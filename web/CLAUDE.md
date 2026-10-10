@@ -64,13 +64,13 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - Every number in the drawer shows its source and its evidence grade (A to D).
 - Works at phone width; the graph may scroll sideways inside its own container.
 
-## Current state (local `frontend`, 10 Oct, after merging `main` at `80a806e`)
+## Current state (`frontend` at `96665fd`, 11 Oct)
 
 What is on the branch:
 
-- `demo.html` at the repo root: the whole page in one file, styles and script inline. It loads
-  `sample_data/dashboard.sample.js` and `web/risk_model.js` in place. `index.html` and the two stale root-level
-  copies are deleted.
+- `web/demo.html`: the whole page in one file, styles and script inline. It loads
+  `../sample_data/dashboard.sample.js` and `risk_model.js` (same folder) in place, as shown above. `index.html`,
+  the root-level `demo.html` and the two stale root-level copies are gone.
 - Preview mode is removed (Prototype only). Step 3 and every probability input are gone: the verdict comes from
   `RiskModel.decideAt`, the step-2 zones and "selling starts at / pool limit from" from `breakEvenSeverity`.
   Wide % sliders use a log scale shared with the zone bar.
@@ -78,29 +78,33 @@ What is on the branch:
 - `main` is merged in: the model now has `atSize`, `carryOf`, `sensitivity`, `decideAtDuration`, `timeline`,
   `timelineSummary`; the data has `time_model` and real-borrower presets. `FRONTEND_GUIDE.md` is `main`'s version.
 
-Checked after the merge (headless Chrome): no console errors, all 15 of the guide's 10M acceptance rows match,
-all 18 drawers open in both views. Not checked: the guide's 1M / 7M / 50M rows (the page has no size input yet),
-phone width and dark mode, and `check_js_port.py` (needs pycryptodome, missing locally).
+Checked after the move (`web/demo.html` opened from disk in headless Chrome): no console errors, the load-error
+banner stays hidden, all 15 of the guide's 10M acceptance rows match, all 18 drawers open in both views.
+`python3 check_js_port.py` passes all 19 gates after the `4329aae` merge (standard library only now). Not checked:
+the guide's 1M / 7M / 50M rows (the page has no size input yet), phone width and dark mode.
 
-Gaps against the current guide: the page does not call `atSize` (no position size or wallet input), computes
-carry itself instead of `RiskModel.carryOf`, and builds "what would change the answer" itself instead of
-`sensitivity`.
+Gaps against the current guide (its section 0 sets this order): 1. carry is computed by the page instead of
+`RiskModel.carryOf` (verdicts are wrong whenever "cash earns" is not 5.01%); 2. "what would change the answer" is
+built by the page instead of `sensitivity`; 3. no `atSize` (no position size or wallet input).
+Answer to the guide's open point: the page is `web/demo.html` and it has no position-size input yet.
 
-Until step 2 is done this file does not load on its own (it loads when a file in `web/` is opened), so read it
-at the start of the session.
+No detector exists (team decision, guide rule 3): `d.detected` is always empty; the sample feed stays, labelled
+as invented.
+
+This file loads when a file in `web/` is opened (the page is there now); otherwise read it at the start of the
+session.
 
 ## To-do, in order
 
-1. ~~Bring the branch up to date: merge `main` into `frontend`.~~ Done (merge, not rebase: `frontend` was already
-   pushed, a rebase would need a force-push).
-2. Move: put the page at `web/demo.html` (`git mv demo.html web/demo.html`). Set the two script paths as shown above
-   and update the error message that names them. Open it in a browser to confirm it loads. Own commit.
-   (`index.html` and the root-level copies are already deleted.)
+1. ~~Bring the branch up to date: merge `main` into `frontend`.~~ Done twice (`80a806e`, then `4329aae`); merge,
+   not rebase, because `frontend` is pushed. Repeat after every backend push, then run `check_js_port.py`.
+2. ~~Move the page to `web/demo.html`, set the two script paths and the error message.~~ Done in `96665fd`
+   (own commit; loads from disk, checks above).
 3. ~~Fix the PT / lending drawer crash from duplicate position edges.~~ Done: data edges only.
 4. Split into the four files of the target layout. No behaviour change, no reformatting. Own commit.
 5. Follow the current guide. Done: step 3 and all probability code removed, verdict from `decideAt`, zones from
-   `breakEvenSeverity`. Left: position size / wallet input via `atSize`, carry via `carryOf`, "what would change
-   the answer" from `sensitivity`.
+   `breakEvenSeverity`. Left, in the guide's order: carry via `carryOf`, "what would change the answer" from
+   `sensitivity`, position size / wallet input via `atSize` (then check the 1M / 7M / 50M rows).
 6. Duration slider, recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
    `timelineSummary`).
 7. Assumptions panel: keep "cash earns after selling"; "share of the book" is display-only and optional.
