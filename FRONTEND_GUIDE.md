@@ -2,7 +2,7 @@
 
 > For the front-end colleague: give this file together with `Dependency_Risk_Desk_v2.html` to Claude and say "edit this page following FRONTEND_GUIDE.md".
 > Keep the layout, but **remove step 3 (probability)**: the organisers consider that the probability p of a sudden incident cannot be predicted, so the core method is now "assume the incident has happened and decide by its severity".
-> Step 1 picks a node (the fixed 9 nodes + detected incidents), step 2 drags the severity by hand; the verdict follows from the severity alone, with "above which fall you should exit" (the break-even severity).
+> Step 1 picks a node (the fixed 9 nodes; incidents are set by hand, there is no detector), step 2 drags the severity by hand; the verdict follows from the severity alone, with "above which fall you should exit" (the break-even severity).
 > What changes: the data are read from the backend files, losses and verdicts are computed by the backend model, and outdated texts are removed.
 > New: the position size is the manager's input (USD, default $10M); a wallet address can also be entered (a wallet read on chain at the same block by `onchain_positions.py --wallet`, or a borrower of this Morpho market, at its real on-chain size; numbers are never typed in by hand). The two real-borrower presets use their real sizes.
 > The "Cash earns after selling, % APY" input is annual: convert it with `RiskModel.carryOf(d, S.alt / 100)` into the yield given up until expiry before passing it to the model (4% -> 0.128%); never pass the annual difference.
@@ -31,7 +31,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 
 1. Do not hard-code numbers from the old snapshot. Read everything from `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` (section 3b), recomputed whenever the size or the wallet input changes.
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
-3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), plus the detected incidents (`d.detected`, empty today; keep the prototype sample feed, still labelled as invented).
+3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), Incidents are set by hand (node, failure, severity, duration): there is no detector and `d.detected` is always empty. If the prototype's sample feed stays, keep it labelled as invented.
 4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
 5. No probability anywhere: delete step 3, `S.p`, `pOf` / `vOf`, the partial-case assumptions (`pk`, `ps`) and the probability zones. The decision assumes the incident has happened; the severity slider is the only "how bad" input. Show on that slider the zones from `RiskModel.breakEvenSeverity` (stay / sell part / sell to the pool limit). The backend still has probability-based fields (`decision_grid`, `thresholds`, `incidents[].probabilities`...) for compatibility: do not use them.
 6. Show evidence grades: A = read from chain / API, B = contract rule back-tested, C = analogy from history, D = assumption. Dashed style = D.
@@ -52,7 +52,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 | `FAIL[k].loss` | delete; `RiskModel.inject` |
 | `FAIL[k].prob` | delete (no probability) |
 | `stress()` | the `sellable_later` / `avg_cost_later` returned by `inject` (drain keeps its own curve, section 7) |
-| `DETECTED` | `d.detected` when it is not empty; otherwise the prototype sample list (keep it labelled as invented) |
+| `DETECTED` | No detector: `d.detected` is always empty. The prototype sample list may stay, labelled as invented |
 | `REPLAYS` | oracle: node `oracle`, failure `oracleLow`, severity 2.77 (`d.failure_types.types.oracleLow.anchors[0]`), and show `d.validation` ("back-test of the liquidation rules on PT-reUSD: 9/9 checks pass"); issuer: node `ethena`, failure `shortfall`, severity 50 (Stream xUSD) or 99.87 (Elixir deUSD) from `anchors` |
 
 ## 3b. Position size and wallet (header inputs)

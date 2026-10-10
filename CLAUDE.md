@@ -35,7 +35,7 @@ Two views in one page:
 1. **Position view (PT, main entry)**: PT-sUSDe-26NOV2026, held outright or as collateral on Morpho. Header inputs:
    position size in USD (default $10M, `RiskModel.atSize`) and an optional wallet (read on chain at the borrowers' block with
    `onchain_positions.py --wallet`: PT held + Morpho position, or any borrower of this market → presets at real size); real-borrower presets use their real positions. Step 1 picks one
-   of 9 nodes (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`) plus detected incidents;
+   of 9 nodes (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`) (incidents are set by hand);
    step 2 picks the failure and drags the severity (manual), plus the incident duration and "recovers / stays";
    the verdict (STAY / REDUCE / SELL_TO_CAP / EXIT) and the break-even severity follow. Details: five-layer chain with
    evidence, exit panel ("now vs later"), sensitivity ("what would change the answer"), timeline.
@@ -136,48 +136,43 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
 ## Requirements discussed (and decisions)
 
 - Organisers: no probability (done: severity-based core); vault address + amount input (done); STAY / EXIT badge,
-  dependency chain, loss vs exit cost in money, one sentence (done); "force allocation" = most likely VaultV2
-  `forceDeallocate` (used as the forced exit tranche; to confirm); "multiplied by price of PT" + timeline (done as
-  incident duration + PT valued at its price; exact meaning to confirm).
-- Team: PT view stays the main entry, vault view is the second view; Kamino deferred; fault injection limited to the
-  9 nodes; severity slider manual; USDe ≠ sUSDe (done); timeline = incident duration, flat timelines described as
-  "duration does not change the answer" (not "always stay").
+  dependency chain, loss vs exit cost in money, one sentence (done); "force allocation" = VaultV2 `forceDeallocate`
+  (decided; used as the forced exit tranche, penalty read on chain); "multiplied by price of PT" + timeline (done:
+  incident duration, PT valued at units x its price).
+- Team: PT view stays the main entry, vault view is the second view and is in scope; Kamino deferred; fault injection
+  limited to the 9 nodes; severity slider manual; USDe ≠ sUSDe (done); timeline = incident duration, flat timelines
+  described as "duration does not change the answer" (not "always stay").
+- No incident detector (decided with the team): incidents are set by hand in the front end (node, failure, severity,
+  duration); `detected[]` stays empty. Do not build `detect.py`.
 - Front-end questions answered: cascade range to 40% (done), carry scaled per unit of equity (done), position edges
   in `ui.edges` (done), amount above vault assets is capped (documented); the front end's size input is now
   "Position size (USD)" (was "share of the book"); "cash earns after selling, % APY" stays, converted with `carryOf`.
 - Positions only from chain or the manager's size: no typed-in collateral / debt (a "custom borrower" was rejected);
-  new borrowers appear by rerunning `onchain_positions.py` + export; other wallets via `--wallet`.
-- Every number must be from the same moment (user requirement). Today's samples are not: Pendle markets 09:13 UTC,
-  quotes 09:22–09:27, crawl block 26162694 (~14:41), borrowers / oracle block 26163209 (16:24), export 18:21
-  (`days_to_expiry` counts from the export time). Planned, not started (refresh button postponed): one refresh =
-  one snapshot: pin block B, read everything on chain at B (Pendle price / implied APY on chain if the verified ABI
-  allows), call the APIs right after, gate on the spread (e.g. ≤ 5 min), time-based fields from B's timestamp, a
-  `snapshot` block in the dashboard; then a local `serve.py` with POST /api/refresh behind a page button.
+  new borrowers appear by rerunning `onchain_positions.py` + export; other wallets via `--wallet`. Belem's wallet
+  addresses are not available (the Belem RWA EURCV vault's owner / curator 0xbbacdcfb… is a contract holding no PT).
+- Same-moment snapshot: not required (decided). Each source keeps its own block / time in its evidence (today:
+  Pendle markets 09:13 UTC, quotes 09:22–09:27, crawl block 26162694, borrowers / oracle block 26163209 at 16:24,
+  `days_to_expiry` from the export time). No refresh button for now.
 
 ## Not done (priority order)
 
 1. Done: PT view position size (`at_size`, `exit_curve_usd` $10k–$4.5M, `size_input`, real-borrower presets at real
-   size, wallet input = wallets read with `onchain_positions.py --wallet` or borrowers of this market (never typed-in numbers), PT units from the quoted price, loss at market value / oracle value
-   only for liquidation, sale costed at today's value, `decide` also tries the cap when it is off the 1% grid).
-   Left: Belem's address (ask the organisers; the Belem RWA EURCV vault's owner / curator 0xbbacdcfb… holds no PT),
-   combined decision for a wallet with PT both held and on Morpho, PT in Pendle LP / other markets, sizes above ~$450M.
-2. **Detection** (`detect.py`): turn the signals we already read into `detected[]` (meta-oracle deviation vs 0.75% and
-   challenge state, Chainlink staleness, utilization, debt within 1% of liquidation, PT price jumps) with the observed
-   severity; replay PT-reUSD 25 Aug 2026 (our hourly candles) to show it fires at 04:00 UTC.
-3. **Volatile collateral** (WBTC / wstETH / cbBTC, ~14% of Belem's vault, not analysed): severity anchors from
-   DeFiLlama BTC/ETH drawdowns, oracles are Chainlink market feeds (follow immediately).
-4. **Front-end integration check** against both acceptance tables; a 2–3 minute demo script (Belem vault → mGLOeuro →
-   chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command for refresh + checks, as one same-moment
-   snapshot (see Requirements), then the refresh button.
-5. Off-chain dependencies with source URLs (Ethena exchanges / custodians, SG-Forge for EURCV, Huma receivables);
+   size, wallet input = wallets read with `onchain_positions.py --wallet` or borrowers of this market (never typed-in
+   numbers), PT units from the quoted price, loss at market value / oracle value only for liquidation, sale costed at
+   today's value, `decide` also tries the cap when it is off the 1% grid). Left: combined decision for a wallet with
+   PT both held and on Morpho, PT in Pendle LP / other markets, sizes above ~$450M.
+2. **Volatile collateral** in the vault view (WBTC / wstETH / cbBTC, ~14% of Belem's vault, not analysed): severity
+   anchors from DeFiLlama BTC/ETH drawdowns, oracles are Chainlink market feeds (follow immediately).
+3. **Off-chain dependencies with source URLs** (Ethena exchanges / custodians, SG-Forge for EURCV, Huma receivables);
    the LLM only finds relations, numbers come from code.
-6. Liquidation feasibility for RWA collateral without DEX liquidity (bad debt if liquidators cannot sell).
-7. Admin / upgrade risk from the crawler's role edges (who can change an oracle or a vault, timelock, EOA vs multisig).
-8. Vault timeline: PT collateral pull-to-par and borrower interest; swap cost for asset-issuer incidents (REVIEW).
-9. Protocol exploit failure type; Stream xUSD / Elixir deUSD replay (Dune); Base Morpho vault; Kamino (deferred).
+4. **Front-end integration check** against both acceptance tables; a 2–3 minute demo script (Belem vault → mGLOeuro →
+   chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command for refresh + checks.
+5. Liquidation feasibility for RWA collateral without DEX liquidity (bad debt if liquidators cannot sell).
+6. Admin / upgrade risk from the crawler's role edges (who can change an oracle or a vault, timelock, EOA vs multisig).
+7. Vault timeline: PT collateral pull-to-par and borrower interest; swap cost for asset-issuer incidents (REVIEW).
+8. Protocol exploit failure type; Stream xUSD / Elixir deUSD replay (Dune); Base Morpho vault; Kamino (deferred).
 
-Open questions for the organisers: is the vault view scored or a bonus; is "force allocation" `forceDeallocate`;
-exact meaning of "multiplied by price of PT"; Belem wallet addresses (would make position size grade A).
+Open questions for the organisers: none at the moment.
 
 Assumptions to keep visible: PT-view default size $10M is ours until the manager enters one; default vault amount 10,000,000 is a placeholder for the
 manager's input; capacity is a snapshot (Pendle swap route only); alternative yield per currency USD 4% / EUR 2% /
