@@ -8,6 +8,8 @@ The backend rules are in the root `CLAUDE.md`. This file covers `web/` only.
 
 Reply to the user in the language they write in. Code, comments, commit messages and repo docs stay in English.
 
+Always ask for permission before commit and push.
+
 ## Files (target layout)
 
 | File                                 | Holds                                              | Never holds                                       |
