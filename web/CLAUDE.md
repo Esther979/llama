@@ -73,8 +73,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - One mode: any dependency can be failed by hand. Preview was removed on 10 Oct.
 - No detector and no invented incidents (team decision). An incident is set by hand (node, failure, severity), or
   loaded from a past event through "Load a past incident pattern…" at the top right: the real events in
-  `d.past_incidents`, grade C. No page text may describe a detector (gate 2b). The page still has the
-  two invented examples and the "Prototype control" bar; see to-do 3.
+  `d.past_incidents`, grade C. No page text may describe a detector or an invented incident (gate 2b).
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults.
 - Header of the PT view, left to right, once to-do 7 is done: title; the position select; "Position size (USD)";
   "Cash earns after selling, % APY"; "Load a past incident pattern…"; the view switch at the far right.
@@ -92,7 +91,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   `VAULTS.report.assumptions.alt_apy_by_currency`) with the horizon (`exit.horizon_days`). The PT select, size,
   "cash earns" and past-incident dropdown are hidden there. Each view keeps its own values when switching.
 - The page never opens on an empty decision card: the PT-reUSD oracle drop is preselected on the real borrower
-  closest to liquidation (see to-do 3), so the first screen shows a liquidation and an exit, not a STAY. A past
+  closest to liquidation (done in `b47402c`), so the first screen shows a liquidation and an exit, not a STAY. A past
   event is a pattern applied to this position, not something that happened to it: the banner and the card label must
   say so ("Pattern from …"), and the PT-reUSD event must never read as an incident on PT-sUSDe. The opening preset
   is likewise someone else's position (a real borrower of this market), not the manager's: say so on the card.
@@ -139,20 +138,27 @@ Not started. The guide and its acceptance table (9 decision rows and a 3-row liq
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `74993e8`; page code last changed in `7aa2500`)
+## Current state (`frontend` at `b47402c`)
 
 What is on the branch:
 
 - `web/demo.html` (markup), `web/demo.css` (both former `<style>` blocks, in order) and `web/demo.js` (the former
   inline script), moved line for line: rebuilding the old single file from the three gives it byte for byte.
   The page loads `../sample_data/dashboard.sample.js` and `risk_model.js` in place, as shown above.
-- `web/demo.copy.js` holds the `COPY` object: so far the example-incident wording and the off-chain row. The other
-  user-facing strings are still in `demo.js` and move step by step (see "Separation rules").
-- No detector wording: the two invented incidents are "examples" set by hand (prototype bar, tag, band, dropdown
-  group, drawer row, step-2 note). The examples themselves and the "Prototype control" bar are still on the page;
-  to-do 3 removes them.
-- "Load a past incident pattern…" lists three events: the PT-reUSD oracle drop (first `oracleLow` anchor) and the
-  two `shortfall` anchors (Stream xUSD, Elixir deUSD). The `depeg` anchors are not listed.
+- `web/demo.copy.js` holds the `COPY` object: so far the step-1 hint, the past-event wording, "not your position"
+  and the off-chain row. The other user-facing strings are still in `demo.js` and move step by step (see
+  "Separation rules").
+- No detector and no invented incidents: the prototype bar, the two examples and the page-built `REPLAYS` are gone.
+  "Load a past incident pattern…" lists `d.past_incidents` (4 events). Selecting one sets node, failure and
+  severity and passes its `opts` to `decideAt` and `breakEvenSeverity` (`S.past`); moving the dependency, failure
+  or severity drops it (what-if), changing the position keeps it. Its text is in `#pastBanner` ("Pattern from …,
+  applied to this position. It did not happen to PT-sUSDe."); `#banner` is only the load error. The origin layer
+  and node carry a "Past pattern" tag, the card label "Pattern from …".
+- First screen: `pt_reusd_aug_2026` on `lev_closest_to_liquidation` (EXIT, doing nothing loses $165k, selling
+  costs $5.7k). With a real-borrower preset the card says it is "a real borrower of this market, read on chain, not
+  your position". The header still shows "position size $10.00M" (gap 2).
+- `sensitivity` and `decisionText` are not called yet, so `opts` reaches only `decideAt` and `breakEvenSeverity`;
+  pass it when to-do 5 and 6 add them.
 - Off-chain dependencies (guide section 8): the `ethena` and `susde` drawers have an "Off-chain (issuer documents)"
   row from `d.offchain.USDe` (31 relations) and `d.offchain.sUSDe` (4): issuer, summary and count per kind,
   relations grouped by kind on demand, each with a source link, grade D and the quote ("re-checked" when
@@ -178,20 +184,24 @@ What is on the branch:
   dependencies of USDe and sUSDe), `RiskModel.decisionText` and `RiskModel.sizeCurve`. The backend pushes often, so
   run
   `git log HEAD..origin/main --oneline` before starting and merge first.
-- `main` was merged again at `48e5ab9` (in `74993e8`): `d.past_incidents` and the optional `opts` argument are in
-  the data and in `risk_model.js`; the page does not use them yet. At 23:40 on 10 Oct the branch was 1 commit
-  behind (`f1a44c5`, guide section 3c only: the first-screen rule).
+- `main` was merged again at `48e5ab9` (in `74993e8`: `d.past_incidents`, the optional `opts` argument) and at
+  `f1a44c5` (in `642e57b`: guide 3c, the first-screen rule, docs only).
 
-Checked at `7aa2500`: `node web/check_demo.mjs` passes: no console errors, banner hidden, 18/18 drawers, gate 2b (no
-detector wording), gates 2c (off-chain links ethena 31/31, susde 4/4, usde links to Ethena, on-chain members only),
-48 preset x failure combinations, 15/15 of the guide's 10M acceptance rows (model and on-screen verdict), gate 4b
-(exit panel agrees with the decision card) 192/192, no horizontal scroll at 390px, dark background in dark mode.
-Gates 2b / 2c failed on the page before (4 failures). Screenshots checked: the prototype bar, the ethena drawer
-collapsed and expanded, the usde drawer, the graph view.
-`python3 check_js_port.py` passes all 21 gates at the `9fd615e` merge (`556828c` changed docs only). Gate 4b failed
-on the page before the fix (114/192, every failure with a real-borrower preset). Screenshots checked: the closest
+Checked at `b47402c`: `node web/check_demo.mjs` passes: no console errors, load-error banner hidden, 1b (first
+screen: PT-reUSD on the closest borrower, EXIT, event banner, "Pattern from", "not your position"), 18/18 drawers,
+2b (no detector or invented-incident wording, no prototype bar), 2c (off-chain links ethena 31/31, susde 4/4, usde
+links to Ethena, quote wording by `quote_found` true 34 / null 1 / false 0, on-chain members only), 2d (4 past
+events listed, each sets its incident and passes its opts; opts change the USDe result; moving the severity makes
+a what-if), 2e (guide 3c rows 8/8, model and screen), 48 preset x failure combinations, 15/15 of the guide's 10M
+acceptance rows, 4b 192/192, no horizontal scroll at 390px, dark background in dark mode. On the page before
+`b47402c`, gates 1b, 2b, 2d and 2e fail (8 failures); gate 2c's quote wording failed before `0c71c3f`. Screenshots
+checked: the first screen on desktop and at a real 390px viewport (device emulation; a plain `--window-size=390`
+screenshot crops the page and is not a valid phone check). `python3 check_js_port.py` passes all 22 gates at the
+`48e5ab9` merge (`f1a44c5` changed docs only).
+Earlier: screenshots of the ethena drawer collapsed and expanded, the usde drawer and the graph view.
+Gate 4b failed on the page before its fix (114/192, every failure with a real-borrower preset). Screenshots checked: the closest
 borrower at a 2% and a 0.5% USDe depeg, and the $10M position. Not checked: the guide's 1M / 7M / 50M rows (no size
-input yet; reported as SKIPPED), layout by eye in dark mode and at phone width (the expanded off-chain row
+input yet; reported as SKIPPED), layout by eye in dark mode (first screen and the expanded off-chain row
 included). Earlier: the carry change was
 compared old vs new on 564 cases: no verdict changed, 9 REDUCE sizes moved by 1-3 points.
 
@@ -228,47 +238,13 @@ Done: `main` merged (repeat after every backend push, then `python3 check_js_por
 `9fd615e` (`a4d9f9e`); carry from `RiskModel.carryOf`, decimal comma accepted (`8baf37b`); exit panel from each
 position's own curve, with gate 4b in `check_demo.mjs` (`8291329`, `098d44c`); `main` merged at `556828c`
 (`5cda215`); no detector wording and off-chain row in the evidence drawer, with gates 2b / 2c (`a726d90`,
-`7aa2500`).
+`7aa2500`); `main` merged at `48e5ab9` (`74993e8`) and `f1a44c5` (`642e57b`); off-chain quotes "not re-checked"
+when `quote_found` is null (`0c71c3f`); past incidents replace the invented examples, first screen on PT-reUSD
+with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`).
 
-Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording) and 3b are
-done; the 3 below is a new item.
+Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b and
+the new 3 (past incidents) are done.
 
-3. Remove the invented incidents; past events are the only quick picks.
-   - Delete: the dashed "Prototype control" bar at the top (`#proto`, `#feedLbl`, `#protoNote`, the feed select),
-     the "Invented examples" group in step 1, and what only they use: the "Example" tag on cards and nodes, the
-     "Example" band label, the drawer row, the step-2 "Example value" note, `SAMPLE` and `COPY.examples`. Keep the
-     `d.detected` mapping only if it costs nothing; it is always empty.
-   - Rewrite the hint texts under step 1 and step 2 (in `COPY`): pick any dependency and set the failure and
-     severity by hand, or load a past event at the top right.
-   - Keep "Load a past incident pattern…" as the only entry to past events, filled from `d.past_incidents` (backend
-     `48e5ab9`, guide section 3c), no longer built from the anchors in the page: four events (USDe 1 Feb 2026 1.62%,
-     PT-reUSD oracle 25 Aug 2026 2.77%, Stream xUSD 50%, Elixir deUSD 99.87%), each with `node`, `fail`, `sev`,
-     `label`, `date`, `evidence` (grade C, `source`, `basis`) and `opts`. Statistics (median depeg losses) are not in
-     the list. Delete the page's `REPLAYS` builder.
-   - On select, set steps 1-2 from `p.node`, `p.fail`, `p.sev` and pass `p.opts` as the last argument of
-     `decideAt`, `breakEvenSeverity` (after `steps`, i.e. `..., f.min, f.max, 400, p.opts`), `sensitivity` and
-     `decisionText`. Without `opts` the USDe event reads as a permanent 1.62% loss ($162,000 on $10M); with it
-     (`{hours: 24, permanent: 0}`) an unlevered holder loses nothing and a levered one is liquidated. Moving the
-     node, failure or severity turns it into a what-if: drop `opts`.
-   - The page opens with one past event preselected, so the decision card is filled on first view (user decision,
-     10 Oct): the PT-reUSD oracle drop (`d.past_incidents` key `pt_reusd_aug_2026`: node `oracle`,
-     failure `oracleLow`, 2.77%, back-tested 9/9, with its `opts`) **and** the position preset
-     `lev_closest_to_liquidation` (the real borrower closest to liquidation, $3.25M, 0.99% from its liquidation
-     line), with the event's banner shown. Why both: it is the brief's own highlighted layer (layer 3) and a real,
-     sourced event, but with "PT held outright" it gives STAY with no loss (no debt, so an oracle drop changes
-     nothing), and the first screen would show no action. With the closest borrower it shows the whole point:
-     EXIT, doing nothing loses $164,903, selling now costs $5,683, liquidated (guide 3c acceptance row). Fall back
-     to the first entry of `d.past_incidents` if that key is missing. Choosing another node or moving the severity
-     turns it into a what-if as today; changing the preset keeps the event and its `opts`.
-   - The default preset changes from `spot` to `lev_closest_to_liquidation`. Before the change, check which gates
-     of `check_demo.mjs` rely on the page opening on `spot`, and make them select their preset explicitly.
-   - `#banner` serves two purposes today: the load-error message and the past-event text. With an event
-     preselected it is visible on load, so gate 1 ("load-error banner hidden") fails. Give the load error its own
-     element, or make the gate test for the error state, before turning preselection on.
-   - `check_demo.mjs`: gate 2b opens a drawer "that shows an example incident" and must be rewritten; add a gate
-     that `#proto` is gone, no "invented" or "Example" text is left, and the dropdown lists `d.past_incidents`, each
-     setting its `node`, `fail` and `sev` and passing its `opts`; check the 8 rows of guide section 3c on screen
-     (`acceptanceRows()` reads section 9 only today: the 3c table needs its own reader).
 4. Vault view, first cut: header switch, address and amount inputs in the header (they replace the PT view's two
    header inputs while this view is shown), scenario and severity, verdict badge, the
    sentence, loss if staying versus cost of exiting, and the dependency chain. Add the vault acceptance rows and a
