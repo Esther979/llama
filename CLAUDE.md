@@ -32,6 +32,8 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `incidents.py` | Three-outcome incidents, expected / tail loss, exact break-even, exit now vs later, lender |
 | `etherscan.py` | Etherscan V2 verified source / ABI / contract name (key in .env, never saved) |
 | `crawl.py` | Generic ABI-driven dependency crawler -> edges_<tag>.csv (src, dst, type, kind, weight_usd, evidence) |
+| `oracle_types.py` | Oracle type table (linear discount, Chainlink V2 combiner, meta-oracle timelock, Chainlink market / rate feeds); unknown -> D |
+| `vault_pipeline.py` | RockawayX-format input -> per-vault dependency graph, borrowers, incidents, vault loss, exit tranches, sentence |
 | `onchain_positions.py` | Morpho borrowers on chain over JSON-RPC (stdlib): positions, LTVs, liquidation curve vs capacity; 7 gates |
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |
@@ -72,6 +74,10 @@ Done
   dip (D). Unlevered: E[L] 5.2%, tail 92%; exit the sellable 45% if P(severe) > 0.49% (0.98% if severe = -50%).
   Exact break-even per scenario (checked against decide()). Exit later: after a 1.6% oracle fall only 14% is
   sellable at 1.2% (now 45% at 0.49%). Gas ~$0.1-0.3 per sale. Lender: 76% withdrawable now.
+
+- Vault mode (`vault_pipeline.py`, input `sample_data/rockawayx_vaults.csv`, 33 rows): 12 ethereum Morpho VaultV2
+  vaults get full numbers; the oracle of our PT-sUSDe market is a MetaOracleDeviationTimelock (0.75%, 16h) over a
+  PendleSparkLinearDiscountOracle (no market input). `onchain_positions.read_market` reads any Morpho market.
 
 Not done (in priority order)
 1. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`

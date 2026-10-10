@@ -1,0 +1,798 @@
+{
+ "vault_name": "RockawayX Confidential RWA USDC",
+ "vault_address": "0xc207d3f66537d7f66456808379a0e560cf20da36",
+ "coverage": "full",
+ "block": 26162417,
+ "input": {
+  "token_name": "USDC",
+  "chain": "ethereum",
+  "protocol": "morpho",
+  "category": "Money Market",
+  "tvl_usd": "23.9m$",
+  "apy": "10.00%"
+ },
+ "asset": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+ "asset_symbol": "USDC",
+ "total_assets": 26424556.310066,
+ "idle": 0.0,
+ "liquidity_market": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+ "dependency_graph": {
+  "edges_file": "data/vaults/edges_0xc207d3f6.csv",
+  "nodes": 85,
+  "edges": 138,
+  "by_kind": {
+   "data": 64,
+   "role": 25,
+   "operator": 42,
+   "infra": 7
+  }
+ },
+ "markets": [
+  {
+   "key": "morpho_market:0x002278ea",
+   "market_id": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+   "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
+   "allocation": 21847929.580556,
+   "lltv": 0.86,
+   "analyzed": true,
+   "collateral": "0x22ae3d9a738471f405169af055d31c687087d4c7",
+   "collateral_symbol": "PST",
+   "collateral_contract": "BurnMintERC20",
+   "collateral_type": "rwa_or_credit",
+   "oracle": {
+    "address": "0xa5657b406fc4282039861c6fca64452aefec8ac0",
+    "contract_name": "MorphoChainlinkOracleV2",
+    "kind": "morpho_chainlink_v2",
+    "tracks_market": false,
+    "tracks_underlying": null,
+    "parts": {
+     "BASE_FEED_1": {
+      "address": "0x4be50be32db1510240d542f77c5b36ca0d0965e6",
+      "contract_name": "EACAggregatorProxy",
+      "kind": "reported_rate",
+      "description": "PST-USDC Exchange Rate (Calculated)",
+      "last_update": {
+       "answer": 1138172,
+       "updated_at": 1791636947,
+       "age_seconds": 2976
+      },
+      "prices": null,
+      "tracks_market": false,
+      "tracks_underlying": null,
+      "rule": "reported exchange rate / NAV: does not follow the market; whether it falls on an issuer failure depends on who reports it",
+      "evidence": {
+       "grade": "C",
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162417; classified from description 'PST-USDC Exchange Rate (Calculated)'"
+      }
+     }
+    },
+    "loan_side": [],
+    "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
+    "evidence": {
+     "grade": "C",
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162417"
+    }
+   },
+   "supply": 37947138.876221,
+   "borrow": 34389856.908927,
+   "liquidity": 3557281.967294,
+   "share_of_market": 0.5757464258852641,
+   "n_borrowers": 12,
+   "max_ltv": 0.8375924998693983,
+   "debt_within_1pct_of_liquidation": 0
+  },
+  {
+   "key": "morpho_market:0x2bbdd815",
+   "market_id": "0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+   "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
+   "allocation": 600024.225649,
+   "lltv": 0.77,
+   "analyzed": true,
+   "collateral": "0x997e2efbce91d170b00ea402e35a66c887ee1da9",
+   "collateral_symbol": "AUTO",
+   "collateral_contract": "AutoStakingVault",
+   "collateral_type": "yield_wrapper",
+   "oracle": {
+    "address": "0x9abd4961996b7957baa4be82716d23bdfe541854",
+    "contract_name": "MorphoChainlinkOracleV2",
+    "kind": "morpho_chainlink_v2",
+    "tracks_market": false,
+    "tracks_underlying": null,
+    "parts": {
+     "BASE_FEED_1": {
+      "address": "0x0a19f6490346fde451dd398714b735b77e67d6cb",
+      "contract_name": "EACAggregatorProxy",
+      "kind": "reported_rate",
+      "description": "Hastra Auto / WYLDS Exchange Rate",
+      "last_update": {
+       "answer": 1023499658613285960,
+       "updated_at": 1791561335,
+       "age_seconds": 78588
+      },
+      "prices": "hastra auto",
+      "tracks_market": false,
+      "tracks_underlying": null,
+      "rule": "reported exchange rate / NAV: does not follow the market; whether it falls on an issuer failure depends on who reports it",
+      "evidence": {
+       "grade": "C",
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162417; classified from description 'Hastra Auto / WYLDS Exchange Rate'"
+      }
+     },
+     "QUOTE_FEED_1": {
+      "address": "0x8fffffd4afb6115b954bd326cbe7b4ba576818f6",
+      "contract_name": "EACAggregatorProxy",
+      "kind": "market_price_feed",
+      "description": "USDC / USD",
+      "last_update": {
+       "answer": 99988047,
+       "updated_at": 1791639575,
+       "age_seconds": 348
+      },
+      "prices": "usdc",
+      "tracks_market": true,
+      "tracks_underlying": true,
+      "rule": "Chainlink price feed of the described pair: follows its market price",
+      "evidence": {
+       "grade": "C",
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162417; classified from description 'USDC / USD'"
+      }
+     }
+    },
+    "loan_side": [
+     "QUOTE_FEED_1"
+    ],
+    "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
+    "evidence": {
+     "grade": "C",
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162417"
+    }
+   },
+   "supply": 600005.055635,
+   "borrow": 539657.779268,
+   "liquidity": 60347.276367,
+   "share_of_market": 1.0000319497541228,
+   "n_borrowers": 3,
+   "max_ltv": 0.7278919024616067,
+   "debt_within_1pct_of_liquidation": 0
+  },
+  {
+   "key": "morpho_market:0x1e9d6146",
+   "market_id": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+   "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
+   "allocation": 3976601.451321,
+   "lltv": 0.915,
+   "analyzed": true,
+   "collateral": "0xecfafdc7741323a945a163ed068b5a3c43483957",
+   "collateral_symbol": "PT-reUSD-10DEC2026",
+   "collateral_contract": "PendlePrincipalToken",
+   "collateral_type": "pt",
+   "oracle": {
+    "address": "0x217d6ddcdb95112c51657f6270e8c079cfdb51f0",
+    "contract_name": "MorphoChainlinkOracleV2",
+    "kind": "morpho_chainlink_v2",
+    "tracks_market": null,
+    "tracks_underlying": null,
+    "parts": {
+     "BASE_FEED_1": {
+      "address": "0x77ee147391eac11c92817e771860ff4aad265d89",
+      "contract_name": "OjoPTFeed",
+      "kind": "unknown",
+      "tracks_market": null,
+      "tracks_underlying": null,
+      "last_update": {
+       "answer": 981717844517170473,
+       "updated_at": 1791639923,
+       "age_seconds": 0
+      },
+      "rule": "type not in the table: both branches computed",
+      "evidence": {
+       "grade": "D",
+       "source": "Etherscan verified source (OjoPTFeed); eth_call @ block 26162417; not classified"
+      }
+     }
+    },
+    "loan_side": [],
+    "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
+    "evidence": {
+     "grade": "D",
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162417"
+    }
+   },
+   "supply": 119010415.19076,
+   "borrow": 106330814.3324,
+   "liquidity": 12679600.85836,
+   "share_of_market": 0.03341389444736383,
+   "n_borrowers": 231,
+   "max_ltv": 0.9125832241912603,
+   "debt_within_1pct_of_liquidation": 7991.731521
+  },
+  {
+   "key": "morpho_market:0xf8697bec",
+   "market_id": "0xf8697bec3140fb8e046af586a1cda4f95e980bb7bc7551cad6e81cf701bc176d",
+   "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
+   "allocation": 1.05254,
+   "lltv": 0.915,
+   "analyzed": false,
+   "note": "allocation below 1,000: not analyzed"
+  }
+ ],
+ "incidents": [
+  {
+   "key": "issuer_default:PST",
+   "type": "issuer_default",
+   "token": "0x22ae3d9a738471f405169af055d31c687087d4c7",
+   "symbol": "PST",
+   "layer": 2,
+   "affected_markets": [
+    "morpho_market:0x002278ea"
+   ],
+   "affected_allocation": 21847929.580556,
+   "propagation_paths": [
+    "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[0]] Morpho Blue market -> [marketParams.collateralToken] PST"
+   ],
+   "outcomes": [
+    {
+     "outcome": "resolved",
+     "preset": null,
+     "probability": 0.6871165644171779,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": []
+    },
+    {
+     "outcome": "partial",
+     "preset": "depeg_partial",
+     "shock": 0.022665999999999964,
+     "hours": null,
+     "probability": 0.2668711656441718,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": [
+      {
+       "market": "morpho_market:0x002278ea",
+       "collateral": "PST",
+       "oracle_falls": null,
+       "market_bad_debt_low": 0.0,
+       "market_bad_debt_high": 0.0,
+       "vault_share_of_market": 0.5757464258852641,
+       "vault_loss_low": 0.0,
+       "vault_loss_high": 0.0
+      }
+     ],
+     "source": "median day-30 loss of the 87 'partial' stablecoin depeg episodes (DeFiLlama stablecoins.llama.fi/stablecoinprices (daily, by gecko_id) + /stablecoins (pegType), 2020-12-30..2026-10-10); level assumed to persist"
+    },
+    {
+     "outcome": "severe",
+     "preset": "issuer_total",
+     "shock": 0.9987447088831541,
+     "hours": null,
+     "probability": 0.046012269938650305,
+     "L_low": 0.7481199827940253,
+     "L_high": 0.7481694118464589,
+     "per_market": [
+      {
+       "market": "morpho_market:0x002278ea",
+       "collateral": "PST",
+       "oracle_falls": null,
+       "market_bad_debt_low": 34335842.52239176,
+       "market_bad_debt_high": 34338111.126625605,
+       "vault_share_of_market": 0.5757464258852641,
+       "vault_loss_low": 19768738.612026326,
+       "vault_loss_high": 19770044.752805714
+      }
+     ],
+     "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
+    }
+   ],
+   "expected_loss": 0.034424972937720504,
+   "tail_loss_95": 0.6884994587544094,
+   "var_95": 0.0,
+   "worst_outcome": "severe",
+   "L_worst": 0.7481694118464589,
+   "evidence": {
+    "probabilities": {
+     "grade": "C",
+     "source": "stablecoin depeg outcome frequencies used by analogy for an issuer failure of PST: 326 stablecoin depeg episodes (close < 0.97 after a functioning month, >= 2 days; 299 USD stablecoins, 2020-12-30..2026-10-10, DeFiLlama): resolved = back >= 0.99 within 7 days, severe = below 0.5 on day 30; range over 3 samples resolved 68.7%-83.2%, partial 14.4%-26.7%, severe 2.5%-5.4% (calibrate_depeg.py)"
+    },
+    "L": {
+     "grade": "D",
+     "basis": {
+      "shock": "C",
+      "oracle": "C",
+      "borrowers_and_allocations": "A",
+      "liquidation_rules": "B",
+      "recovery": "D"
+     },
+     "source": "loss_model per real borrower x vault share of each affected market"
+    }
+   },
+   "break_even": {
+    "p_worst": 0.0065914307257553635,
+    "exit_cost": 0.004931506849315068,
+    "L_worst": 0.7481694118464589
+   },
+   "decision_text": {
+    "text": "Given issuer_default:PST, if you think the probability of the severe outcome (vault loss 74.82%) is above 0.659%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.46% of the vault could leave without penalty.",
+    "numbers": [
+     "74.82%",
+     "0.659%",
+     "100.00%",
+     "0.493%",
+     "13.46%"
+    ],
+    "unchecked": []
+   }
+  },
+  {
+   "key": "issuer_default:AUTO",
+   "type": "issuer_default",
+   "token": "0x997e2efbce91d170b00ea402e35a66c887ee1da9",
+   "symbol": "AUTO",
+   "layer": 2,
+   "affected_markets": [
+    "morpho_market:0x2bbdd815"
+   ],
+   "affected_allocation": 600024.225649,
+   "propagation_paths": [
+    "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[1]] Morpho Blue market -> [marketParams.collateralToken] AUTO"
+   ],
+   "outcomes": [
+    {
+     "outcome": "resolved",
+     "preset": null,
+     "probability": 0.6871165644171779,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": []
+    },
+    {
+     "outcome": "partial",
+     "preset": "depeg_partial",
+     "shock": 0.022665999999999964,
+     "hours": null,
+     "probability": 0.2668711656441718,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": [
+      {
+       "market": "morpho_market:0x2bbdd815",
+       "collateral": "AUTO",
+       "oracle_falls": null,
+       "market_bad_debt_low": 0.0,
+       "market_bad_debt_high": 0.0,
+       "vault_share_of_market": 1.0000319497541228,
+       "vault_loss_low": 0.0,
+       "vault_loss_high": 0.0
+      }
+     ],
+     "source": "median day-30 loss of the 87 'partial' stablecoin depeg episodes (DeFiLlama stablecoins.llama.fi/stablecoinprices (daily, by gecko_id) + /stablecoins (pegType), 2020-12-30..2026-10-10); level assumed to persist"
+    },
+    {
+     "outcome": "severe",
+     "preset": "issuer_total",
+     "shock": 0.9987447088831541,
+     "hours": null,
+     "probability": 0.046012269938650305,
+     "L_low": 0.02037516565010816,
+     "L_high": 0.02037848269091702,
+     "per_market": [
+      {
+       "market": "morpho_market:0x2bbdd815",
+       "collateral": "AUTO",
+       "oracle_falls": null,
+       "market_bad_debt_low": 538387.5106996159,
+       "market_bad_debt_high": 538475.1592309035,
+       "vault_share_of_market": 1.0000319497541228,
+       "vault_loss_low": 538404.7120482055,
+       "vault_loss_high": 538492.3633798421
+      }
+     ],
+     "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
+    }
+   ],
+   "expected_loss": 0.0009376602465145868,
+   "tail_loss_95": 0.01875320493029172,
+   "var_95": 0.0,
+   "worst_outcome": "severe",
+   "L_worst": 0.02037848269091702,
+   "evidence": {
+    "probabilities": {
+     "grade": "C",
+     "source": "stablecoin depeg outcome frequencies used by analogy for an issuer failure of AUTO: 326 stablecoin depeg episodes (close < 0.97 after a functioning month, >= 2 days; 299 USD stablecoins, 2020-12-30..2026-10-10, DeFiLlama): resolved = back >= 0.99 within 7 days, severe = below 0.5 on day 30; range over 3 samples resolved 68.7%-83.2%, partial 14.4%-26.7%, severe 2.5%-5.4% (calibrate_depeg.py)"
+    },
+    "L": {
+     "grade": "D",
+     "basis": {
+      "shock": "C",
+      "oracle": "C",
+      "borrowers_and_allocations": "A",
+      "liquidation_rules": "B",
+      "recovery": "D"
+     },
+     "source": "loss_model per real borrower x vault share of each affected market"
+    }
+   },
+   "break_even": {
+    "p_worst": 0.2419957817327151,
+    "exit_cost": 0.004931506849315068,
+    "L_worst": 0.02037848269091702
+   },
+   "decision_text": {
+    "text": "Given issuer_default:AUTO, if you think the probability of the severe outcome (vault loss 2.04%) is above 24.20%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.46% of the vault could leave without penalty.",
+    "numbers": [
+     "2.04%",
+     "24.20%",
+     "100.00%",
+     "0.493%",
+     "13.46%"
+    ],
+    "unchecked": []
+   }
+  },
+  {
+   "key": "pt_market_dip:PT-reUSD-10DEC2026",
+   "type": "pt_market_dip",
+   "token": "0xecfafdc7741323a945a163ed068b5a3c43483957",
+   "symbol": "PT-reUSD-10DEC2026",
+   "layer": 3,
+   "affected_markets": [
+    "morpho_market:0x1e9d6146"
+   ],
+   "affected_allocation": 3976601.451321,
+   "propagation_paths": [
+    "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026"
+   ],
+   "outcomes": [
+    {
+     "outcome": "resolved",
+     "preset": null,
+     "probability": 0.5,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": []
+    },
+    {
+     "outcome": "partial",
+     "preset": "oracle_dip",
+     "shock": 0.02966625463535233,
+     "hours": 1,
+     "probability": 0.5,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": [
+      {
+       "market": "morpho_market:0x1e9d6146",
+       "collateral": "PT-reUSD-10DEC2026",
+       "oracle_falls": null,
+       "market_bad_debt_low": 0.0,
+       "market_bad_debt_high": 0.0,
+       "vault_share_of_market": 0.03341389444736383,
+       "vault_loss_low": 0.0,
+       "vault_loss_high": 0.0
+      }
+     ],
+     "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h"
+    },
+    {
+     "outcome": "severe",
+     "preset": null,
+     "probability": 0.0,
+     "L_low": null,
+     "L_high": null,
+     "per_market": []
+    }
+   ],
+   "expected_loss": 0.0,
+   "tail_loss_95": 0.0,
+   "var_95": 0.0,
+   "worst_outcome": "partial",
+   "L_worst": 0.0,
+   "evidence": {
+    "probabilities": {
+     "grade": "D",
+     "source": "no historical sample in our data (one event: PT-reUSD 25 Aug 2026, recovered within 5h); placeholder 50 / 50, set by the manager. No severe anchor, so severe = 0"
+    },
+    "L": {
+     "grade": "D",
+     "basis": {
+      "shock": "C",
+      "oracle": "D",
+      "borrowers_and_allocations": "A",
+      "liquidation_rules": "B",
+      "recovery": "D"
+     },
+     "source": "loss_model per real borrower x vault share of each affected market"
+    }
+   },
+   "break_even": {
+    "p_worst": null,
+    "exit_cost": 0.004931506849315068,
+    "L_worst": 0.0
+   },
+   "decision_text": {
+    "text": "Given pt_market_dip:PT-reUSD-10DEC2026, the partial outcome costs this vault nothing (no borrower is left with bad debt), so staying is free whatever its probability.",
+    "numbers": [],
+    "unchecked": []
+   }
+  },
+  {
+   "key": "issuer_default:PT-reUSD-10DEC2026",
+   "type": "issuer_default",
+   "token": "0xecfafdc7741323a945a163ed068b5a3c43483957",
+   "symbol": "PT-reUSD-10DEC2026",
+   "layer": 2,
+   "affected_markets": [
+    "morpho_market:0x1e9d6146"
+   ],
+   "affected_allocation": 3976601.451321,
+   "propagation_paths": [
+    "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026"
+   ],
+   "outcomes": [
+    {
+     "outcome": "resolved",
+     "preset": null,
+     "probability": 0.6871165644171779,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": []
+    },
+    {
+     "outcome": "partial",
+     "preset": "depeg_partial",
+     "shock": 0.022665999999999964,
+     "hours": null,
+     "probability": 0.2668711656441718,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": [
+      {
+       "market": "morpho_market:0x1e9d6146",
+       "collateral": "PT-reUSD-10DEC2026",
+       "oracle_falls": null,
+       "market_bad_debt_low": 0.0,
+       "market_bad_debt_high": 0.0,
+       "vault_share_of_market": 0.03341389444736383,
+       "vault_loss_low": 0.0,
+       "vault_loss_high": 0.0
+      }
+     ],
+     "source": "median day-30 loss of the 87 'partial' stablecoin depeg episodes (DeFiLlama stablecoins.llama.fi/stablecoinprices (daily, by gecko_id) + /stablecoins (pegType), 2020-12-30..2026-10-10); level assumed to persist"
+    },
+    {
+     "outcome": "severe",
+     "preset": "issuer_total",
+     "shock": 0.9987447088831541,
+     "hours": null,
+     "probability": 0.046012269938650305,
+     "L_low": 0.13424568998146016,
+     "L_high": 0.13425103982389705,
+     "per_market": [
+      {
+       "market": "morpho_market:0x1e9d6146",
+       "collateral": "PT-reUSD-10DEC2026",
+       "oracle_falls": null,
+       "market_bad_debt_low": 106164900.94822292,
+       "market_bad_debt_high": 106169131.7394869,
+       "vault_share_of_market": 0.03341389444736383,
+       "vault_loss_low": 3547382.7942987573,
+       "vault_loss_high": 3547524.161511481
+      }
+     ],
+     "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
+    }
+   ],
+   "expected_loss": 0.006177195083921643,
+   "tail_loss_95": 0.12354390167843275,
+   "var_95": 0.0,
+   "worst_outcome": "severe",
+   "L_worst": 0.13425103982389705,
+   "evidence": {
+    "probabilities": {
+     "grade": "C",
+     "source": "stablecoin depeg outcome frequencies used by analogy for an issuer failure of PT-reUSD-10DEC2026: 326 stablecoin depeg episodes (close < 0.97 after a functioning month, >= 2 days; 299 USD stablecoins, 2020-12-30..2026-10-10, DeFiLlama): resolved = back >= 0.99 within 7 days, severe = below 0.5 on day 30; range over 3 samples resolved 68.7%-83.2%, partial 14.4%-26.7%, severe 2.5%-5.4% (calibrate_depeg.py)"
+    },
+    "L": {
+     "grade": "D",
+     "basis": {
+      "shock": "C",
+      "oracle": "D",
+      "borrowers_and_allocations": "A",
+      "liquidation_rules": "B",
+      "recovery": "D"
+     },
+     "source": "loss_model per real borrower x vault share of each affected market"
+    }
+   },
+   "break_even": {
+    "p_worst": 0.03673347227540242,
+    "exit_cost": 0.004931506849315068,
+    "L_worst": 0.13425103982389705
+   },
+   "decision_text": {
+    "text": "Given issuer_default:PT-reUSD-10DEC2026, if you think the probability of the severe outcome (vault loss 13.43%) is above 3.67%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.46% of the vault could leave without penalty.",
+    "numbers": [
+     "13.43%",
+     "3.67%",
+     "100.00%",
+     "0.493%",
+     "13.46%"
+    ],
+    "unchecked": []
+   }
+  },
+  {
+   "key": "depeg:reUSD",
+   "type": "depeg",
+   "token": "0x5086bf358635b81d8c47c66d1c8b9e567db70c72",
+   "symbol": "reUSD",
+   "layer": 2,
+   "affected_markets": [
+    "morpho_market:0x1e9d6146"
+   ],
+   "affected_allocation": 3976601.451321,
+   "propagation_paths": [
+    "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026 -> [SY] PendleREUSDSY -> [REUSD] ShareToken"
+   ],
+   "outcomes": [
+    {
+     "outcome": "resolved",
+     "preset": "usde_mild",
+     "shock": 0.016185490170549488,
+     "hours": 24,
+     "probability": 0.6871165644171779,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": [
+      {
+       "market": "morpho_market:0x1e9d6146",
+       "collateral": "PT-reUSD-10DEC2026",
+       "oracle_falls": null,
+       "market_bad_debt_low": 0.0,
+       "market_bad_debt_high": 0.0,
+       "vault_share_of_market": 0.03341389444736383,
+       "vault_loss_low": 0.0,
+       "vault_loss_high": 0.0
+      }
+     ],
+     "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy"
+    },
+    {
+     "outcome": "partial",
+     "preset": "depeg_partial",
+     "shock": 0.022665999999999964,
+     "hours": null,
+     "probability": 0.2668711656441718,
+     "L_low": 0.0,
+     "L_high": 0.0,
+     "per_market": [
+      {
+       "market": "morpho_market:0x1e9d6146",
+       "collateral": "PT-reUSD-10DEC2026",
+       "oracle_falls": null,
+       "market_bad_debt_low": 0.0,
+       "market_bad_debt_high": 0.0,
+       "vault_share_of_market": 0.03341389444736383,
+       "vault_loss_low": 0.0,
+       "vault_loss_high": 0.0
+      }
+     ],
+     "source": "median day-30 loss of the 87 'partial' stablecoin depeg episodes (DeFiLlama stablecoins.llama.fi/stablecoinprices (daily, by gecko_id) + /stablecoins (pegType), 2020-12-30..2026-10-10); level assumed to persist"
+    },
+    {
+     "outcome": "severe",
+     "preset": "issuer_total",
+     "shock": 0.9987447088831541,
+     "hours": null,
+     "probability": 0.046012269938650305,
+     "L_low": 0.13424568998146016,
+     "L_high": 0.13425103982389705,
+     "per_market": [
+      {
+       "market": "morpho_market:0x1e9d6146",
+       "collateral": "PT-reUSD-10DEC2026",
+       "oracle_falls": null,
+       "market_bad_debt_low": 106164900.94822292,
+       "market_bad_debt_high": 106169131.7394869,
+       "vault_share_of_market": 0.03341389444736383,
+       "vault_loss_low": 3547382.7942987573,
+       "vault_loss_high": 3547524.161511481
+      }
+     ],
+     "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
+    }
+   ],
+   "expected_loss": 0.006177195083921643,
+   "tail_loss_95": 0.12354390167843275,
+   "var_95": 0.0,
+   "worst_outcome": "severe",
+   "L_worst": 0.13425103982389705,
+   "evidence": {
+    "probabilities": {
+     "grade": "C",
+     "source": "326 stablecoin depeg episodes (close < 0.97 after a functioning month, >= 2 days; 299 USD stablecoins, 2020-12-30..2026-10-10, DeFiLlama): resolved = back >= 0.99 within 7 days, severe = below 0.5 on day 30; range over 3 samples resolved 68.7%-83.2%, partial 14.4%-26.7%, severe 2.5%-5.4% (calibrate_depeg.py)"
+    },
+    "L": {
+     "grade": "D",
+     "basis": {
+      "shock": "C",
+      "oracle": "D",
+      "borrowers_and_allocations": "A",
+      "liquidation_rules": "B",
+      "recovery": "D"
+     },
+     "source": "loss_model per real borrower x vault share of each affected market"
+    }
+   },
+   "break_even": {
+    "p_worst": 0.03673347227540242,
+    "exit_cost": 0.004931506849315068,
+    "L_worst": 0.13425103982389705
+   },
+   "decision_text": {
+    "text": "Given depeg:reUSD, if you think the probability of the severe outcome (vault loss 13.43%) is above 3.67%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.46% of the vault could leave without penalty.",
+    "numbers": [
+     "13.43%",
+     "3.67%",
+     "100.00%",
+     "0.493%",
+     "13.46%"
+    ],
+    "unchecked": []
+   }
+  }
+ ],
+ "exit": {
+  "deposit": 1000000.0,
+  "free_usd": 3557281.967294,
+  "free_fraction": 1.0,
+  "forced_fraction": 0.0,
+  "vault_free_fraction": 0.1346203101975609,
+  "vault_forced_fraction": 0.15277262105438608,
+  "locked_fraction": 0.0,
+  "force_deallocate_penalty": 0.01,
+  "carry_cost": 0.004931506849315068,
+  "cost_free": 0.004931506849315068,
+  "cost_forced": 0.014931506849315069,
+  "vault_apy": 0.1,
+  "alt_apy": 0.04,
+  "horizon_days": 30,
+  "restricted_gates": {},
+  "evidence": {
+   "tranches": {
+    "grade": "A",
+    "source": "idle balance, liquidityAdapter/liquidityData, market liquidity and forceDeallocatePenalty @ block 26162417"
+   },
+   "carry_cost": {
+    "grade": "D",
+    "source": "(vault APY 10.00% from the input file - alternative APY 4.00% assumed) x 30 days / 365"
+   }
+  }
+ },
+ "worst_incident": "issuer_default:PST",
+ "decision_text": "Given issuer_default:PST, if you think the probability of the severe outcome (vault loss 74.82%) is above 0.659%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.46% of the vault could leave without penalty.",
+ "notes": [],
+ "gates": [
+  {
+   "pass": true,
+   "check": "allocations 26,424,556 + idle 0 within 1% of totalAssets 26,424,556 USDC"
+  },
+  {
+   "pass": true,
+   "check": "market 0x002278ea (PST): market 0x002278ea exists on Morpho Blue; sum of borrowShares == totalBorrowShares (33649021384107078463 / 33649021384107078463): no borrower missing; sum of borrow 34,389,856.91 within 1% of totalBorrowAssets 34,389,856.91"
+  },
+  {
+   "pass": true,
+   "check": "market 0x2bbdd815 (AUTO): market 0x2bbdd815 exists on Morpho Blue; sum of borrowShares == totalBorrowShares (536994930038392735 / 536994930038392735): no borrower missing; sum of borrow 539,657.78 within 1% of totalBorrowAssets 539,657.78"
+  },
+  {
+   "pass": true,
+   "check": "market 0x1e9d6146 (PT-reUSD-10DEC2026): market 0x1e9d6146 exists on Morpho Blue; sum of borrowShares == totalBorrowShares (103502316699830916447 / 103502316699830916447): no borrower missing; sum of borrow 106,330,814.33 within 1% of totalBorrowAssets 106,330,814.33"
+  },
+  {
+   "pass": true,
+   "check": "every number in the decision texts comes from the computed values"
+  }
+ ],
+ "all_gates_pass": true
+}

@@ -129,6 +129,31 @@ class RPC:
     def eth_call(self, to, data, block):
         return self.call("eth_call", [{"to": to, "data": data}, hex(block)])
 
+    def batch_calls(self, calls, block, size=50, tries=5):
+        """eth_call for [(to, data)] in JSON-RPC batches; returns results in order (None where a call failed)."""
+        out = []
+        for i in range(0, len(calls), size):
+            chunk = calls[i:i + size]
+            body = json.dumps([{"jsonrpc": "2.0", "id": j, "method": "eth_call",
+                                "params": [{"to": t, "data": d}, hex(block)]} for j, (t, d) in enumerate(chunk)]).encode()
+            for k in range(tries):
+                self.n += 1
+                try:
+                    req = urllib.request.Request(self.url, body, {"Content-Type": "application/json",
+                                                                  "User-Agent": "belem-onchain/1.0"})
+                    with urllib.request.urlopen(req, timeout=60) as r:
+                        js = json.load(r)
+                    if isinstance(js, list):
+                        break
+                except (urllib.error.URLError, TimeoutError):
+                    pass
+                time.sleep(2 ** k)
+            else:
+                raise RuntimeError("eth_call batch failed")
+            res = {x.get("id"): x.get("result") for x in js}
+            out += [res.get(j) for j in range(len(chunk))]
+        return out
+
 
 def words(hexstr):
     h = hexstr[2:] if hexstr.startswith("0x") else hexstr
@@ -257,6 +282,74 @@ def distribution(borrowers):
             "distance_buckets": buckets}
 
 
+def read_positions(rpc, block, mid, addrs, tba, tbs, price_raw, lltv_wad, dec_loan, dec_col):
+    """position() of every address at block -> borrowers with collateral or debt, highest LTV first.
+    Field names keep the original market's units (collateral_pt = collateral tokens, *_usdc = loan tokens)."""
+    addrs = sorted(addrs)
+    res = rpc.batch_calls([(MORPHO, "0x" + SIG["position(bytes32,address)"] + mid[2:] + addr_word(u)) for u in addrs],
+                          block)
+    price = price_raw * 10 ** dec_col / 10 ** dec_loan / 1e36
+    lltv = lltv_wad / 1e18
+    out = []
+    for u, r in zip(addrs, res):
+        if r is None:
+            r = rpc.eth_call(MORPHO, "0x" + SIG["position(bytes32,address)"] + mid[2:] + addr_word(u), block)
+        ss, bs, col = words(r)
+        if bs == 0 and col == 0:
+            continue
+        borrowed = -(-bs * (tba + VIRTUAL_ASSETS) // (tbs + VIRTUAL_SHARES))      # toAssetsUp
+        max_borrow = col * price_raw // 10 ** 36 * lltv_wad // 10 ** 18
+        c_pt, b_usdc = col / 10 ** dec_col, borrowed / 10 ** dec_loan
+        ltv = b_usdc / (c_pt * price) if c_pt and price else (float("inf") if b_usdc else 0.0)
+        out.append({"address": u, "collateral_pt": c_pt, "collateral_usdc": c_pt * price,
+                    "borrow_usdc": b_usdc, "borrow_shares": str(bs), "ltv": ltv,
+                    "distance_to_liquidation": 1 - ltv / lltv, "healthy": max_borrow >= borrowed})
+    out.sort(key=lambda b: -b["ltv"])
+    return out
+
+
+def read_market(rpc, block, mid, recent_window=20000, chunk=5000, log=print):
+    """Any Morpho Blue market at block: params, state, oracle price, every borrower. Addresses from Morpho GraphQL
+    marketPositions + recent SupplyCollateral / Borrow logs; amounts on chain. Own gates (no API files needed)."""
+    gates = []
+    g = lambda ok, msg: gates.append({"pass": bool(ok), "check": msg}) or ok
+    mid = mid.lower()
+    v = words(rpc.eth_call(MORPHO, "0x" + SIG["idToMarketParams(bytes32)"] + mid[2:], block))
+    params = {"loan_token": "0x" + f"{v[0]:040x}", "collateral_token": "0x" + f"{v[1]:040x}",
+              "oracle": "0x" + f"{v[2]:040x}", "irm": "0x" + f"{v[3]:040x}", "lltv_wad": v[4]}
+    if not g(v[0] != 0, f"market {mid[:10]} exists on Morpho Blue"):
+        return {"market_id": mid, "gates": gates, "all_gates_pass": False}
+    tsa, tss, tba, tbs, last_update, fee = words(rpc.eth_call(MORPHO, "0x" + SIG["market(bytes32)"] + mid[2:], block))
+    calls = [(params["loan_token"], "0x" + SIG["decimals()"]), (params["collateral_token"], "0x" + SIG["decimals()"])]
+    if params["oracle"] != "0x" + "0" * 40:
+        calls.append((params["oracle"], "0x" + SIG["price()"]))
+    r = rpc.batch_calls(calls, block)
+    dec_loan, dec_col = words(r[0])[0], words(r[1])[0]
+    price_raw = words(r[2])[0] if len(r) > 2 and r[2] else 0
+    price = price_raw * 10 ** dec_col / 10 ** dec_loan / 1e36
+    found = set(api_addresses(mid))
+    logs, covered = recent_logs(rpc, [[T_SUPPLY_COLL, T_BORROW], mid], max(0, block - recent_window), block, chunk)
+    for l in logs:
+        ob = l["topics"][3] if l["topics"][0] == T_SUPPLY_COLL else l["topics"][2]
+        found.add("0x" + ob[-40:].lower())
+    borrowers = read_positions(rpc, block, mid, found, tba, tbs, price_raw, params["lltv_wad"], dec_loan, dec_col)
+    sum_bs = sum(int(b["borrow_shares"]) for b in borrowers)
+    g(sum_bs == tbs, f"sum of borrowShares == totalBorrowShares ({sum_bs} / {tbs}): no borrower missing")
+    sum_b = sum(b["borrow_usdc"] for b in borrowers)
+    tb = tba / 10 ** dec_loan
+    g(tb == 0 or abs(sum_b / tb - 1) < 0.01, f"sum of borrow {sum_b:,.2f} within 1% of totalBorrowAssets {tb:,.2f}")
+    return {"block": block, "market_id": mid, "market_params": params, "lltv": params["lltv_wad"] / 1e18,
+            "loan_decimals": dec_loan, "collateral_decimals": dec_col, "oracle_price_raw": str(price_raw),
+            "oracle_price": price,
+            "market": {"total_supply_assets_usdc": tsa / 10 ** dec_loan, "total_borrow_assets_usdc": tb,
+                       "total_supply_shares": str(tss), "total_borrow_shares": str(tbs), "last_update": last_update,
+                       "fee_wad": str(fee), "liquidity_usdc": (tsa - tba) / 10 ** dec_loan},
+            "discovery": {"sources": [f"Morpho GraphQL marketPositions + eth_getLogs blocks {covered}-{block}"],
+                          "candidates": len(found)},
+            "borrowers": borrowers, "distribution": distribution(borrowers), "gates": gates,
+            "all_gates_pass": all(x["pass"] for x in gates)}
+
+
 # ------------------------------------------------------------------ main
 def run(a):
     rest_files = glob.glob(os.path.join(a.data_dir, "morpho_rest_markets_*.json"))
@@ -364,19 +457,7 @@ def run(a):
     print(f"candidates: {len(found)} addresses")
 
     # 4. read every candidate's position on chain
-    borrowers = []
-    for u in sorted(found):
-        ss, bs, col = words(rpc.eth_call(MORPHO, "0x" + SIG["position(bytes32,address)"] + mid[2:] + addr_word(u), head))
-        if bs == 0 and col == 0:
-            continue
-        borrowed = -(-bs * (tba + VIRTUAL_ASSETS) // (tbs + VIRTUAL_SHARES))      # toAssetsUp
-        max_borrow = col * price_raw // 10 ** 36 * params["lltv_wad"] // 10 ** 18
-        c_pt, b_usdc = col / 10 ** dec_col, borrowed / 10 ** dec_loan
-        ltv = b_usdc / (c_pt * price) if c_pt else (float("inf") if b_usdc else 0.0)
-        borrowers.append({"address": u, "collateral_pt": c_pt, "collateral_usdc": c_pt * price,
-                          "borrow_usdc": b_usdc, "borrow_shares": str(bs), "ltv": ltv,
-                          "distance_to_liquidation": 1 - ltv / lltv, "healthy": max_borrow >= borrowed})
-    borrowers.sort(key=lambda b: -b["ltv"])
+    borrowers = read_positions(rpc, head, mid, found, tba, tbs, price_raw, params["lltv_wad"], dec_loan, dec_col)
     n_debt = sum(b["borrow_usdc"] > 0 for b in borrowers)
     print(f"positions with collateral or debt: {len(borrowers)} ({n_debt} with debt)")
 

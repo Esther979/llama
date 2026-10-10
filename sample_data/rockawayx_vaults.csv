@@ -1,0 +1,34 @@
+vault_name,vault_address,token_name,chain,protocol,category,tvl_usd,apy
+RockawayX RWA USDC,DWSXb18xZApz29vnQpgR2m6MynCT7PznaXt7Ut7M7KaP,USDC,solana,kamino,Money Market,62.7m$,5.59%
+Huma PST,DzgYbR8HFQKf8YLCJ6M3E6ricB1xWAiNGZ2TB7X2KDHz,PST,solana,kamino,Money Market,42.5m$,0.02%
+Tori Ecosystem Vault,0xcd69123b3FBBfC666E1f6a501da27B564C00De54,trUSD,ethereum,upshift,Multi Strategy,24.9m$,3.26%
+RockawayX Confidential RWA USDC,0xc207d3f66537D7F66456808379A0E560cF20Da36,USDC,ethereum,morpho,Money Market,23.9m$,10.00%
+RockawayX f(x) Protocol Ecosystem USDC,0x2cA22cb25558fa2018ecb1CE4eD8AF92Ee7ea423,USDC,ethereum,morpho,Money Market,20.7m$,8.06%
+RockawayX YIELD USDC,0xE0181090c22579B6A217f1522cbf8c9f1F0C1965,USDC,ethereum,morpho,Money Market,18.6m$,6.09%
+Y10K,0x953972ea0C1703c58F09FB6fD2477Fdcf0FEe074,eY10K,ethereum,ember,Multi Strategy,17.8m$,9.04%
+RockawayX Tori Ecosystem,0x3BD9AdAE6643dDcddD02746b8B60075E56DF9478,USDC,ethereum,morpho,Money Market,13.6m$,6.00%
+Huma USDC Main,0x8aC91877b93330f52b2979a31a4879506021475c,USDC,ethereum,morpho,Money Market,12.6m$,7.33%
+Feather PYUSD0,0x6137dcfdd3c83fe2922b1cba4105d2e92b327a06,PYUSD0,sei,feather,Money Market,12.4m$,6.27%
+RockawayX USDC,0x047cD0a91E9B92ED979189a6C8A120bf280f02E5,USDC,pharos,oku,Money Market,11.2m$,3.97%
+Obligate oTFY,6nk5K3PiV3EHtW4LLFhfMc1uR4kNwEfibvTdWqxCm6WF,oTFY,solana,kamino,Money Market,7.2m$,20.51%
+Belem RWA EURCV,0xD6d4b804014EF27836dBe9f8f6Bf6c71251548Ec,EURCV,ethereum,morpho,Money Market,5.3m$,2.58%
+RockawayX SOL,HoffqVZUNGGpEAhE42E1DqNYSwJjCkorfgiBN6NpT2or,SOL,solana,kamino,Money Market,3.7m$,4.16%
+OnRe Core Vault,0x0F0a9d3F0bc6006143c96E6995572b51413CB3c4,USDC,ethereum,accountable,Multi Strategy,3.5m$,11.18%
+mROX,0x67E1F506B148d0Fc95a4E3fFb49068ceB6855c05,mROX,ethereum,midas,Multi Strategy,3.4m$,8.55%
+Raiku rkuSOL,J7idSfhvLqdkSmbMvhHMXBAhZMJVxEtzqXo45JB9HZrP,rkuSOL,solana,kamino,Money Market,2.6m$,1.88%
+Marinade USDC Cluster,2TNCzzYJt3uHmpFpqeeJkza4pQUK9xoLa79DJH9AdgGA,USDC,solana,kamino,Money Market,1.6m$,5.81%
+RockawayX NUVA Ecosystem,0x93e0F9d502eEfce8D34924ab3478C7EA0CBC5a2E,USDC,ethereum,morpho,Money Market,1.5m$,7.48%
+Raiku PT-rkuSOL,7272BNf9uoivyX5h8B7799yoxSfF4WDuzcP7HDwSPLqN,PT-rkuSOL-31OCT26,solana,kamino,Money Market,1.4m$,1.88%
+RockawayX YIELD PT,0xb5a30e1fa2cf3c8dea882124b3ab5a47a27c5dd2,USDT,bsc,lista,Money Market,1.3m$,23.32%
+Midas USDC Prime (Base),0xAE4181CFB5aaA08bbE77d269c6B595672b9F9Edc,USDC,base,morpho,Money Market,572.7k$,4.60%
+Huma USDC,4QKFoFDzNFnvfkzVazABbCEfMwd3y1pZqUVzmpnkCphj,USDC,solana,kamino,Money Market,560.0k$,6.75%
+Obligate USDC,Au2Cg9CNNTX1KfzVhNnpi1ouHX74CwMMBvmSchmqS5ZW,USDC,solana,kamino,Money Market,50.7k$,6.47%
+Earn ctUSD,0x68499eAEf8c4994593C56a1257BD151D17950BA2,ctUSD,citrea,upshift,Multi Strategy,47.8k$,0
+Huma USDS,9XbExNmevn7jzNzbX3kAzxKq83mdYP5ZN4xcYpLUVHGU,USDS,solana,kamino,Money Market,24.7k$,4.33%
+RockawayX EUROP,0x9C57E02bC31e7e463f439353D97bd8f42F5a7F9c,EUROP,ethereum,morpho,Money Market,11.2k$,0.00%
+Midas USDC Prime (Ethereum),0xe99A27169c2aA26a8f2757949d09Fa3f9A8f0B3B,USDC,ethereum,morpho,Money Market,3.5k$,3.78%
+RockawayX wETH,0x64C18DCC4Ccb3b8D27877a4aeBB4C3126CB39cB9,wETH,ethereum,morpho,Money Market,2.1k$,9.81%
+Figure USDC Main,0xd65d6E8dbC3Cd3D12418199E6f4014dB3aaa0097,USDC,ethereum,morpho,Money Market,11.3$,3.37%
+RockawayX PRIME USDC,0x5f829B1B473cBA86838E1B7BB7E144DbDE228e21,USDC,ethereum,morpho,Money Market,10.3$,4.50%
+Raiku SOL,EMyn5A2HhvYhojiibR3znk5QyafRVnK4oZ725XYzzf2s,SOL,solana,kamino,Money Market,0,5.39%
+Y10K AUSD Vault,0xA2fa4CeD4E2d448D084f5a15011b3564922119d6,AUSD,monad,morpho,Money Market,0,0

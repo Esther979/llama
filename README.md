@@ -18,9 +18,13 @@ Current test position: **PT-sUSDe-26NOV2026** on Ethereum (Pendle market `0x47ad
 | `incidents.py` | Incidents with three outcomes (resolved / partial / severe), expected and tail loss, exact break-even probabilities, exit now vs later, lender role; used by `export_dashboard.py`. | — |
 | `etherscan.py` | Etherscan V2 client (standard library): verified source, ABI, contract name, proxy -> implementation. Key from `ETHERSCAN_API_KEY` or `.env` (git-ignored), never saved. | `data/etherscan/<chain>_<address>.json` |
 | `crawl.py` | Generic dependency crawler: from any contracts (or a Morpho market id), calls every view function that returns addresses (ABI from Etherscan), enumerates `f(uint256)` + `fLength()`, turns Morpho market ids into market nodes weighted by allocation. Edge kinds: data (followed), role, operator, infra. | `data/edges_<tag>.csv` (`src, dst, type, kind, weight_usd, evidence`), `data/nodes_<tag>.json` |
+| `oracle_types.py` | Oracle type table: decides from verified source and on-chain parameters whether a Morpho oracle follows the collateral's market price and / or its underlying (linear discount, MorphoChainlinkOracleV2, meta-oracle with timelock, Chainlink market / reported-rate feeds, constant feeds; unknown -> both branches, D). | printed / used by `vault_pipeline.py` |
+| `vault_pipeline.py` | Vault risk for a list in the RockawayX dashboard format: routes each row (ethereum + morpho = full, other ethereum protocols = dependency graph only, other chains / Solana = not covered, no numbers), and for each Morpho VaultV2: markets and allocations, every borrower, oracle types, incidents per collateral and underlying, vault loss per outcome, exit tranches, break-even and the manager sentence. | `data/vaults/<address>.json`, `data/vaults/edges_<address>.csv`, `data/vaults_report.json` |
 | `onchain_positions.py` | Every borrower of our Morpho market read on chain over JSON-RPC (`RPC_URL`, standard library only): positions, LTVs, liquidation curve vs Pendle capacity. 7 gates. | `data/morpho_positions_<id[:10]>.json` |
 | `llama_graph.py` | DeFiLlama free endpoints: protocol-level dependency edges, price and stablecoin replay data. Needs `pip install defillama-sdk`. | `data/edges_*.csv`, `data/replay_*.json` |
 | `sample_data/dashboard.sample.json` | A ready `dashboard.json` built from the 10 Oct 2026 run, so the dashboard can be built without running anything. | — |
+| `sample_data/rockawayx_vaults.csv` | The 33 RockawayX dashboard vaults (input of `vault_pipeline.py`). | — |
+| `sample_data/vaults_report.sample.json`, `sample_data/vault_detail.sample.json` | `vaults_report.json` of the run on the 33 vaults, and the detail file of RockawayX Confidential RWA USDC. | — |
 | `sample_data/dashboard.levered.sample.json` | Same run with `--debt 8950000` (LTV 89.5%, oracle unknown): shows liquidations, bad debt, L ranges and the oracle as weakest link in `scenarios[]`. | — |
 | `sample_data/dashboard.borrower.sample.json` | Same run with `--borrower 0x5c43…` (a real borrower at LTV 90.6%, 0.99% from liquidation): `position_inputs.borrower` filled, LTV graded A. | — |
 
@@ -42,6 +46,7 @@ python3 fetch_data.py step4 --chain 1 --market $M
 python3 backtest_reusd.py           # 9 GATE lines; export_dashboard.py runs it too
 python3 calibrate_depeg.py          # 3 GATE lines (USDC 2023 resolved, UST and deUSD severe)
 RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py   # 7 GATE lines
+python3 vault_pipeline.py sample_data/rockawayx_vaults.csv   # all 33 RockawayX vaults (or --only 0xVAULT)
 python3 export_dashboard.py --market $M --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv --L 0.5 \
     --positions data/morpho_positions_0x5613b170.json [--borrower 0x5c430ff6f374da12218b380d2040299ae5b6d40e]
 # levered example: $8.8M USDC borrowed against the $10M PT, oracle behaviour unknown
@@ -117,6 +122,37 @@ All fractions are 0–1 (multiply by 100 for %). All money in USD.
 `lender` fields: `supply_usdc` (assumed), `total_supply_usdc`, `total_borrow_usdc`, `utilization`, `liquidity_usdc` (= supply − borrow: what can be withdrawn now), `share_of_supply`, `withdrawable_now_usdc`, `withdrawable_fraction`, `locked_fraction`, `block`, `scenarios[]` (`key`, `bad_debt_usdc_per_branch` summed over the real borrowers with loss_model, `L_low`, `L_high` = bad debt / total supply: Morpho takes bad debt from all suppliers pro rata), `incidents[]` (`key`, `outcomes[]`, `expected_loss`, `expected_loss_usdc`, `tail_loss_95`, `tail_loss_95_usdc`, `loss_on_locked_part_usdc`), `decision_text`, `evidence`.
 
 `borrowers.exit_later[]`: the `exit_later` fields for every oracle drop of `liquidation_curve` ("exit now vs later" table).
+
+## Vault report contract (`vaults_report.json`, `vaults/<address>.json`)
+
+Written by `vault_pipeline.py` from an input in the RockawayX dashboard format (`sample_data/rockawayx_vaults.csv`: `vault_name, vault_address, token_name, chain, protocol, category, tvl_usd, apy`; `62.7m$` / `5.59%` style values are parsed).
+
+`vaults_report.json`: `block`, `input`, `assumptions` (`deposit`, `alt_apy`, `horizon_days`: all D), `coverage_counts`, `vaults[]`:
+
+| Field | Meaning |
+|---|---|
+| `vault_name`, `vault_address`, `chain`, `protocol`, `tvl_usd`, `apy` | From the input row (`tvl_usd`, `apy` parsed to numbers) |
+| `coverage` | `full` (ethereum + morpho: all numbers), `partial` (other ethereum protocol: dependency graph only), `not_supported` (other chain), `out_of_scope` (Solana), `error`. No loss numbers unless `full` |
+| `note` | Why the coverage is what it is |
+| `total_assets`, `markets` | Full only: vault assets (vault token units) and number of markets it allocates to |
+| `worst_incident`, `expected_loss`, `tail_loss_95` | Full only: the incident with the highest expected vault loss, its expected loss and CVaR 95% (fractions of vault assets) |
+| `free_fraction`, `locked_fraction` | Full only: share of a `deposit`-sized position that can be withdrawn now without penalty / cannot be withdrawn now |
+| `decision_text` | Full only: the manager sentence of the worst incident (numbers checked) |
+| `all_gates_pass`, `detail` | Full only: gates of the vault, path of the detail file |
+| `contract`, `dependency_graph`, `direct_dependencies` | Partial only: root contract name, edges file and counts, direct edges (`function: contract`) |
+
+`vaults/<address>.json` (full coverage):
+
+| Field | Meaning |
+|---|---|
+| `asset`, `asset_symbol`, `total_assets`, `idle`, `liquidity_market` | Vault asset, `totalAssets()`, idle balance, market id decoded from `liquidityData()` |
+| `dependency_graph` | `edges_file` (`src, dst, type, kind, weight_usd, evidence`), `nodes`, `edges`, `by_kind` |
+| `markets[]` | One per market held by the vault's own adapters: `market_id`, `holder` (adapter), `allocation`, `lltv`, `collateral`, `collateral_symbol`, `collateral_contract`, `collateral_type` (`pt`, `stablecoin`, `yield_wrapper`, `rwa_or_credit`, `volatile`), `oracle` (classification tree from `oracle_types.py`), `supply`, `borrow`, `liquidity`, `share_of_market` (= allocation / market supply: the vault's share of any bad debt), `n_borrowers`, `max_ltv`, `debt_within_1pct_of_liquidation`; `analyzed: false` + `note` below `--min-alloc` |
+| `incidents[]` | `key` (`type:SYMBOL`), `type` (`depeg`, `issuer_default`, `pt_market_dip`, `volatile_crypto` = not analyzed), `token`, `symbol`, `layer` (2 underlying / issuer, 3 market price), `affected_markets`, `affected_allocation`, `propagation_paths` (vault -> adapter -> market -> collateral -> ... -> token, edge names in brackets), `outcomes[]` (`outcome`, `preset`, `shock`, `hours`, `probability`, `L_low`, `L_high` = vault loss as a fraction of vault assets, `per_market[]`: `oracle_falls`, `market_bad_debt_low/high`, `vault_share_of_market`, `vault_loss_low/high`), `expected_loss`, `tail_loss_95`, `var_95`, `worst_outcome`, `L_worst`, `break_even` (`p_worst` = exit cost / `L_worst`), `decision_text`, `evidence` |
+| `exit` | Exit for a `deposit`-sized depositor: `free_fraction` (idle + liquidity market), `forced_fraction` (other markets' liquidity via `forceDeallocate`), `locked_fraction`, `force_deallocate_penalty`, `carry_cost` (= max(0, vault APY - `alt_apy`) x horizon / 365: yield given up), `cost_free`, `cost_forced`, `vault_free_fraction` / `vault_forced_fraction` (same if every depositor withdrew), `restricted_gates`, `evidence` |
+| `worst_incident`, `decision_text`, `notes`, `gates`, `all_gates_pass` | Summary sentence; gates: allocations + idle = totalAssets (1%), every market's borrower completeness, numbers in texts checked |
+
+How a token failure propagates (vault mode): token -> every collateral whose dependency graph reaches it (PT -> SY -> underlying, wrapper -> asset) -> each Morpho market with that collateral -> the market's oracle decides whether liquidations happen (`oracle_types.oracle_falls`, meta-oracle threshold and timelock included) -> loss_model on every real borrower gives the market's bad debt -> the vault takes `share_of_market` of it -> vault loss per outcome -> expected and tail loss -> exit tranches and break-even.
 
 ### Evidence grades
 
@@ -199,6 +235,7 @@ function decide(p, L, curve, steps = 100) {
 - Depeg outcome probabilities are frequencies over other stablecoins (C) with our episode rules (0.97, 7 days, 0.5 on day 30); they move with the sample (severe 2.5%–5.4%). The oracle incident has no sample: its 50 / 50 default is a placeholder (D).
 - "Exit later" assumes liquidators sell first into the same pool and the pool is not refilled; the PT price fall itself is in L, not in the exit cost.
 - Lender: withdrawal gas is not measured; the "locked" part assumes no other lender withdraws first (in a run they do, so it is a best case).
+- Vault mode covers ethereum + Morpho VaultV2 only (12 of the 33 RockawayX vaults). Other ethereum protocols get a dependency graph without numbers; other chains and Solana (Kamino) get no numbers. Volatile crypto collateral (WBTC, wstETH, ...) has no calibrated scenario yet and is listed as not analyzed. Issuer-default probabilities borrow the stablecoin depeg frequencies by analogy (C).
 - `weakest_link` alternatives are our choices (recovery 0 ↔ 1 or 1 → 0.5, shock ×0.5 / ×1.5, debt 0 ↔ Morpho average LTV, the other oracle branch, can_hold flipped); position size is not tested (needs quotes at another size).
 - Back-test tolerances are ours: ±1 bp on the distances to liquidation, ±50 bps for Pendle drop vs oracle drop. The 19 liquidated borrowers are checked as "every LTV in the reported range is liquidated", not borrower by borrower.
 - For levered positions the scenario grid treats the unsold part as keeping the full position's L; deleveraging by a partial sale is not modelled.
