@@ -1,7 +1,7 @@
 # Second view: vaults
 
-> 给前端同事：这是**第二个视图**（金库），和第一视图（单个 PT 仓位，`FRONTEND_GUIDE.md`）分开。PT 视图仍是主入口，一行都不要改。
-> 把这份文件交给 Claude，说"按 FRONTEND_VAULT_GUIDE.md 在页面里加一个金库视图"。
+> For the front-end colleague: this is the **second view** (vaults), separate from the first view (a single PT position, `FRONTEND_GUIDE.md`). The PT view stays the main entry: do not change a single line of it.
+> Give this file to Claude and say "add a vault view to the page following FRONTEND_VAULT_GUIDE.md".
 
 Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The existing PT view stays the default view and must not change (same data, same code paths). The two views share only `web/risk_model.js` and the page style.
 

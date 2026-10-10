@@ -49,8 +49,10 @@ Two views in one page:
 The organisers rejected p x L (sudden events cannot be predicted). The decision is made **given the incident**, at a
 chosen or observed severity:
 - PT view: sell share x minimising `x·(slippage(x) + carry) + (1 − x)·L(severity)`, never beyond the largest Pendle
-  quote (`decision_core.decide` with p = 1; `frontend_contract.decide_at`, `RiskModel.decideAt`). Carry and slippage
-  per unit of equity (x collateral / equity) for levered positions. Key output: break-even severity
+  quote (`decision_core.decide` with p = 1; `frontend_contract.decide_at`, `RiskModel.decideAt`). Carry = yield given
+  up until expiry as a fraction of the value sold, from the annual "cash earns" input via `carry_of` /
+  `RiskModel.carryOf` (4% → 0.128%; never the annual difference). Carry and slippage
+  per unit of equity (x value / equity) for levered positions. Key output: break-even severity
   (`break_even_severity`, `RiskModel.breakEvenSeverity`).
 - Vault view: withdraw each tranche whose unit cost is below L(severity): free tranche (idle + liquidity market) at
   the yield given up, forced tranche (VaultV2 `forceDeallocate` from other markets, up to their liquidity) at the
@@ -141,7 +143,16 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
   9 nodes; severity slider manual; USDe ≠ sUSDe (done); timeline = incident duration, flat timelines described as
   "duration does not change the answer" (not "always stay").
 - Front-end questions answered: cascade range to 40% (done), carry scaled per unit of equity (done), position edges
-  in `ui.edges` (done), amount above vault assets is capped (documented).
+  in `ui.edges` (done), amount above vault assets is capped (documented); the front end's size input is now
+  "Position size (USD)" (was "share of the book"); "cash earns after selling, % APY" stays, converted with `carryOf`.
+- Positions only from chain or the manager's size: no typed-in collateral / debt (a "custom borrower" was rejected);
+  new borrowers appear by rerunning `onchain_positions.py` + export; other wallets via `--wallet`.
+- Every number must be from the same moment (user requirement). Today's samples are not: Pendle markets 09:13 UTC,
+  quotes 09:22–09:27, crawl block 26162694 (~14:41), borrowers / oracle block 26163209 (16:24), export 18:21
+  (`days_to_expiry` counts from the export time). Planned, not started (refresh button postponed): one refresh =
+  one snapshot: pin block B, read everything on chain at B (Pendle price / implied APY on chain if the verified ABI
+  allows), call the APIs right after, gate on the spread (e.g. ≤ 5 min), time-based fields from B's timestamp, a
+  `snapshot` block in the dashboard; then a local `serve.py` with POST /api/refresh behind a page button.
 
 ## Not done (priority order)
 
@@ -156,7 +167,8 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
 3. **Volatile collateral** (WBTC / wstETH / cbBTC, ~14% of Belem's vault, not analysed): severity anchors from
    DeFiLlama BTC/ETH drawdowns, oracles are Chainlink market feeds (follow immediately).
 4. **Front-end integration check** against both acceptance tables; a 2–3 minute demo script (Belem vault → mGLOeuro →
-   chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command for refresh + checks.
+   chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command for refresh + checks, as one same-moment
+   snapshot (see Requirements), then the refresh button.
 5. Off-chain dependencies with source URLs (Ethena exchanges / custodians, SG-Forge for EURCV, Huma receivables);
    the LLM only finds relations, numbers come from code.
 6. Liquidation feasibility for RWA collateral without DEX liquidity (bad debt if liquidators cannot sell).

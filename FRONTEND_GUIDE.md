@@ -1,10 +1,11 @@
 # Risk Desk v2: connecting the front end to the backend
 
-> 给前端同事：把这份文件和 `Dependency_Risk_Desk_v2.html` 一起交给 Claude，说"按 FRONTEND_GUIDE.md 修改这个页面"。
-> 布局保持不变，但**去掉第 3 步（概率）**：主办方认为突发事件的概率 p 无法预测，核心算法改为"假设事故已经发生，按严重程度决定"。
-> 第 1 步选节点（固定 9 个节点 + 检测到的事故），第 2 步手动拖严重程度，结论直接由严重程度给出，并显示"跌幅超过多少就该走"（盈亏平衡严重程度）。
-> 改的是：数据从后端文件读取，损失和结论从后端的模型计算，并删掉已经过时的文字。
-> 新增：头寸规模由经理输入（默认 $10M），也可输入钱包地址（本 Morpho 市场的借款人，按真实规模）；两个真实借款人预设按真实规模计算。
+> For the front-end colleague: give this file together with `Dependency_Risk_Desk_v2.html` to Claude and say "edit this page following FRONTEND_GUIDE.md".
+> Keep the layout, but **remove step 3 (probability)**: the organisers consider that the probability p of a sudden incident cannot be predicted, so the core method is now "assume the incident has happened and decide by its severity".
+> Step 1 picks a node (the fixed 9 nodes + detected incidents), step 2 drags the severity by hand; the verdict follows from the severity alone, with "above which fall you should exit" (the break-even severity).
+> What changes: the data are read from the backend files, losses and verdicts are computed by the backend model, and outdated texts are removed.
+> New: the position size is the manager's input (USD, default $10M); a wallet address can also be entered (a wallet read on chain at the same block by `onchain_positions.py --wallet`, or a borrower of this Morpho market, at its real on-chain size; numbers are never typed in by hand). The two real-borrower presets use their real sizes.
+> The "Cash earns after selling, % APY" input is annual: convert it with `RiskModel.carryOf(d, S.alt / 100)` into the yield given up until expiry before passing it to the model (4% -> 0.128%); never pass the annual difference.
 
 Instructions for Claude. Edit `Dependency_Risk_Desk_v2.html` so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls. Remove step 3 (the probability slider) and everything that uses a probability: the decision is made given the incident, at the severity chosen in step 2.
 
@@ -16,7 +17,7 @@ From the repo (`git pull`):
 |---|---|
 | `sample_data/dashboard.sample.js` | The data as `window.DASHBOARD = {...};`. Load it with a `<script>` tag (works when the page is opened from disk) |
 | `sample_data/dashboard.sample.json` | Same data as JSON, if the page is served over HTTP (`fetch`) |
-| `web/risk_model.js` | The model: `RiskModel.inject`, `positionLoss`, `oracleFalls`, `decide`, `breakEven`, `slippageAt`, `lif`. Checked equal to the Python backend (`python3 check_js_port.py`) |
+| `web/risk_model.js` | The model: `RiskModel.atSize` (position size and wallet, call first), `carryOf` (annual cash yield -> carry), `decideAt`, `breakEvenSeverity`, `sensitivity`, `decideAtDuration`, `timeline`, `timelineSummary`, `inject`, `walletPresets`, `positionLoss`, `oracleFalls`, `slippageAt`. Checked equal to the Python backend (`python3 check_js_port.py`) |
 | `README.md`, section "Frontend integration" | Field-by-field contract of `dashboard.json` |
 
 Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML file (or adjust the paths), and put the two scripts before the page's own script:
