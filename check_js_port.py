@@ -387,6 +387,48 @@ def main():
           f"liquidated, origin, verdict)" + (f"  first {pstate[0]}" if pstate else ""))
     bad = bad + pbad + punchecked + pstate
 
+    # propagation along the duration slider: propagationEvents, same events in JS and Python; each event is a real
+    # change (the propagation just before differs from just after) and no change is missed between events
+    import math
+    from frontend_contract import propagation_events, propagation_at_duration
+    ecombos = [(pk, k, sev, rec) for pk in sized[1e7]["position_presets"] for k in d["ui"]["injections"]
+               for sev in (0.5, 3, 20) for rec in (True, False)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "e.json"), os.path.join(tmp, "e.js")
+        json.dump(ecombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=M.atSize(require(process.argv[3]),1e7);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(a.map(c=>{const k=c[1].split(':');"
+                            "return M.propagationEvents(d,c[0],k[0],k[1],c[2],c[3],0.04);})));")
+        je = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    dz = sized[1e7]
+    sig = lambda pg: [(x["node"], x["state"]) for x in pg["steps"]] + [("verdict", pg["verdict"])]
+    ebad, ereal, n_ev, rnd = [], [], 0, random.Random(7)
+    for c, j in zip(ecombos, je):
+        node, fail = c[1].split(":")
+        py = propagation_events(dz, c[0], node, fail, c[2], c[3], 0.04)
+        if len(py["events"]) != len(j["events"]) or py["start"] != j["start"] or \
+                any(not same(a["hours"], b["hours"], 1e-6) or {k: v for k, v in a.items() if k != "hours"} !=
+                    {k: v for k, v in b.items() if k != "hours"} for a, b in zip(py["events"], j["events"])):
+            ebad.append(c)
+        at = lambda h: sig(propagation_at_duration(dz, c[0], node, fail, c[2], h, c[3], 0.04))
+        for ev in py["events"]:
+            n_ev += 1
+            if at(ev["hours"] * (1 - 1e-5)) == at(ev["hours"] * (1 + 1e-5)):
+                ereal.append((c, ev["hours"], "no change at the event"))
+        bounds = [1.0] + [ev["hours"] for ev in py["events"]] + [4320.0]
+        for lo, hi in zip(bounds, bounds[1:]):         # one random duration inside each segment: same state as its start
+            if hi / lo < 1 + 1e-4:
+                continue
+            h = lo * math.exp(math.log(hi / lo) * rnd.uniform(0.01, 0.99))
+            if at(h) != at(lo * (1 + 1e-5) if lo > 1.0 else 1.0):
+                ereal.append((c, round(h, 3), "change between events"))
+    print(f"GATE {'PASS' if not ebad else 'FAIL'}  propagationEvents: {len(ecombos)} cases give the same events in JS "
+          f"and Python ({n_ev} events)" + (f"  first mismatch {ebad[0]}" if ebad else ""))
+    print(f"GATE {'PASS' if not ereal else 'FAIL'}  propagationEvents: every event changes the propagation and none is "
+          f"missed between events" + (f"  first {ereal[0]}" if ereal else ""))
+    bad = bad + ebad + ereal
+
     # one duration mechanism (guide 5b): decideAt with the inputs decideAtDuration used equals decideAtDuration
     from frontend_contract import decide_at_duration
     dur_bad, n_dur = [], 0

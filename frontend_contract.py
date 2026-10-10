@@ -1146,3 +1146,64 @@ def propagation(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     bad = [x for x in NUM.findall(text) if x not in nums]
     return {"verdict": r["verdict"], "origin": {"node": node, "layer": origin_layer}, "steps": steps, "layers": rows,
             "numbers": nums, "unchecked": bad}
+
+
+def _duration_inputs(d, preset_key, r, hours, recovers):
+    """The opts that make decide_at (and every function taking opts) equal decide_at_duration's result r (guide 5b)."""
+    o = {"hours": hours, "collateral_usd": r["position_value_usd"], "collateral_oracle_usd": r["collateral_usd"],
+         "debt_usd": r["debt_usd"], "sale_value_usd": d["position_presets"][preset_key]["collateral_usd"]}
+    if recovers:
+        o["permanent"] = 0
+    return o
+
+
+def propagation_at_duration(d, preset_key, node, fail, sev, hours, recovers=True, alt_apy=None):
+    """propagation for an incident lasting `hours`, with decide_at_duration's inputs (what the duration slider shows)."""
+    r = decide_at_duration(d, preset_key, node, fail, sev, hours, recovers, alt_apy)
+    return propagation(d, preset_key, node, fail, sev, r["carry"], _duration_inputs(d, preset_key, r, hours, recovers))
+
+
+def propagation_events(d, preset_key, node, fail, sev, recovers=True, alt_apy=None, h_min=1.0, h_max=4320.0,
+                       steps=200):
+    """Where the propagation changes along the duration slider: the exact durations (hours, between h_min and h_max)
+    at which a step's state or the verdict changes, found by a log-spaced scan and bisection on
+    propagation_at_duration. Each event lists the changed layers (state before / after, the layer's text after) and
+    steps (node, state before / after, text after). The texts come from propagation (numbers checked there).
+    Mirrored by RiskModel.propagationEvents."""
+    import math
+
+    def at(h):
+        return propagation_at_duration(d, preset_key, node, fail, sev, h, recovers, alt_apy)
+
+    def sig(pg):
+        return [(x["node"], x["state"]) for x in pg["steps"]] + [("verdict", pg["verdict"])]
+    hs = [h_min * math.exp(math.log(h_max / h_min) * i / steps) for i in range(steps + 1)]
+    pgs = [at(h) for h in hs]
+    events, nums, bad = [], [], []
+    for i in range(steps):
+        a, b, pa = hs[i], hs[i + 1], pgs[i]
+        if sig(pa) == sig(pgs[i + 1]):
+            continue
+        sa = sig(pa)
+        for _ in range(50):                           # smallest duration whose propagation differs from a's
+            m = (a + b) / 2
+            if sig(at(m)) == sa:
+                a = m
+            else:
+                b = m
+        before, after = at(a), at(b)
+        lay = [{"n": y["n"], "name": y["name"], "from": x["state"], "to": y["state"], "text": y["text"]}
+               for x, y in zip(before["layers"], after["layers"]) if x["state"] != y["state"]]
+        stp_b = {x["node"]: x for x in before["steps"]}
+        stp = [{"layer": y["layer"], "node": y["node"], "from": stp_b[y["node"]]["state"] if y["node"] in stp_b else None,
+                "to": y["state"], "text": y["text"]}
+               for y in after["steps"] if y["node"] not in stp_b or stp_b[y["node"]]["state"] != y["state"]
+               or (y["node"] == "result" and before["verdict"] != after["verdict"])]
+        nums += after["numbers"]
+        bad += after["unchecked"]
+        events.append({"hours": math.floor(b * 1e6 + 0.5) / 1e6, "verdict_before": before["verdict"],
+                       "verdict_after": after["verdict"], "layers": lay, "steps": stp})
+    first = pgs[0]
+    return {"h_min": h_min, "h_max": h_max, "recovers": recovers,
+            "start": {"verdict": first["verdict"], "layers": [{"n": x["n"], "state": x["state"]} for x in first["layers"]]},
+            "events": events, "numbers": nums, "unchecked": bad}

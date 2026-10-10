@@ -6,7 +6,7 @@
      oracleFalls                oracle_types.py (oracle_falls; meta-oracle threshold + timelock)
      slippageAt, decide         decision_core.py
      breakEven                  incidents.py (exact break-even from the exit curve, no p grid)
-     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText, propagation   frontend_contract.py (position size: the manager's input)
+     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText, propagation(AtDuration, Events)   frontend_contract.py (position size: the manager's input)
 
    Shapes (same field names as the Python dataclasses):
      scenario = {layer: 2|3, shock: 0..1, permanent: 0..1, hours: number|null}
@@ -738,6 +738,54 @@
     const bad = (all.match(NUM) || []).filter(x => !nums.includes(x));
     return {verdict: r.verdict, origin: {node, layer: originLayer}, steps, layers: rows, numbers: nums, unchecked: bad};
   }
+  /* The opts that make decideAt equal decideAtDuration's result r (guide 5b). */
+  function durationInputs(d, presetKey, r, hours, recovers) {
+    const o = {hours, collateral_usd: r.position_value_usd, collateral_oracle_usd: r.collateral_usd,
+               debt_usd: r.debt_usd, sale_value_usd: d.position_presets[presetKey].collateral_usd};
+    if (recovers) o.permanent = 0;
+    return o;
+  }
+  /* propagation for an incident lasting `hours` (port of frontend_contract.propagation_at_duration). */
+  function propagationAtDuration(d, presetKey, node, fail, sev, hours, recovers = true, altApy = null) {
+    const r = decideAtDuration(d, presetKey, node, fail, sev, hours, recovers, altApy);
+    return propagation(d, presetKey, node, fail, sev, r.carry, durationInputs(d, presetKey, r, hours, recovers));
+  }
+  /* Where the propagation changes along the duration slider (port of frontend_contract.propagation_events). */
+  function propagationEvents(d, presetKey, node, fail, sev, recovers = true, altApy = null, hMin = 1, hMax = 4320,
+                             steps = 200) {
+    const at = h => propagationAtDuration(d, presetKey, node, fail, sev, h, recovers, altApy);
+    const sig = pg => JSON.stringify(pg.steps.map(x => [x.node, x.state]).concat([['verdict', pg.verdict]]));
+    const hs = [];
+    for (let i = 0; i <= steps; i++) hs.push(hMin * Math.exp(Math.log(hMax / hMin) * i / steps));
+    const pgs = hs.map(at), events = [], nums = [], bad = [];
+    for (let i = 0; i < steps; i++) {
+      let a = hs[i], b = hs[i + 1];
+      const sa = sig(pgs[i]);
+      if (sa === sig(pgs[i + 1])) continue;
+      for (let k = 0; k < 50; k++) {
+        const m = (a + b) / 2;
+        if (sig(at(m)) === sa) a = m; else b = m;
+      }
+      const before = at(a), after = at(b);
+      const lay = after.layers.map((y, j) => [before.layers[j], y]).filter(([x, y]) => x.state !== y.state)
+        .map(([x, y]) => ({n: y.n, name: y.name, from: x.state, to: y.state, text: y.text}));
+      const stpB = {};
+      for (const x of before.steps) stpB[x.node] = x;
+      const stp = after.steps.filter(y => !(y.node in stpB) || stpB[y.node].state !== y.state ||
+                                          (y.node === 'result' && before.verdict !== after.verdict))
+        .map(y => ({layer: y.layer, node: y.node, from: y.node in stpB ? stpB[y.node].state : null, to: y.state,
+                    text: y.text}));
+      nums.push(...after.numbers);
+      bad.push(...after.unchecked);
+      events.push({hours: Math.floor(b * 1e6 + 0.5) / 1e6, verdict_before: before.verdict, verdict_after: after.verdict,
+                   layers: lay, steps: stp});
+    }
+    const first = pgs[0];
+    return {h_min: hMin, h_max: hMax, recovers,
+            start: {verdict: first.verdict, layers: first.layers.map(x => ({n: x.n, state: x.state}))},
+            events, numbers: nums, unchecked: bad};
+  }
+
   const pickWeakest = rows => {
     const flips = rows.filter(x => x.flips && !x.comparison);
     if (!flips.length) return null;
@@ -812,7 +860,7 @@
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
                inject, decideAt, breakEvenSeverity,
-               sensitivity, decisionText, propagation, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
+               sensitivity, decisionText, propagation, propagationAtDuration, propagationEvents, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;

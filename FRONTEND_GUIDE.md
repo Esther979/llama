@@ -229,6 +229,7 @@ const be = RiskModel.breakEvenSeverity(d, S.pos, S.node, S.fail, r.carry, f.min,
 const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, r.carry, o);
 const t  = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, r.carry, o);
 const pg = RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, r.carry, o);   // section 6
+const ev = RiskModel.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);   // section 6, not on drag
 ```
 
 `RiskModel.decideAt(d, S.pos, S.node, S.fail, S.sev, r.carry, o)` equals `r` exactly. The carry is the yield given up over the incident only, at most until expiry (`r.carry`), not `carryOf` until expiry. First screen with the duration path: PT-reUSD on the closest borrower, loss if staying $164,900 (the position is valued at the end of the 1 h incident) instead of $164,903 with `decideAt` and `p.opts`.
@@ -282,6 +283,29 @@ Acceptance (`d = RiskModel.atSize(window.DASHBOARD, 1e7)`, carry 0; layer states
 | `spot` | `susde:discount` | 3% | `null` | unchanged · origin · unchanged · unchanged · not_applicable | No loss on this position at this severity. | STAY |
 | `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | `{hours: 1, permanent: 0}` | unchanged · unchanged · origin · hit · hit | Loss if staying: $164,903 (53.62% of the position's equity of $307,545). | EXIT |
 | `spot` | `lending:cascade` | 20% | `null` | unchanged · not_modelled · not_modelled · hit · origin | No direct loss on this position: only how much of it can be sold changes. | STAY |
+
+Dynamic propagation on the duration slider (your draggable component): recompute `pg` on every drag, as above, so the
+layers change while the user drags. Mark on the slider where they change:
+
+```js
+const ev = RiskModel.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);   // not on drag:
+// recompute only when position, node, failure, severity, recovers or cash APY change (about 300 model runs)
+```
+
+- `ev.events[]`: `{hours, verdict_before, verdict_after, layers: [{n, name, from, to, text}], steps: [{layer, node, from,
+  to, text}]}`, the exact durations (1 h to 180 days, the slider's range) at which a step's state or the verdict
+  changes, in order. `ev.start` = the states at 1 h. Texts are `propagation`'s (numbers checked).
+- Put one red mark per event on the slider (replaces the fixed 16 h and expiry ticks, keep those two as grey
+  reference marks); list the events under it ("16 h: layer 3 unchanged -> hit: {text}", verdict change); clicking an
+  event moves the slider just past it. When a drag crosses an event, flash the layers whose state changed (compare
+  `pg.layers[i].state` with the previous render).
+- Optional play button: move the slider from 1 h to 180 days and pause at each event.
+- Example (`lev_closest_to_liquidation`, `usde:depeg` 3%, recovers on, cash 4%): one event at 16 h, layers 3 and 5
+  unchanged -> hit, steps oracle / lending / market / position unchanged -> hit, verdict STAY -> EXIT. With
+  `susde:discount` 0.5%: one event at 4,190.4 h (about 175 days): layer 5 unchanged -> hit, STAY -> EXIT (after
+  expiry the oracle stays at 1 while the debt grows, the LTV crosses the liquidation line without any shock).
+- `check_js_port.py` checks 288 cases: the same events in JS and Python, each event a real change, no change missed
+  between events.
 
 The first two rows are the demo's point: the same 3% USDe depeg, 6 h vs 24 h. Below the meta-oracle's 16 h nothing
 reaches layers 3 and 5 (the loss is the PT's value only); above it the oracle switches, the position is liquidated
