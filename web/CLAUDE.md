@@ -64,13 +64,16 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - Every number in the drawer shows its source and its evidence grade (A to D).
 - Works at phone width; the graph may scroll sideways inside its own container.
 
-## Current state (`frontend` at `96665fd`, 11 Oct)
+## Current state (`frontend`, 11 Oct, after the CSS / JS split)
 
 What is on the branch:
 
-- `web/demo.html`: the whole page in one file, styles and script inline. It loads
-  `../sample_data/dashboard.sample.js` and `risk_model.js` (same folder) in place, as shown above. `index.html`,
-  the root-level `demo.html` and the two stale root-level copies are gone.
+- `web/demo.html` (markup), `web/demo.css` (both former `<style>` blocks, in order) and `web/demo.js` (the former
+  inline script), moved line for line: rebuilding the old single file from the three gives it byte for byte.
+  The page loads `../sample_data/dashboard.sample.js` and `risk_model.js` in place, as shown above. There is no
+  `demo.copy.js` yet: user-facing strings are still in `demo.js` (118 sentences, 30 of them inside HTML templates).
+- Still against the separation rules: three SVG legend swatches in `demo.js` (`renderExit`) carry inline colour
+  styles that are not geometry.
 - Preview mode is removed (Prototype only). Step 3 and every probability input are gone: the verdict comes from
   `RiskModel.decideAt`, the step-2 zones and "selling starts at / pool limit from" from `breakEvenSeverity`.
   Wide % sliders use a log scale shared with the zone bar.
@@ -78,10 +81,11 @@ What is on the branch:
 - `main` is merged in: the model now has `atSize`, `carryOf`, `sensitivity`, `decideAtDuration`, `timeline`,
   `timelineSummary`; the data has `time_model` and real-borrower presets. `FRONTEND_GUIDE.md` is `main`'s version.
 
-Checked after the move (`web/demo.html` opened from disk in headless Chrome): no console errors, the load-error
-banner stays hidden, all 15 of the guide's 10M acceptance rows match, all 18 drawers open in both views.
-`python3 check_js_port.py` passes all 19 gates after the `4329aae` merge (standard library only now). Not checked:
-the guide's 1M / 7M / 50M rows (the page has no size input yet), phone width and dark mode.
+Checked after the split with `node web/check_demo.mjs`: no console errors, banner hidden, 18/18 drawers, 48 preset x
+failure combinations, 15/15 of the guide's 10M acceptance rows (model and on-screen verdict), no horizontal scroll at
+390px, dark background in dark mode; the same output as the single file before the split. `python3
+check_js_port.py` passes all 19 gates after the `4329aae` merge. Not checked: the guide's 1M / 7M / 50M rows (the
+page has no size input yet; the script reports them as SKIPPED), and dark / phone layouts by eye.
 
 Gaps against the current guide (its section 0 sets this order): 1. carry is computed by the page instead of
 `RiskModel.carryOf` (verdicts are wrong whenever "cash earns" is not 5.01%); 2. "what would change the answer" is
@@ -101,7 +105,9 @@ session.
 2. ~~Move the page to `web/demo.html`, set the two script paths and the error message.~~ Done in `96665fd`
    (own commit; loads from disk, checks above).
 3. ~~Fix the PT / lending drawer crash from duplicate position edges.~~ Done: data edges only.
-4. Split into the four files of the target layout. No behaviour change, no reformatting. Own commit.
+4. Split into the four files of the target layout. Done for `demo.css` and `demo.js` (pure move, own commit).
+   Left: `demo.copy.js`. Moving the strings into one `COPY` object rewrites most render functions, so it is its own
+   commit, checked with `check_demo.mjs` (same output before and after).
 5. Follow the current guide. Done: step 3 and all probability code removed, verdict from `decideAt`, zones from
    `breakEvenSeverity`. Left, in the guide's order: carry via `carryOf`, "what would change the answer" from
    `sensitivity`, position size / wallet input via `atSize` (then check the 1M / 7M / 50M rows).
@@ -131,5 +137,8 @@ Checking against the data files is not enough; the drawer crash was missed that 
 4. Compare the rows of the guide's acceptance table with what the page shows.
 5. Check phone width and dark mode for any visual change.
 
-`check_demo.mjs` (to be written with step 4) automates 1 to 4 and fails on any console error. Run it before each
-commit. State plainly what was checked and what was not.
+`node web/check_demo.mjs [page.html]` automates 1 to 5 (no packages; installed Chrome over the DevTools protocol,
+`CHROME=` to override). It reads the acceptance table from `../FRONTEND_GUIDE.md` at run time, prints one
+`GATE PASS` / `GATE FAIL` line per check and exits 1 on any failure or console error. Run it before each commit;
+for a refactor, run it on the old and the new page and compare the output. It does not judge layout by eye.
+State plainly what was checked and what was not.
