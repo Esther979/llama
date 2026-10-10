@@ -9,6 +9,25 @@
 
 Instructions for Claude. Edit `Dependency_Risk_Desk_v2.html` so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls. Remove step 3 (the probability slider) and everything that uses a probability: the decision is made given the incident, at the severity chosen in step 2.
 
+## 0. Next steps for the page (backend main at 33833eb)
+
+The page passes the 15 rows at $10M of section 9, but it lags this guide in three places. Do these in order:
+
+1. Pull `main` again and merge it into `frontend`.
+2. Run `python3 check_js_port.py`. No package is needed (standard library only; the vault checks are skipped when
+   `data/vaults/` is absent, it is git-ignored). Every line must say `GATE PASS`.
+3. Fix the three places where the page computes things itself instead of calling the model:
+
+| Priority | Page today | Replace with | Why |
+|---|---|---|---|
+| 1 | Computes `carry` itself | `const carry = () => RiskModel.carryOf(d, S.alt / 100);` (section 4) | The "Cash earns after selling, % APY" input is annual; the model needs the yield given up until expiry. The annual difference overstates the cost of selling about 8 times whenever the input is not 5.01, so the verdicts are wrong |
+| 2 | Builds "What would change the answer" itself | `RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Same candidates, flips and weakest assumption as the backend; its "cash earns 1% a year less" step is converted to the time left to expiry |
+| 3 | No `RiskModel.atSize` | `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` on load and on every size / wallet change (section 3b) | Position size (USD) and wallet presets; then check the $1M, $7M and $50M rows of section 9 |
+
+Open point: the merge report says the page has no position-size input yet, while the team was told the input is now
+"Position size (USD)". Check which is true on `frontend`, and which file is the page (`demo.html` or
+`Dependency_Risk_Desk_v2.html`) so that this guide names the right one.
+
 ## 1. Files
 
 From the repo (`git pull`):
