@@ -25,6 +25,7 @@ The page passes the 15 rows at $10M of section 9, but it lags this guide in thre
 | 3 | No `RiskModel.atSize` | `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` on load and on every size / wallet change (section 3b) | Position size (USD) and wallet presets; then check the $1M, $7M and $50M rows of section 9 |
 | 4 | Builds the decision sentence itself | `RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Headline, reasons, break-even and the assumption it hinges on, with every number from the model and the same wording as the backend |
 | 5 | Builds `REPLAYS` from `failure_types` anchors; shows two invented examples and a "Prototype control" bar | `d.past_incidents` (section 3c); remove the invented examples and the prototype bar (user decision) | Four real past incidents, each with its node, failure, severity and the duration / recovery to pass to the model (`opts`); statistics are not listed as events |
+| 6 | Builds the red path of the five-layer chain itself from `r` (origin, layer 3, 4, 5) | `RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, r.carry, o)` (section 6) | How the failure travels layer by layer (origin -> PT value -> oracle -> liquidation -> exit liquidity -> position -> verdict), each step with its text, grade and the edges it crosses; layers 1 and 2 included; numbers checked |
 
 Open point: the merge report says the page has no position-size input yet, while the team was told the input is now
 "Position size (USD)". Check which is true on `frontend`, and which file is the page (`demo.html` or
@@ -195,6 +196,7 @@ function model() {
 - Badge: `r.verdict` (`STAY` green, `REDUCE` amber "Sell `sell_usd`", `SELL_TO_CAP` red "Sell `sell_usd`, `stuck_fraction` stuck", `EXIT` red).
 - Sentence and reasons: `const t = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, carry())`. Show `t.title`, then `t.headline` (verdict, loss if staying, what selling now costs and leaves), the list `t.reasons` (whether the lending oracle follows and why, liquidation and how far the liquidation line is, recovery, what the pool takes today and after the failure), `t.break_even` and `t.hinges_on` (the assumption the answer depends on, from `sensitivity`), and `t.rule` (the propagation rule, fixed text) in small print. Every number in these texts comes from the model (`t.numbers`; `check_js_port.py` checks the text equals the Python `decision_text` and that `t.unchecked` is empty). Use these texts instead of building sentences in the page; the template below is what they contain.
 - (Template, for reference) Sentence (numbers from `r` and `be` only): "If {node label} {failure label lowercased} by {sev}, doing nothing loses {loss_if_stay_usd}. Selling {sell_usd} now costs {sale_cost_usd} and leaves {loss_kept_usd} at risk on the rest." For `STAY`: "If ..., doing nothing loses {loss_if_stay_usd}; selling would cost more than it saves." Then: "Selling starts to pay once the severity exceeds {be.start}" (or "Selling does not pay at any severity on this slider").
+- How the failure reaches this position, layer by layer: `RiskModel.propagation` on the five-layer chain (section 6).
 - Bars: "Do nothing" = `loss_if_stay_usd`; "Act" = `sale_cost_usd` + `loss_kept_usd`.
 - Under the verdict, one line from `r.note`, and: oracle follows = `r.oracle_falls`, liquidated = `r.liquidated`. If `r.L_low !== r.L_high`: "loss between L_low and L_high depending on the oracle; the decision uses the high end".
 - "What would change the answer": `const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())`. It replaces one assumption at a time by its stated alternative and reruns the decision. Show `sv.candidates` as a table (`alternative`, `grade`, `verdict`, a mark when `flips`), the other position presets (`comparison: true`) in a separate "other positions" group, and highlight `sv.weakest`: the lowest-graded assumption that flips the verdict ("The answer hinges on: {alternative} (grade {grade}) -> {verdict}"); `null` -> "No tested assumption changes the answer". Also show the severity break-even (`be.start`, `be.cap`). The backend's `weakest_link` / `scenarios[].weakest_link` fields are probability-based legacy: do not use them.
@@ -216,7 +218,7 @@ Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours,
 | Debt over time | levered presets: debt grows at the market's borrow APR (`d.time_model.borrow_apr`, read on chain); the oracle price rises with the linear discount; after expiry it stays at 1 while the debt keeps growing (`ltv`) |
 | Yield given up | exiting gives up (implied APY - alt) over the incident, at most until expiry (`carry`) |
 
-One mechanism once the duration slider exists. The decision card, `breakEvenSeverity`, `sensitivity` and `decisionText` all use the duration inputs; past incidents (section 3c) only preset the controls. Selecting a past incident sets node, failure, severity, the duration slider to `p.hours` and the recovers toggle to `p.recovers` (events with `hours: null` leave the duration at its default and `recovers` off); `p.opts` is then not used (it is for pages without the duration slider). Pass the other functions the inputs `decideAtDuration` used, so that every number on the screen is the same:
+One mechanism once the duration slider exists. The decision card, `breakEvenSeverity`, `sensitivity`, `decisionText` and `propagation` all use the duration inputs; past incidents (section 3c) only preset the controls. Selecting a past incident sets node, failure, severity, the duration slider to `p.hours` and the recovers toggle to `p.recovers` (events with `hours: null` leave the duration at its default and `recovers` off); `p.opts` is then not used (it is for pages without the duration slider). Pass the other functions the inputs `decideAtDuration` used, so that every number on the screen is the same:
 
 ```js
 const r = RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
@@ -226,6 +228,7 @@ if (S.recovers) o.permanent = 0;
 const be = RiskModel.breakEvenSeverity(d, S.pos, S.node, S.fail, r.carry, f.min, f.max, 400, o);
 const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, r.carry, o);
 const t  = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, r.carry, o);
+const pg = RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, r.carry, o);   // section 6
 ```
 
 `RiskModel.decideAt(d, S.pos, S.node, S.fail, S.sev, r.carry, o)` equals `r` exactly. The carry is the yield given up over the incident only, at most until expiry (`r.carry`), not `carryOf` until expiry. First screen with the duration path: PT-reUSD on the closest borrower, loss if staying $164,900 (the position is valued at the end of the 1 h incident) instead of $164,903 with `decideAt` and `p.opts`.
@@ -246,13 +249,43 @@ Layer facts (replace the old texts, numbers from the data):
 | 4 | `d.ui.nodes.market.label` | "You can sell `max_exit_fraction x notional` today" |
 | 5 | `d.ui.nodes.lending.label` | "`d.borrowers.distribution.n_borrowers` borrowers; Morpho liquidations would exceed the pool from a `d.borrowers.first_drop_seized_exceeds_capacity` oracle drop" |
 
-Effects shown on the red path, from `r` (the `decideAt` result):
+The red path (how the failure travels through the five layers to the position): one call, do not build these
+sentences in the page.
 
-- origin layer: the failure and severity, e.g. "USDe down 2%".
-- layer 3: `oracle_falls === true` -> "Oracle follows (after the 16 h switch)" for `usde` / `ethena`, "Oracle reports the low price" for `oracleLow`; `false` -> "Oracle does not move (linear discount, no market input)".
-- layer 4: `sellable_later < sellable_now` -> "Sellable falls from X to Y".
-- layer 5: `liquidated` contains true -> "Your position is liquidated"; levered and false -> "Not liquidated".
-- your position: `loss_usd`.
+```js
+const pg = RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, r.carry, o);   // same r.carry and o as section 5b
+// without the duration slider: RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, carry(), p ? p.opts : null)
+```
+
+- Layer rows: `pg.layers` = the five rows (`n`, `name`, `nodes`, `state`, `text`). Show `text` under each layer head
+  and colour the row by `state`: `origin` (the failure starts here) and `hit` (changed by it) red; `unchanged` grey;
+  `not_applicable` grey ("no debt: nothing to liquidate"); `not_modelled` dashed grey; `unknown` amber.
+- Path: `pg.steps` in causal order: origin -> PT value (layer 4) -> lending oracle (layer 3) -> liquidation (layer 5)
+  -> exit liquidity (layer 4) -> `position` -> `result`. Each step has `layer`, `node` (a key of `d.ui.nodes`, or
+  `position` / `result`), `state`, `text`, `grade` (`null` = the manager's input) and `edges` (the `d.ui.edges` it
+  crosses, `{from, to, type, grade}`). Light the arrows of the steps whose state is `origin` or `hit`; that is the red
+  path. Show the steps as a numbered list next to the chain ("How it spreads"), with the grade badge.
+- The `position` step is the loss if staying (`$` and share of equity); the `result` step starts with the verdict
+  and equals the decision card. Both are already in `decisionText`; here they close the chain.
+- Every number in the texts comes from the model (`pg.numbers`; `pg.unchecked` is empty). `check_js_port.py` checks
+  1,216 cases: the same text in JS and Python, and each layer's state agrees with `decideAt` (layer 3 `hit` exactly
+  when `oracle_falls` is true, layer 5 `hit` exactly when the position is liquidated).
+- This replaces the old per-layer rules (origin layer / layer 3 / layer 4 / layer 5 / your position from `r`).
+
+Acceptance (`d = RiskModel.atSize(window.DASHBOARD, 1e7)`, carry 0; layer states 1 · 2 · 3 · 4 · 5):
+
+| Preset | Node · failure | Severity | opts | Layer states | `position` step | Verdict |
+|---|---|---|---|---|---|---|
+| `lev_closest_to_liquidation` | `usde:depeg` | 3% | `{hours: 6}` | unchanged · origin · unchanged · hit · unchanged | Loss if staying: $97,484 (31.7% of the position's equity of $307,545). | EXIT |
+| `lev_closest_to_liquidation` | `usde:depeg` | 3% | `{hours: 24}` | unchanged · origin · hit · hit · hit | Loss if staying: $176,328 (57.33% of the position's equity of $307,545). | EXIT |
+| `spot` | `susde:navLoss` | 10% | `null` | unchanged · origin · unchanged · hit · not_applicable | Loss if staying: $1,000,000 (10% of the position's equity of $10,000,000). | SELL_TO_CAP |
+| `spot` | `susde:discount` | 3% | `null` | unchanged · origin · unchanged · unchanged · not_applicable | No loss on this position at this severity. | STAY |
+| `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | `{hours: 1, permanent: 0}` | unchanged · unchanged · origin · hit · hit | Loss if staying: $164,903 (53.62% of the position's equity of $307,545). | EXIT |
+| `spot` | `lending:cascade` | 20% | `null` | unchanged · not_modelled · not_modelled · hit · origin | No direct loss on this position: only how much of it can be sold changes. | STAY |
+
+The first two rows are the demo's point: the same 3% USDe depeg, 6 h vs 24 h. Below the meta-oracle's 16 h nothing
+reaches layers 3 and 5 (the loss is the PT's value only); above it the oracle switches, the position is liquidated
+and liquidators take the pool first (layer 4: 100% sellable today, 38.89% after).
 
 Remove these old texts, the backend now contradicts them: "Type unknown", "Upstream feeds are not resolved yet", "Not resolved. Needs the on-chain crawler", "Not verified. Planned: on-chain read from the sUSDe contract", "Starting probabilities are samples, not calibrated from history" (keep it only for failures whose `p_severe` is null).
 

@@ -346,6 +346,47 @@ def main():
           + (f"  first {xunchecked[0]}" if xunchecked else ""))
     bad = bad + xbad + xunchecked + pi_bad
 
+    # propagation (PT view): the five layers step by step; same text as Python, every number from the model, and each
+    # layer's state agrees with decideAt (oracle follows <-> layer 3 hit, liquidated <-> layer 5 hit)
+    from frontend_contract import propagation
+    pcombos = xcombos + [(sz, pk, k, sev, c, o) for sz in (1e6, 1e7) for pk in at_size(d, sz)["position_presets"]
+                         for k in d["ui"]["injections"] for sev in (0.5, 3) for c in (carry_of(d, 0.04),)
+                         for o in ({"hours": 6}, {"hours": 24, "permanent": 0})]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "p.json"), os.path.join(tmp, "p.js")
+        json.dump(pcombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d0=require(process.argv[3]);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));const cache={};"
+                            "console.log(JSON.stringify(a.map(c=>{const d=cache[c[0]]||(cache[c[0]]=M.atSize(d0,c[0]));"
+                            "const k=c[2].split(':');return M.propagation(d,c[1],k[0],k[1],c[3],c[4],c[5]);})));")
+        jp = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    pbad, punchecked, pstate = [], [], []
+    for c, j in zip(pcombos, jp):
+        node, fail = c[2].split(":")
+        py = propagation(sized[c[0]], c[1], node, fail, c[3], c[4], c[5])
+        if py != j:
+            pbad.append(c)
+        if py["unchecked"]:
+            punchecked.append((c, py["unchecked"]))
+        r = decide_at(sized[c[0]], c[1], node, fail, c[3], c[4], c[5])
+        lay = {x["n"]: x["state"] for x in py["layers"]}
+        if r["type"] == "loss_model" and node not in ("feeds", "oracle"):
+            if (lay[3] == "hit") != (r["oracle_falls"] is True):
+                pstate.append((c, "layer 3"))
+        if r["type"] == "loss_model" and node != "lending" and sized[c[0]]["position_presets"][c[1]]["debt_usd"] > 0 \
+                and c[5] is None:
+            if (lay[5] == "hit") != any(r["liquidated"] or []):
+                pstate.append((c, "layer 5"))
+        if lay[py["origin"]["layer"]] != "origin" or py["steps"][-1]["text"].split(":")[0] != r["verdict"]:
+            pstate.append((c, "origin / verdict"))
+    print(f"GATE {'PASS' if not pbad else 'FAIL'}  propagation: {len(pcombos)} cases give the same layers and text in JS "
+          f"and Python" + (f"  first mismatch {pbad[0]}" if pbad else ""))
+    print(f"GATE {'PASS' if not punchecked else 'FAIL'}  propagation: every number in the text comes from the model"
+          + (f"  first {punchecked[0]}" if punchecked else ""))
+    print(f"GATE {'PASS' if not pstate else 'FAIL'}  propagation: layer states agree with decideAt (oracle follows, "
+          f"liquidated, origin, verdict)" + (f"  first {pstate[0]}" if pstate else ""))
+    bad = bad + pbad + punchecked + pstate
+
     # one duration mechanism (guide 5b): decideAt with the inputs decideAtDuration used equals decideAtDuration
     from frontend_contract import decide_at_duration
     dur_bad, n_dur = [], 0
