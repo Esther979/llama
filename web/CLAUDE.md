@@ -106,13 +106,12 @@ Not started. The guide and its acceptance table (9 decision rows and a 3-row liq
   `tail_loss_95` or `break_even`.
 - **Same UX rules as the PT view.** First screen: badge, the sentence (guide section 4), loss if staying versus
   cost of exiting. Dependency chain (6 layers), markets, exit tranches, sensitivity and timeline open on demand.
-- **A slip in the vault guide.** Its rule 2 and its assumptions line name `RiskModel.vaultDecide`; its files table
-  says that function is probability-based and must not be used. Use `vaultDecideAt` everywhere and tell the
-  backend.
+- **Use `vaultDecideAt` everywhere.** `vaultDecide` is the old probability-based function. The vault guide named
+  it in two places; the backend fixed that in `556828c` (on `main`, not merged yet).
 - **The amount default exceeds the Belem vault.** 10,000,000 is above its total assets (about 4.7M EURCV); the
   guide has a message for that case. Show it; do not silently cap the input.
 
-## Current state (`frontend` at `8baf37b`)
+## Current state (`frontend` at `17c31e1`; page code last changed in `8baf37b`)
 
 What is on the branch:
 
@@ -129,7 +128,9 @@ What is on the branch:
 - Edges come from `ui.edges` only (data id `position` drawn as the page's `pos`).
 - Carry comes from `RiskModel.carryOf(d, S.alt / 100)`; the "cash earns" field is a text field
   (`inputmode="decimal"`) that accepts "4,5" as well as "4.5".
-- `main` was merged at `9fd615e` (in `a4d9f9e`). The backend pushes often, so run
+- `main` was merged at `9fd615e` (in `a4d9f9e`), which brought `d.offchain` (off-chain dependencies of USDe and
+  sUSDe), `RiskModel.decisionText` and `RiskModel.sizeCurve`. At 22:30 on 10 Oct the branch was 1 commit behind
+  (`556828c`, a wording fix in the vault guide). The backend pushes often, so run
   `git log HEAD..origin/main --oneline` before starting and merge first.
 
 Checked at `8baf37b`: `python3 check_js_port.py` passes all 21 gates; `node web/check_demo.mjs` passes: no console errors,
@@ -154,6 +155,9 @@ Gaps, most visible first:
 3. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
    assumed $10M.
 4. The page's wording still describes a detector (UX section above).
+5. Off-chain dependencies are in the data but not on the page. The layer-2 Ethena card still says "Off-chain part
+   not verified", which the data now contradicts, and "Contracts behind it" in the `ethena` and `susde` drawers
+   lists the off-chain entities as bare names with no source (29 of 30 members for `ethena`, 5 of 7 for `susde`).
 
 Answered by the backend (guide section 0b, merged):
 
@@ -182,6 +186,32 @@ Done: `main` merged (repeat after every backend push, then `python3 check_js_por
 3. Wording: no detector. Rename the sample feed to example incidents (invented), remove "Detector feed",
    "detected now", "the detector is not connected yet" and the "Detected" tag. Ask the user before removing the two
    samples themselves.
+   3b. Off-chain dependencies in the PT evidence drawer (from the backend; guide section 8; data in `d.offchain`).
+   In `nodeEvidence`, three drawers get one more row, "Off-chain (issuer documents)", right after "Contracts
+   behind it":
+   - `ethena`: `d.offchain.USDe` (31 relations): custodians, hedging exchanges, reserve assets, the Reserve Fund,
+     attestations and others.
+   - `usde`: the same `d.offchain.USDe`, or only its `summary` with a link that opens the `ethena` drawer. Prefer
+     the short form: showing the same 31 relations in two drawers is noise.
+   - `susde`: `d.offchain.sUSDe` (4 relations).
+     Content of the row: the issuer and its one-line `summary`, then `relations` grouped by `kind`, each with the
+     entity, the relation, a link to `evidence.url` and `evidence.quote` in quotation marks. Take the grade from
+     `evidence.grade` (D today: stated by the issuer, not verifiable on chain), drawn dashed like every other D.
+     Mark a relation "third-party" when `evidence.official` is false (none today). Show a quote as verbatim only when
+     `evidence.quote_found` is true: one of the 31 USDe quotes was not found on its page.
+     Keep to the first-screen rule: the row opens collapsed, showing the summary and the count per kind; the 31
+     relations expand on demand.
+     Also in this step:
+   - Drop the `offchain:*` ids from "Contracts behind it": the new row shows the same entities, grouped and
+     sourced.
+   - Replace the page-made "Off-chain part not verified" on the layer-2 Ethena card (`GSUB.ethena`) with text from
+     the data: `ui.nodes.ethena.note` or a short line from `d.offchain.USDe.counts`.
+   - Do it in the same pass over `nodeEvidence` as to-do 3, which removes the detector wording from that drawer.
+   - New strings (row title, kind names, "third-party", "source") go into `COPY`; the quote and group styles into
+     `demo.css`.
+   - `check_demo.mjs`: a gate that the `ethena` and `susde` drawers show as many source links as
+     `d.offchain.USDe.counts.relations` and `d.offchain.sUSDe.counts.relations`, and that no `offchain:*` id is
+     left in "Contracts behind it".
 4. Vault view, first cut: header switch, address and amount inputs, scenario and severity, verdict badge, the
    sentence, loss if staying versus cost of exiting, and the dependency chain. Add the vault acceptance rows and a
    "PT view unchanged after switching back" gate to `check_demo.mjs`. The backend's demo script opens on this view
