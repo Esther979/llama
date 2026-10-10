@@ -247,6 +247,35 @@ try {
   const ok = res.filter((r) => !r.d.length).length;
   gate(ok === res.length && res.length > 0, `4. acceptance rows at $10M: ${ok}/${res.length} match (model and screen)`);
   res.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
+  /* 4b. the exit panel agrees with the decision card, for every preset x failure at four severities */
+  const agree = await p.ev(`(() => {
+    const bad = []; let n = 0;
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    /* parse the page's money(): $1.23M, $456k, $4.5k, $789 */
+    const usd = (t) => { const m = t.match(/\\$([\\d.,]+)([Mk]?)/); if (!m) return null;
+      return +m[1].replace(/,/g, "") * (m[2] === "M" ? 1e6 : m[2] === "k" ? 1e3 : 1); };
+    const dd = (label) => { const dt = [...document.querySelectorAll("#exit dt")].find((x) => x.textContent === label);
+      return dt ? dt.nextElementSibling.textContent : ""; };
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const k of Object.keys(NODES)) for (const f of fails(k)) {
+        const fl = FAIL[f];
+        for (const sv of [fl.min, fl.def, (fl.min + fl.max) / 2, fl.max]) {
+          setNode(k, f, sv);
+          const m = model(), r = m.sev, today = usd(dd("Today")), later = dd("If this plays out"), tag = pk + " " + k + ":" + f + " @" + +sv.toFixed(2);
+          n++;
+          if (today === null) { bad.push(tag + ": no 'Today' amount"); continue; }
+          if (r.sell_usd > today * 1.005 + 500) bad.push(tag + ": card sells " + money(r.sell_usd) + ", panel says today " + money(today));
+          if (/liquidators/i.test(later) && !(r.sellable_later < r.sellable_now - 1e-9))
+            bad.push(tag + ": panel names liquidators, sellable " + r.sellable_now.toFixed(3) + " -> " + r.sellable_later.toFixed(3));
+        }
+      }
+    }
+    return { n, bad };
+  })()`);
+  gate(agree.bad.length === 0, `4b. exit panel agrees with the decision card: ${agree.n - agree.bad.length}/${agree.n} cases`);
+  agree.bad.slice(0, 8).forEach((x) => console.log("           " + x));
+  if (agree.bad.length > 8) console.log(`           ... and ${agree.bad.length - 8} more`);
   const other = rows.length - atPage.length;
   if (other) console.log(`SKIPPED    4. ${other} acceptance rows at other sizes: the page has no position-size input yet`);
 
