@@ -90,9 +90,14 @@ Every `evidence` map is `{field: {grade, source, basis?}}`, one entry per graded
 | A | Measured now from live API / chain data | exit quotes, capacity, LLTV, Morpho LTV, PT price |
 | B | Mechanism verified in contract source **and** back-tested | Morpho health check, LIF (graded D if `validation.all_pass` is false) |
 | C | Analogy from another asset's history | every preset `shock` (USDe for sUSDe; xUSD, deUSD, PT-reUSD for our PT) |
-| D | Assumption or unknown | position size, debt, can_hold, oracle behaviour while unknown, recovery (`permanent`) |
+| D | Assumption or unknown | position size, debt, can_hold, oracle behaviour while unknown, assumed recovery (`permanent` of the issuer scenarios) |
 
-A number computed from others takes the **worst** grade of its inputs, listed in `basis`. For example, a position's liquidation threshold is `{formula: B, debt_usd: D, lltv: A}` → D, while the Morpho market's aggregate threshold is `{formula: B, aggregate_ltv: A, lltv: A}` → B.
+A number computed from others takes the **worst** grade of the inputs it actually depends on, listed in `basis`. For example, a position's liquidation threshold is `{formula: B, ltv: D, lltv: A}` → D, while the Morpho market's aggregate threshold is `{formula: B, aggregate_ltv: A, lltv: A}` → B. Dependencies follow `loss_model`'s branches:
+
+- `ltv` is graded by the debt input alone when debt = 0 (LTV is 0 at any size), else by debt and position size.
+- L (fraction of equity) depends on `shock`, `ltv`, `can_hold` and, when it matters, `permanent`. When levered it also depends on `lltv`, the Morpho rules (`formula`) and the `oracle` behaviour. `can_hold` is dropped when every branch is liquidated; `permanent` is dropped when the position is sold at the worst point and not liquidated. Position size never enters L.
+- `position_size` enters the USD amounts (`bad_debt_usd`, `branches`, `equity_usd`) and each scenario's `thresholds` / `decision_grid`: exit costs are per fraction of a position of this size, quoted at this size.
+- `permanent` (recovery) is C when the recovery was observed on the anchor (the source says where), D when assumed (issuer scenarios: no recovery).
 
 ### Reasoning steps (`scenarios[].reasoning[]`)
 

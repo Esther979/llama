@@ -34,6 +34,7 @@ class Scenario:
     hours: Optional[float]  # how long the worst point lasted, if known
     source: str
     analogy: bool           # True = observed on another asset, used by analogy
+    recovery_source: Optional[str] = None   # where the recovery assumed by `permanent` was observed, if it was
 
 
 @dataclass
@@ -51,10 +52,13 @@ class Position:
 PRESETS = [
     Scenario("usde_mild", 2, 1 - 0.9838145098294505, 0.0, 24,
              "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near "
-             "1.00 after; used for sUSDe / the PT by analogy", True),
+             "1.00 after; used for sUSDe / the PT by analogy", True,
+             "USDe 0.98381 on 2026-02-01 -> 0.99889 on 2026-02-02 (DeFiLlama ethena-usde, data/replay_usde_prices.csv)"),
     Scenario("oracle_dip", 3, 1 - 0.9420 / 0.9708, 0.0, 1,
              "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); "
-             "back to -0.4% within 5h", True),
+             "back to -0.4% within 5h", True,
+             "PT-reUSD 0.9708 open 04:00 -> 0.9671 close 09:00 UTC on 2026-08-25, -0.38% (Pendle hourly ohlcv, "
+             "data/pendle_history_0x13285bcb.json)"),
     Scenario("issuer_half", 2, 0.50, 1.0, None,
              "Stream xUSD fell to about $0.50 in Nov 2025 (Decrypt, citing PeckShield); no recovery assumed", True),
     Scenario("issuer_total", 2, 1 - 0.001255291116845859, 1.0, None,

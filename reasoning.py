@@ -67,8 +67,7 @@ def scenario_reasoning(ctx, sc, r, thr, mech):
                   ctx["ev"]["pt_price"]))
     S.append(step(1, "debt", f"Debt against the PT: {fmt(D, 'USD')}", D, "USD", ctx["ev"]["debt"]))
     S.append(step(1, "ltv", f"Position LTV {fmt(D / C, 'fraction')} (debt / collateral)", D / C, "fraction",
-                  derived("debt / collateral", debt_usd=ctx["ev"]["debt"]["grade"],
-                          collateral_usd=ctx["ev"]["collateral"]["grade"])))
+                  ctx["ev"]["ltv"]))
     S.append(step(1, "lltv", f"Morpho LLTV {fmt(lltv, 'fraction')}", lltv, "fraction", ctx["ev"]["lltv"]))
     S.append(step(1, "can_hold", "Can hold to recovery / maturity" if ctx["can_hold"]
                   else "Must sell at the worst point", ctx["can_hold"], None, ctx["ev"]["can_hold"]))
@@ -98,15 +97,14 @@ def scenario_reasoning(ctx, sc, r, thr, mech):
                       f"Liquidation if the oracle falls more than {fmt(t, 'fraction')} (1 - LTV / LLTV); "
                       f"shock {fmt(sc.shock, 'fraction')} is {'above' if above else 'below'} it, so "
                       + ("liquidated if the oracle falls" if above else "no liquidation in either branch"),
-                      t, "fraction",
-                      derived("1 - debt / (collateral x LLTV), Morpho health check", formula=g_mech,
-                              debt_usd=ctx["ev"]["debt"]["grade"], lltv=ctx["ev"]["lltv"]["grade"])))
+                      t, "fraction", ctx["ev_scen"][sc.key]["threshold"]))
         if any(b["liquidated"] for b in r["branches"]):
             f = next(b["lif"] for b in r["branches"] if b["liquidated"])
             S.append(step(4, "lif", f"Liquidator seizes collateral worth the repaid debt x LIF {fmt(f, 'ratio')}",
                           f, "ratio", mech))
     else:
-        S.append(step(4, "threshold", "No debt: no liquidation threshold", None, "fraction", ctx["ev"]["debt"]))
+        S.append(step(4, "threshold", "No debt: no liquidation threshold", None, "fraction",
+                      ctx["ev_scen"][sc.key]["threshold"]))
     if ctx["lending"] and ctx["lending"].get("aggregate_liquidation_drop_threshold") is not None:
         at = ctx["lending"]["aggregate_liquidation_drop_threshold"]
         S.append(step(4, "market_threshold",
@@ -144,8 +142,7 @@ def scenario_reasoning(ctx, sc, r, thr, mech):
         S.append(step(6, "exit_cost_scale", f"Per unit of equity, exit cost is x{ctx['scale']:.2f} "
                       "(collateral / equity)", ctx["scale"], "x", ctx["ev"]["scale"]))
     # 7 thresholds on p
-    g_ev = derived("decision_core.decide over p with this scenario's L_used and the exit curve",
-                   exit_curve="A", L_used=L_ev["grade"])
+    g_ev = ctx["ev_scen"][sc.key]["grid"]
     sp, cp = thr["start_selling_p"], thr["sell_to_cap_p"]
     S.append(step(7, "start_selling_p", f"Start selling at p >= {fmt(sp, 'probability')}" if sp is not None
                   else "Never sells on the p grid", sp, "probability", g_ev))

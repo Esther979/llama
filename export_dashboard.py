@@ -25,7 +25,8 @@ import sys
 import backtest_reusd
 from decision_core import Scenario, decide, load_curve
 from loss_model import PRESETS, Position, position_loss
-from reasoning import check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link
+from reasoning import (check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link,
+                       worst)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -207,24 +208,46 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
     for fl, val in (("oracle_tracks_underlying", oracle_tracks_underlying),
                     ("oracle_tracks_market", oracle_tracks_market)):
         e_in[fl] = ev("D", oracle_src if val is None else f"typed in (--{fl.replace('_', '-')}), not verified on-chain")
-    e_in["scale"] = derived("collateral / equity", collateral_usd="D", debt_usd="D")
+    # Each derived number is graded only by what it depends on. LTV = 0 whatever the size, so an
+    # unlevered LTV depends on the debt input alone; position size enters only USD amounts and the
+    # exit costs per fraction of the position (quotes were taken at this size).
+    g_coll, g_debt, g_lltv = e_in["collateral"]["grade"], e_in["debt"]["grade"], e_in["lltv"]["grade"]
+    g_ltv = g_debt if debt == 0 else worst(g_debt, g_coll)
+    e_in["ltv"] = (derived("debt / collateral", debt_usd=g_debt) if debt == 0 else
+                   derived("debt / collateral", debt_usd=g_debt, collateral_usd=g_coll))
+    e_in["scale"] = derived("collateral / equity = 1 / (1 - ltv)", ltv=g_ltv)
     ev_scen = {}
     for sc in PRESETS:
-        lev = {"mechanism": mech["grade"], "debt_usd": "D"} if debt > 0 else {"debt_usd": "D"}
+        r = position_loss(sc, pos)
+        flag = oracle_tracks_underlying if sc.layer == 2 else oracle_tracks_market
+        g_perm = "C" if sc.recovery_source else "D"
+        perm = ev(g_perm, f"observed: {sc.recovery_source}" if sc.recovery_source else
+                  "assumption: no recovery" if sc.permanent == 1 else "assumption")
+        if debt == 0:                                   # L = shock x permanent (can hold) or shock (must sell)
+            L_dep = {"shock": "C", "ltv": g_ltv, "can_hold": e_in["can_hold"]["grade"],
+                     **({"permanent": g_perm} if can_hold else {})}
+            thr_dep = {"ltv": g_ltv}
+        else:
+            liq = [b["liquidated"] for b in r["branches"]]
+            # liquidated branch: residual PT is worth end_value; healthy branch: end_value or sold_value
+            uses_perm = any(liq) or can_hold
+            L_dep = {"shock": "C", "ltv": g_ltv, "lltv": g_lltv, "formula": mech["grade"],
+                     "oracle": e_in["oracle_tracks_underlying" if sc.layer == 2 else "oracle_tracks_market"]["grade"],
+                     **({"can_hold": e_in["can_hold"]["grade"]} if not all(liq) else {}),
+                     **({"permanent": g_perm} if uses_perm else {})}
+            thr_dep = {"formula": mech["grade"], "ltv": g_ltv, "lltv": g_lltv}
+        L_ev = derived("loss_model.position_loss (fraction of equity)", **L_dep)
         ev_scen[sc.key] = {
             "shock": ev("C", sc.source),
-            "permanent": ev("D", ("assumption: full recovery by the end" if sc.permanent == 0 else
-                                  "assumption: no recovery" if sc.permanent == 1 else "assumption")
-                            + " (anchor: see shock source)"),
+            "permanent": perm,
             "hours": ev("C", sc.source) if sc.hours is not None else ev("D", "unknown"),
-            "L": derived("loss_model.position_loss", shock="C", permanent="D", can_hold="D",
-                         **({"oracle": "D"} if debt > 0 else {}), **lev),
-            "liquidated": derived("shock vs liquidation threshold", shock="C", **lev,
-                                  **({"lltv": e_in["lltv"]["grade"], "oracle": "D"} if debt > 0 else {})),
-            "threshold": derived("1 - debt / (collateral x LLTV)", **lev,
-                                 **({"lltv": e_in["lltv"]["grade"]} if debt > 0 else {})),
-            "bad_debt": derived("loss_model.position_loss", shock="C", permanent="D", **lev,
-                                **({"oracle": "D"} if debt > 0 else {})),
+            "L": L_ev,
+            "liquidated": derived("shock vs liquidation threshold",
+                                  **{k: v for k, v in L_dep.items() if k not in ("permanent", "can_hold")}),
+            "threshold": derived("1 - ltv / LLTV" if debt > 0 else "no debt: no threshold", **thr_dep),
+            "bad_debt": derived("loss_model.position_loss (USD)", position_size=g_coll, **L_dep),
+            "grid": derived("decision_core.decide with L_used and the exit curve (costs per fraction of a "
+                            "position of this size)", exit_curve="A", position_size=g_coll, L_used=L_ev["grade"]),
         }
     ctx = {"collateral": notional, "debt": debt, "lltv": lltv, "can_hold": can_hold,
            "oracle_tracks_underlying": oracle_tracks_underlying, "oracle_tracks_market": oracle_tracks_market,
@@ -260,12 +283,11 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         if bad:
             sys.exit(f"GATE FAIL  decision_text for {sc.key} uses numbers not in its reasoning steps: {bad}")
         es = ev_scen[sc.key]
-        g_grid = derived("decision_core.decide with L_used and the exit curve", exit_curve="A",
-                         L_used=es["L"]["grade"])
+        g_grid = es["grid"]
         scenarios[-1].update({
             "evidence": {"shock": es["shock"], "permanent": es["permanent"], "hours": es["hours"],
                          "L_low": es["L"], "L_high": es["L"], "L_used": es["L"],
-                         "branches": es["L"], "liquidated": es["liquidated"],
+                         "branches": es["bad_debt"], "liquidated": es["liquidated"],
                          "liquidation_drop_threshold": es["threshold"], "bad_debt_usd": es["bad_debt"],
                          "thresholds": g_grid, "decision_grid": g_grid},
             "reasoning": S,
@@ -303,12 +325,12 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "exit_cost_scale": scale,
             "ltv": debt / notional,
             "evidence": {"collateral_usd": e_in["collateral"], "debt_usd": e_in["debt"],
-                         "equity_usd": derived("collateral - debt", collateral_usd="D", debt_usd="D"),
+                         "equity_usd": derived("collateral - debt", collateral_usd=g_coll, debt_usd=g_debt),
                          "lltv": e_in["lltv"], "can_hold": e_in["can_hold"],
                          "oracle_tracks_underlying": e_in["oracle_tracks_underlying"],
                          "oracle_tracks_market": e_in["oracle_tracks_market"],
                          "exit_cost_scale": e_in["scale"],
-                         "ltv": derived("debt / collateral", collateral_usd="D", debt_usd="D")},
+                         "ltv": e_in["ltv"]},
             "note": "scenarios[].decision_grid is per unit of equity: exit cost = slippage x exit_cost_scale "
                     "(collateral / equity), stay cost = p x L_used. The unsold part keeps the full "
                     "position's L; the deleveraging effect of a sale is not modelled.",

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T11:57:13+00:00",
+ "generated_at": "2026-10-10T12:09:41+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -1820,18 +1820,17 @@
    },
    "exit_cost_scale": {
     "grade": "D",
-    "source": "collateral / equity",
+    "source": "collateral / equity = 1 / (1 - ltv)",
     "basis": {
-     "collateral_usd": "D",
-     "debt_usd": "D"
+     "ltv": "D"
     }
    },
    "ltv": {
     "grade": "D",
     "source": "debt / collateral",
     "basis": {
-     "collateral_usd": "D",
-     "debt_usd": "D"
+     "debt_usd": "D",
+     "collateral_usd": "D"
     }
    }
   },
@@ -3493,8 +3492,8 @@
      "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy"
     },
     "permanent": {
-     "grade": "D",
-     "source": "assumption: full recovery by the end (anchor: see shock source)"
+     "grade": "C",
+     "source": "observed: USDe 0.98381 on 2026-02-01 -> 0.99889 on 2026-02-02 (DeFiLlama ethena-usde, data/replay_usde_prices.csv)"
     },
     "hours": {
      "grade": "C",
@@ -3502,50 +3501,55 @@
     },
     "L_low": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "L_high": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "L_used": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "branches": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "liquidated": {
@@ -3553,45 +3557,50 @@
      "source": "shock vs liquidation threshold",
      "basis": {
       "shock": "C",
-      "mechanism": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A",
+      "formula": "B",
       "oracle": "D"
      }
     },
     "liquidation_drop_threshold": {
      "grade": "D",
-     "source": "1 - debt / (collateral x LLTV)",
+     "source": "1 - ltv / LLTV",
      "basis": {
-      "mechanism": "B",
-      "debt_usd": "D",
+      "formula": "B",
+      "ltv": "D",
       "lltv": "A"
      }
     },
     "bad_debt_usd": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "thresholds": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
     "decision_grid": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -3670,8 +3679,8 @@
      "claim": "0.00% of the shock is still there at the end",
      "value": 0.0,
      "unit": "fraction",
-     "evidence": "D",
-     "source": "assumption: full recovery by the end (anchor: see shock source)"
+     "evidence": "C",
+     "source": "observed: USDe 0.98381 on 2026-02-01 -> 0.99889 on 2026-02-02 (DeFiLlama ethena-usde, data/replay_usde_prices.csv)"
     },
     {
      "step": 3,
@@ -3698,10 +3707,10 @@
      "value": 0.021857923497267784,
      "unit": "fraction",
      "evidence": "D",
-     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "source": "1 - ltv / LLTV",
      "basis": {
       "formula": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A"
      }
     },
@@ -3729,14 +3738,15 @@
      },
      "unit": "fraction of equity",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     {
@@ -3746,13 +3756,16 @@
      "value": 0.0,
      "unit": "USD",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     {
@@ -3798,10 +3811,9 @@
      "value": 9.523809523809524,
      "unit": "x",
      "evidence": "D",
-     "source": "collateral / equity",
+     "source": "collateral / equity = 1 / (1 - ltv)",
      "basis": {
-      "collateral_usd": "D",
-      "debt_usd": "D"
+      "ltv": "D"
      }
     },
     {
@@ -3811,9 +3823,10 @@
      "value": null,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
@@ -3824,9 +3837,10 @@
      "value": null,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -3841,12 +3855,12 @@
     "sell_to_cap": null
    },
    "weakest_link": {
-    "step": 2,
-    "id": "permanent",
-    "input": "recovery (permanent part of the shock)",
+    "step": 1,
+    "id": "can_hold",
+    "input": "can_hold",
     "grade": "D",
-    "source": "assumption: full recovery by the end (anchor: see shock source)",
-    "alternative": "permanent = 1",
+    "source": "assumption (--can-hold / --must-sell)",
+    "alternative": "can_hold = False",
     "thresholds_now": {
      "start_selling_p": null,
      "sell_to_cap_p": null
@@ -3875,8 +3889,8 @@
       "step": 2,
       "id": "permanent",
       "input": "recovery (permanent part of the shock)",
-      "grade": "D",
-      "source": "assumption: full recovery by the end (anchor: see shock source)",
+      "grade": "C",
+      "source": "observed: USDe 0.98381 on 2026-02-01 -> 0.99889 on 2026-02-02 (DeFiLlama ethena-usde, data/replay_usde_prices.csv)",
       "alternative": "permanent = 1",
       "L_alt": 0.15414752543380464,
       "thresholds_alt": {
@@ -5608,8 +5622,8 @@
      "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h"
     },
     "permanent": {
-     "grade": "D",
-     "source": "assumption: full recovery by the end (anchor: see shock source)"
+     "grade": "C",
+     "source": "observed: PT-reUSD 0.9708 open 04:00 -> 0.9671 close 09:00 UTC on 2026-08-25, -0.38% (Pendle hourly ohlcv, data/pendle_history_0x13285bcb.json)"
     },
     "hours": {
      "grade": "C",
@@ -5617,50 +5631,55 @@
     },
     "L_low": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "L_high": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "L_used": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "branches": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "liquidated": {
@@ -5668,45 +5687,50 @@
      "source": "shock vs liquidation threshold",
      "basis": {
       "shock": "C",
-      "mechanism": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A",
+      "formula": "B",
       "oracle": "D"
      }
     },
     "liquidation_drop_threshold": {
      "grade": "D",
-     "source": "1 - debt / (collateral x LLTV)",
+     "source": "1 - ltv / LLTV",
      "basis": {
-      "mechanism": "B",
-      "debt_usd": "D",
+      "formula": "B",
+      "ltv": "D",
       "lltv": "A"
      }
     },
     "bad_debt_usd": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     "thresholds": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
     "decision_grid": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -5785,8 +5809,8 @@
      "claim": "0.00% of the shock is still there at the end",
      "value": 0.0,
      "unit": "fraction",
-     "evidence": "D",
-     "source": "assumption: full recovery by the end (anchor: see shock source)"
+     "evidence": "C",
+     "source": "observed: PT-reUSD 0.9708 open 04:00 -> 0.9671 close 09:00 UTC on 2026-08-25, -0.38% (Pendle hourly ohlcv, data/pendle_history_0x13285bcb.json)"
     },
     {
      "step": 3,
@@ -5813,10 +5837,10 @@
      "value": 0.021857923497267784,
      "unit": "fraction",
      "evidence": "D",
-     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "source": "1 - ltv / LLTV",
      "basis": {
       "formula": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A"
      }
     },
@@ -5853,14 +5877,15 @@
      },
      "unit": "fraction of equity",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     {
@@ -5870,13 +5895,16 @@
      "value": 0.0,
      "unit": "USD",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "C"
      }
     },
     {
@@ -5922,10 +5950,9 @@
      "value": 9.523809523809524,
      "unit": "x",
      "evidence": "D",
-     "source": "collateral / equity",
+     "source": "collateral / equity = 1 / (1 - ltv)",
      "basis": {
-      "collateral_usd": "D",
-      "debt_usd": "D"
+      "ltv": "D"
      }
     },
     {
@@ -5935,9 +5962,10 @@
      "value": 0.005,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
@@ -5948,9 +5976,10 @@
      "value": 0.4,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -6007,8 +6036,8 @@
       "step": 2,
       "id": "permanent",
       "input": "recovery (permanent part of the shock)",
-      "grade": "D",
-      "source": "assumption: full recovery by the end (anchor: see shock source)",
+      "grade": "C",
+      "source": "observed: PT-reUSD 0.9708 open 04:00 -> 0.9671 close 09:00 UTC on 2026-08-25, -0.38% (Pendle hourly ohlcv, data/pendle_history_0x13285bcb.json)",
       "alternative": "permanent = 1",
       "L_alt": 0.5055805433032879,
       "thresholds_alt": {
@@ -7741,7 +7770,7 @@
     },
     "permanent": {
      "grade": "D",
-     "source": "assumption: no recovery (anchor: see shock source)"
+     "source": "assumption: no recovery"
     },
     "hours": {
      "grade": "D",
@@ -7749,50 +7778,55 @@
     },
     "L_low": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "L_high": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "L_used": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "branches": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "liquidated": {
@@ -7800,45 +7834,50 @@
      "source": "shock vs liquidation threshold",
      "basis": {
       "shock": "C",
-      "mechanism": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A",
+      "formula": "B",
       "oracle": "D"
      }
     },
     "liquidation_drop_threshold": {
      "grade": "D",
-     "source": "1 - debt / (collateral x LLTV)",
+     "source": "1 - ltv / LLTV",
      "basis": {
-      "mechanism": "B",
-      "debt_usd": "D",
+      "formula": "B",
+      "ltv": "D",
       "lltv": "A"
      }
     },
     "bad_debt_usd": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "thresholds": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
     "decision_grid": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -7918,7 +7957,7 @@
      "value": 1.0,
      "unit": "fraction",
      "evidence": "D",
-     "source": "assumption: no recovery (anchor: see shock source)"
+     "source": "assumption: no recovery"
     },
     {
      "step": 3,
@@ -7945,10 +7984,10 @@
      "value": 0.021857923497267784,
      "unit": "fraction",
      "evidence": "D",
-     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "source": "1 - ltv / LLTV",
      "basis": {
       "formula": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A"
      }
     },
@@ -7985,14 +8024,15 @@
      },
      "unit": "fraction of equity",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     {
@@ -8002,13 +8042,16 @@
      "value": 4077499.999999999,
      "unit": "USD",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     {
@@ -8054,10 +8097,9 @@
      "value": 9.523809523809524,
      "unit": "x",
      "evidence": "D",
-     "source": "collateral / equity",
+     "source": "collateral / equity = 1 / (1 - ltv)",
      "basis": {
-      "collateral_usd": "D",
-      "debt_usd": "D"
+      "ltv": "D"
      }
     },
     {
@@ -8067,9 +8109,10 @@
      "value": 0.005,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
@@ -8080,9 +8123,10 @@
      "value": 0.2,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -8140,7 +8184,7 @@
       "id": "permanent",
       "input": "recovery (permanent part of the shock)",
       "grade": "D",
-      "source": "assumption: no recovery (anchor: see shock source)",
+      "source": "assumption: no recovery",
       "alternative": "permanent = 0.5",
       "L_alt": 1.0,
       "thresholds_alt": {
@@ -9873,7 +9917,7 @@
     },
     "permanent": {
      "grade": "D",
-     "source": "assumption: no recovery (anchor: see shock source)"
+     "source": "assumption: no recovery"
     },
     "hours": {
      "grade": "D",
@@ -9881,50 +9925,55 @@
     },
     "L_low": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "L_high": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "L_used": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "branches": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "liquidated": {
@@ -9932,45 +9981,50 @@
      "source": "shock vs liquidation threshold",
      "basis": {
       "shock": "C",
-      "mechanism": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A",
+      "formula": "B",
       "oracle": "D"
      }
     },
     "liquidation_drop_threshold": {
      "grade": "D",
-     "source": "1 - debt / (collateral x LLTV)",
+     "source": "1 - ltv / LLTV",
      "basis": {
-      "mechanism": "B",
-      "debt_usd": "D",
+      "formula": "B",
+      "ltv": "D",
       "lltv": "A"
      }
     },
     "bad_debt_usd": {
      "grade": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     "thresholds": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
     "decision_grid": {
      "grade": "D",
-     "source": "decision_core.decide with L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -10050,7 +10104,7 @@
      "value": 1.0,
      "unit": "fraction",
      "evidence": "D",
-     "source": "assumption: no recovery (anchor: see shock source)"
+     "source": "assumption: no recovery"
     },
     {
      "step": 3,
@@ -10077,10 +10131,10 @@
      "value": 0.021857923497267784,
      "unit": "fraction",
      "evidence": "D",
-     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "source": "1 - ltv / LLTV",
      "basis": {
       "formula": "B",
-      "debt_usd": "D",
+      "ltv": "D",
       "lltv": "A"
      }
     },
@@ -10117,14 +10171,15 @@
      },
      "unit": "fraction of equity",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (fraction of equity)",
      "basis": {
       "shock": "C",
-      "permanent": "D",
-      "can_hold": "D",
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
       "oracle": "D",
-      "mechanism": "B",
-      "debt_usd": "D"
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     {
@@ -10134,13 +10189,16 @@
      "value": 8937767.188066337,
      "unit": "USD",
      "evidence": "D",
-     "source": "loss_model.position_loss",
+     "source": "loss_model.position_loss (USD)",
      "basis": {
+      "position_size": "D",
       "shock": "C",
-      "permanent": "D",
-      "mechanism": "B",
-      "debt_usd": "D",
-      "oracle": "D"
+      "ltv": "D",
+      "lltv": "A",
+      "formula": "B",
+      "oracle": "D",
+      "can_hold": "D",
+      "permanent": "D"
      }
     },
     {
@@ -10186,10 +10244,9 @@
      "value": 9.523809523809524,
      "unit": "x",
      "evidence": "D",
-     "source": "collateral / equity",
+     "source": "collateral / equity = 1 / (1 - ltv)",
      "basis": {
-      "collateral_usd": "D",
-      "debt_usd": "D"
+      "ltv": "D"
      }
     },
     {
@@ -10199,9 +10256,10 @@
      "value": 0.005,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     },
@@ -10212,9 +10270,10 @@
      "value": 0.2,
      "unit": "probability",
      "evidence": "D",
-     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "source": "decision_core.decide with L_used and the exit curve (costs per fraction of a position of this size)",
      "basis": {
       "exit_curve": "A",
+      "position_size": "D",
       "L_used": "D"
      }
     }
@@ -10272,7 +10331,7 @@
       "id": "permanent",
       "input": "recovery (permanent part of the shock)",
       "grade": "D",
-      "source": "assumption: no recovery (anchor: see shock source)",
+      "source": "assumption: no recovery",
       "alternative": "permanent = 0.5",
       "L_alt": 1.0,
       "thresholds_alt": {
