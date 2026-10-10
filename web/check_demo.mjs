@@ -197,6 +197,45 @@ try {
   })()`);
   gate(drawers.bad.length === 0, `2. drawers open: ${drawers.n}/${drawers.of}${drawers.bad.length ? " missing " + drawers.bad.join(", ") : ""}`);
 
+  /* 2b. no detector wording (there is no detector: team decision), on the page, in its menus and in a drawer
+     that shows an example incident */
+  const words = await p.ev(`(() => {
+    const opts = [...document.querySelectorAll("option, optgroup")].map((o) => o.label || o.textContent).join(" | ");
+    const ex = dets()[0];
+    if (ex) nodeEvidence(ex.node);
+    const txt = document.body.innerText + " | " + opts;
+    closeDrawer();
+    return (txt.match(/[^.|\\n]*(detect|anomal|sample alert)[^.|\\n]*/gi) || []).slice(0, 4);
+  })()`);
+  gate(words.length === 0, `2b. no detector wording on the page${words.length ? ": " + words.join(" / ") : ""}`);
+
+  /* 2c. off-chain dependencies in the evidence drawer (guide section 8) */
+  const off = await p.ev(`(() => {
+    const o = d.offchain || {}, out = {};
+    const links = (id) => { nodeEvidence(id); return document.querySelectorAll("#drawer a.osrc").length; };
+    out.ethena = [links("ethena"), o.USDe ? o.USDe.counts.relations : null];
+    out.susde = [links("susde"), o.sUSDe ? o.sUSDe.counts.relations : null];
+    nodeEvidence("usde");
+    const b = document.querySelector('#drawer button[data-drawer="ethena"]');
+    if (b) b.click();
+    out.usdeOpensEthena = !!b && document.querySelectorAll("#drawer a.osrc").length === out.ethena[1];
+    /* "Contracts behind it" lists one entry per member, off-chain members excluded */
+    out.offIds = [];
+    for (const k of Object.keys(NODES)) {
+      nodeEvidence(k);
+      const dt = [...document.querySelectorAll("#drawer dt")].find((x) => x.textContent === "Contracts behind it");
+      const shown = dt ? dt.nextElementSibling.innerHTML.split("<br>").length : 0;
+      const want = (NODES[k].members || []).filter((m) => !m.startsWith("offchain:")).length;
+      if (shown !== want) out.offIds.push(k + " " + shown + " shown vs " + want);
+    }
+    closeDrawer();
+    return out;
+  })()`);
+  gate(off.ethena[1] !== null && off.ethena[0] === off.ethena[1] && off.susde[0] === off.susde[1],
+    `2c. off-chain source links: ethena ${off.ethena[0]}/${off.ethena[1]}, susde ${off.susde[0]}/${off.susde[1]}`);
+  gate(off.usdeOpensEthena, "2c. the usde drawer links to Ethena's off-chain relations");
+  gate(off.offIds.length === 0, `2c. "Contracts behind it" lists on-chain members only${off.offIds.length ? ": " + off.offIds.join(", ") : ""}`);
+
   /* 3. every preset x every failure of every node, through the page's own controls */
   const sweep = await p.ev(`(() => {
     const bad = []; let n = 0;
