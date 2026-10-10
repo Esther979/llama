@@ -191,50 +191,29 @@
         e.to === "position" ? Object.assign({}, e, { to: "pos" }) : e,
       );
 
-      /* Example incidents. There is no detector (team decision): d.detected is always empty, and if it ever has
-   entries they name a dependency-graph node, mapped to one of the 9 UI nodes. The two examples are invented quick
-   picks and stay labelled as such. */
-      const uiNodeOf = (id) =>
-        NODES[id]
-          ? id
-          : Object.keys(NODES).find((k) =>
-              (NODES[k].members || []).includes(id),
-            );
-      const REAL = (d.detected || [])
-        .map((x) =>
-          Object.assign({}, x, { node: uiNodeOf(x.node), real: true }),
-        )
-        .filter((x) => x.node && fails(x.node).includes(x.fail));
-      const SAMPLE = [
-        {
-          node: "susde",
-          fail: "discount",
-          sev: 3,
-          signal: "trading 3% below its NAV",
-        },
-        {
-          node: "market",
-          fail: "drain",
-          sev: 35,
-          signal: "pool liquidity down 35% in 24 h",
-        },
-      ].filter((x) => fails(x.node).includes(x.fail));
-      const dets = () =>
-        S.feed === "real" ? REAL : S.feed === "sample" ? SAMPLE : [];
-      const sigTxt = (x) => x.signal + (x.real ? "" : COPY.examples.suffix);
-      /* Any dependency can be failed by hand; the examples are listed first. */
+      /* Past incidents (guide section 3c): real events as ready-made inputs, each with the opts the model needs
+   (duration, recovery). There is no detector and no invented incident. S.past = the selected key, null for a
+   what-if test; moving the dependency, failure or severity drops it, changing the position keeps it. */
+      const PAST = d.past_incidents || [];
+      const pastOf = () => PAST.find((x) => x.key === S.past) || null;
+      const pastOpts = () => (pastOf() ? pastOf().opts : null);
+      /* First screen (guide 3c, user decision): the PT-reUSD oracle drop on the real borrower closest to
+   liquidation, so the decision card shows a liquidation and an exit. */
+      const FIRST = PAST.find((x) => x.key === "pt_reusd_aug_2026") || PAST[0] || null;
+      /* Real-borrower presets have a fixed on-chain size (sized: false): someone else's position. */
+      const isReal = (k) => !!PRE[k] && PRE[k].sized === false;
       let CUR = { type: "none" };
       const S = {
         view: "list",
-        feed: REAL.length ? "real" : "sample",
-        det: null,
-        pos: Object.keys(PRE)[0],
-        node: "susde",
-        fail: "depeg",
-        sev: 10,
+        past: FIRST ? FIRST.key : null,
+        pos: PRE.lev_closest_to_liquidation
+          ? "lev_closest_to_liquidation"
+          : Object.keys(PRE)[0],
+        node: FIRST ? FIRST.node : "susde",
+        fail: FIRST ? FIRST.fail : "depeg",
+        sev: FIRST ? FIRST.sev : 10,
         alt: d.position.implied_apy * 100,
         book: 10,
-        replay: "",
         open: {},
         more: {},
       };
@@ -266,7 +245,8 @@
           equity = C - P.debt_usd,
           f = FAIL[S.fail],
           cy = carry();
-        const r = RM.decideAt(d, posKey, S.node, S.fail, S.sev, cy),
+        const o = pastOpts(),
+          r = RM.decideAt(d, posKey, S.node, S.fail, S.sev, cy, o),
           x = r.sell_fraction;
         const m = {
           P,
@@ -282,11 +262,11 @@
           verdict: r.verdict,
         };
         if (light) return m;
-        m.be = RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, f.min, f.max);
+        m.be = RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, f.min, f.max, 400, o);
         /* be is floored at the slider's minimum; below it, search [0, min] for the real values to print. */
         const low =
           m.be.start !== null && m.be.start <= f.min + 1e-9
-            ? RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, 0, f.min)
+            ? RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, 0, f.min, 400, o)
             : null;
         m.start = low && low.start !== null ? low.start : m.be.start;
         m.cap =
@@ -408,17 +388,12 @@
             hot = ef[L.n] !== undefined,
             open = !!S.more[L.n],
             lf = LFACT[L.n];
-          const dd = dets().filter((x) => NODES[x.node].layer === L.n),
-            hyp = org === L.n && S.det === null;
+          const past = org === L.n && !!S.past,
+            hyp = org === L.n && !S.past;
           const tags =
-            (dd.length ? `<span class="tag det">${COPY.examples.tag}</span>` : "") +
+            (past ? `<span class="tag det">${COPY.past.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
-          const fact = dd.length
-            ? dd
-                .map((x) => `<b>${NODES[x.node].label} ${x.signal}</b>`)
-                .join(" · ") +
-              (dd.some((x) => !x.real) ? COPY.examples.suffix : "")
-            : lf.fact;
+          const fact = lf.fact;
           return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}"><span class="ln">${L.n}</span>
       <button class="lrow" data-layer="${L.n}" aria-label="Test an incident at layer ${L.n}, ${L.name}">
         <span class="lt"><span class="lbl">${L.name}</span><b>${lf.head}${tags}</b><span class="fact">${fact}</span></span>
@@ -537,7 +512,6 @@
           fl = idle ? { nodes: new Set(), edges: new Set() } : flow(st),
           fxr = idle ? { o: {}, note: {} } : nodeFx(m, st, fl),
           fx = fxr.o,
-          ds = dets(),
           P = m.P;
         FLOW = fl;
         IDLE = !!idle;
@@ -545,19 +519,17 @@
           const n = NODES[id],
             hot = fl.nodes.has(id),
             org = !idle && id === S.node,
-            hyp = org && S.det === null,
-            dt = ds.find((x) => x.node === id),
+            past = org && !!S.past,
+            hyp = org && !S.past,
             g = n.evidence && n.evidence.grade;
           const tags =
-            (dt ? `<span class="tag det">${COPY.examples.tag}</span>` : "") +
+            (past ? `<span class="tag det">${COPY.past.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
           const sub = fx[id]
             ? `<b>${fx[id]}</b>`
             : fxr.note[id]
               ? fxr.note[id]
-              : dt
-                ? sigTxt(dt)
-                : GSUB[id];
+              : GSUB[id];
           return `<button class="node ${g === "D" ? "doc" : ""} ${hot ? "hot" : ""} ${org ? "origin" : ""} ${hyp ? "hyp" : ""}" data-n="${id}" data-g="${id}" style="grid-column:${GCOL[id]}"><span class="nm">${n.label}</span>${tags}<span class="sub">${sub}</span></button>`;
         };
         let h = '<svg id="edges" aria-hidden="true"></svg>';
@@ -741,8 +713,8 @@
           );
         }
         $("#decision").innerHTML =
-          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.det !== null ? COPY.examples.band : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
-    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${body}</div>`;
+          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
+    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;
       }
 
       const ymaxOf = (c) =>
@@ -873,8 +845,8 @@
                     ? `sell part from ${S0}, to the pool limit from ${K0}.`
                     : `sell to the pool limit from ${S0}.`);
         $("#sevNote").textContent =
-          (S.det !== null
-            ? COPY.examples.sevNote(sevText(dets()[S.det].sev))
+          (S.past
+            ? COPY.past.sevNote(sevText(pastOf().sev))
             : `${f.sev}: ${sevText()}.`) + zt;
         let h = "";
         if (be.start !== null || m.hasLoss) {
@@ -891,18 +863,9 @@
         $("#zoneBox").innerHTML = h;
       }
       function syncSteps() {
-        const ds = dets();
-        $("#q1").textContent = ds.length
-          ? "Which incident?"
-          : "Test a failure at…";
-        $("#n1").textContent = ds.length
-          ? COPY.examples.countNote(ds.length)
-          : COPY.examples.noneNote;
-        $("#node").innerHTML =
-          (ds.length
-            ? `<optgroup label="${COPY.examples.group}">${ds.map((x, i) => `<option value="det:${i}">${NODES[x.node].label} · ${x.signal}</option>`).join("")}</optgroup>`
-            : "") +
-          LAY.map(
+        $("#q1").textContent = "Test a failure at…";
+        $("#n1").textContent = COPY.steps.hint;
+        $("#node").innerHTML = LAY.map(
               (L) =>
                 `<optgroup label="What-if · ${L.n} · ${L.name}">${L.nodes
                   .filter((k) => fails(k).length)
@@ -910,8 +873,7 @@
                   .join("")}</optgroup>`,
             )
             .join("");
-        $("#node").value = S.det !== null ? "det:" + S.det : S.node;
-        $("#feed").value = S.feed;
+        $("#node").value = S.node;
         $("#pos").value = S.pos;
         $("#fail").innerHTML = fails(S.node)
           .map((k) => `<option value="${k}">${FAIL[k].label}</option>`)
@@ -951,63 +913,24 @@
         setFail(f, sev);
       }
       function setFail(k, sev) {
-        S.det = null;
         S.fail = k;
         S.sev = sev != null ? sev : FAIL[k].def;
         apply();
       }
-      function setDet(i) {
-        const x = dets()[i];
-        S.det = i;
-        S.replay = "";
-        S.node = x.node;
-        S.fail = x.fail;
-        S.sev = x.sev;
-        apply();
-      }
-      /* Most severe example = largest loss at its value; ties keep list order. */
-      function pickTop() {
-        const ds = dets();
-        if (!ds.length) return null;
-        let b = 0,
-          bl = -1;
-        ds.forEach((x, i) => {
-          const l = RM.inject(d, S.pos, x.node, x.fail, x.sev).loss_usd;
-          if (l > bl) {
-            bl = l;
-            b = i;
-          }
-        });
-        return b;
-      }
       const MAIN = { 2: "susde", 3: "oracle", 4: "market" };
-      const detAt = (test) => dets().findIndex(test);
-
-      /* Past incidents: severities are the backend's historical anchors. */
-      const REPLAYS = {};
-      ((FT.oracleLow || {}).anchors || []).slice(0, 1).forEach((a, i) => {
-        REPLAYS["oracle:" + i] = {
-          node: "oracle",
-          fail: "oracleLow",
-          sev: a.value,
-          opt: `Oracle manipulation · ${d.validation ? d.validation.event : a.source}`,
-          text: `<b>Pattern from ${d.validation ? d.validation.event : a.source}.</b> Severity ${trim(a.value)}% is the historical oracle drop, applied to this position's oracle.${d.validation ? ` Back-test of the liquidation rules on PT-reUSD: ${d.validation.passed}/${d.validation.total} checks pass. <a href="https://${d.validation.source}" target="_blank" rel="noopener">Incident analysis</a>` : ""}`,
-        };
-      });
-      ((FT.shortfall || {}).anchors || []).forEach((a, i) => {
-        REPLAYS["issuer:" + i] = {
-          node: "ethena",
-          fail: "shortfall",
-          sev: a.value,
-          opt: `Issuer failure · ${a.source}`,
-          text: `<b>Pattern from ${a.source}.</b> Severity ${trim(a.value)}% is the historical loss, applied to this position's issuer.`,
-        };
-      });
+      /* The past event's banner (its own element: #banner is kept for the load error). */
       function renderBanner() {
-        const b = $("#banner");
-        b.hidden = !S.replay;
-        b.innerHTML = S.replay ? REPLAYS[S.replay].text : "";
-        $("#replay").value = S.replay;
+        const b = $("#pastBanner"),
+          p = pastOf();
+        b.hidden = !p;
+        b.innerHTML = p
+          ? COPY.past.banner(
+              p.label,
+              `${FAIL[p.fail].phrase(sevText(p.sev))} at ${NODES[p.node].label}`,
+              src(p.evidence),
+            )
+          : "";
+        $("#replay").value = S.past || "";
       }
 
       function openDrawer(title, rows) {
@@ -1043,7 +966,7 @@
       }
       function nodeEvidence(id) {
         const n = NODES[id],
-          dt = dets().find((x) => x.node === id);
+          dt = pastOf() && pastOf().node === id ? pastOf() : null;
         const addr = n.address
           ? `<span class="mono" id="addrTxt">${n.address}</span> <button class="link" id="copy" data-a="${n.address}">Copy</button> · <a href="https://etherscan.io/address/${n.address}" target="_blank" rel="noopener">Open on Etherscan</a>`
           : n.market_id
@@ -1116,15 +1039,7 @@
           )
           .join("<br>");
         openDrawer(n.label, [
-          dt && [
-            COPY.examples.drawerRow,
-            dt.signal +
-              (dt.real
-                ? dt.evidence
-                  ? " · " + src(dt.evidence)
-                  : ""
-                : COPY.examples.drawerSuffix),
-          ],
+          dt && [COPY.past.drawerRow, `${dt.label} · ${src(dt.evidence)}`],
           ["Type", n.kind],
           ["Layer", n.layer + " · " + LAY[n.layer - 1].name],
           ["Contract", (n.contract_name ? n.contract_name + " · " : "") + addr],
@@ -1192,11 +1107,9 @@
         if (!t) return;
         if (t.dataset.drawer) nodeEvidence(t.dataset.drawer);
         else if (t.dataset.layer) {
-          S.replay = "";
-          const n = +t.dataset.layer,
-            i = detAt((x) => NODES[x.node].layer === n);
-          if (i >= 0) setDet(i);
-          else setNode(MAIN[n] || LAY[n - 1].nodes[0]);
+          S.past = null;
+          const n = +t.dataset.layer;
+          setNode(MAIN[n] || LAY[n - 1].nodes[0]);
         } else if (t.dataset.e) edgeEvidence(+t.dataset.e);
         else if (t.dataset.view) {
           S.view = t.dataset.view;
@@ -1209,11 +1122,9 @@
           S.more[k] = !S.more[k];
           render();
         } else if (t.dataset.n) {
-          S.replay = "";
-          const id = t.dataset.n,
-            i = detAt((x) => x.node === id);
-          if (i >= 0) setDet(i);
-          else setNode(id);
+          S.past = null;
+          const id = t.dataset.n;
+          setNode(id);
           nodeEvidence(id);
         } else if (t.id === "closeDrawer") closeDrawer();
         else if (t.id === "copy") {
@@ -1239,6 +1150,10 @@
         if (t.id === "sev") {
           const f = FAIL[S.fail];
           S.sev = isLog(f) ? posSev(f, +t.value) : +t.value;
+          if (S.past) {
+            S.past = null;
+            renderBanner();
+          }
           render();
         }
       });
@@ -1254,32 +1169,19 @@
           render();
         }
         if (t.id === "node") {
-          S.replay = "";
-          t.value.startsWith("det:")
-            ? setDet(+t.value.slice(4))
-            : setNode(t.value);
-        }
-        if (t.id === "feed") {
-          S.feed = t.value;
-          closeDrawer();
-          const i = pickTop();
-          if (i !== null) setDet(i);
-          else {
-            S.det = null;
-            apply();
-          }
+          S.past = null;
+          setNode(t.value);
         }
         if (t.id === "fail") {
-          S.replay = "";
+          S.past = null;
           setFail(t.value);
         }
         if (t.id === "replay") {
           closeDrawer();
-          S.replay = t.value;
-          if (t.value) {
-            const r = REPLAYS[t.value];
-            setNode(r.node, r.fail, r.sev);
-          } else renderBanner();
+          const p = PAST.find((x) => x.key === t.value);
+          S.past = p ? p.key : null;
+          if (p) setNode(p.node, p.fail, p.sev);
+          else apply();
         }
         if (t.id === "alt") {
           S.alt = num(0, 50, 0);
@@ -1354,16 +1256,7 @@
         .join("");
       $("#replay").innerHTML =
         '<option value="">Load a past incident pattern…</option>' +
-        Object.keys(REPLAYS)
-          .map((k) => `<option value="${k}">${REPLAYS[k].opt}</option>`)
-          .join("");
-      $("#feedLbl").textContent = COPY.examples.feedLabel;
-      $("#feed").innerHTML =
-        (REAL.length
-          ? `<option value="real">${COPY.examples.feedFromData(REAL.length)}</option>`
-          : "") +
-        `<option value="sample">${COPY.examples.feedShow(SAMPLE.length)}</option><option value="none">${COPY.examples.feedNone}</option>`;
-      $("#protoNote").textContent = COPY.examples.protoNote;
+        PAST.map((p) => `<option value="${p.key}">${p.label}</option>`).join("");
       $("#stamp").innerHTML =
         `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""} · position size <span class="asm">${money(N)}</span>`;
       $("#advNote").innerHTML =
@@ -1381,10 +1274,7 @@
         S.fail = fails(k)[0];
         S.sev = FAIL[S.fail].def;
       }
-      {
-        const i = pickTop();
-        i !== null ? setDet(i) : apply();
-      }
+      apply();
       new ResizeObserver(() => paint()).observe($("#chain"));
       if (document.fonts && document.fonts.ready)
         document.fonts.ready.then(paint);
