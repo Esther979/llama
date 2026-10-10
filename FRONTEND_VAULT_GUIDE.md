@@ -20,7 +20,7 @@ Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The
 ## 2. Rules
 
 1. A view switch in the header: "Position (PT)" (default) | "Vaults". Switching back restores the PT view exactly as it was.
-2. Every number comes from `window.VAULTS` or from `RiskModel.vaultDecide` / `vaultRun`. No formulas in page code.
+2. Every number comes from `window.VAULTS` or from `RiskModel.vaultDecideAt` / `vaultRun` (never `vaultDecide`: probability-based legacy). No formulas in page code.
 3. Vaults that are not `coverage: "full"` are listed but greyed, with their `note` (e.g. "Solana (Kamino) is outside the prototype"). Never show loss numbers for them.
 4. No probability: every number assumes the incident has happened, at the severity on the slider ("if PST loses 30%..."). Say it next to the numbers. The backend still has probability-based fields (`outcomes[].probability`, `expected_loss`, `tail_loss_95`, `break_even`) for compatibility: do not show them.
 5. Show evidence grades (A chain / API, B rule back-tested, C history by analogy, D assumption).
@@ -62,7 +62,7 @@ For `liquidity_run` there is no badge: show the run table (below).
 - Per market at the historical anchors: `inc.outcomes[].per_market` (`collateral`, `oracle_falls`, `market_bad_debt_high`, `vault_share_of_market`, `vault_loss_high`); show the shock of each row, not its probability.
 - Markets: `details[a].markets` (collateral, type, allocation, share of vault and of market, oracle kind and what it follows, borrowers, max LTV, debt within 1% of liquidation).
 - Exit: tranches from `details[a].exit` (free now / with penalty / locked for this amount: `r.free_usd`, `r.forced_usd`, `r.locked_usd`), penalty `exit.force_deallocate_penalty`, and "if all depositors withdrew, only `exit.vault_free_fraction` of the vault could leave".
-- Assumptions (editable, grade D): alternative yield (`exit.alt_apy`, per currency `VAULTS.report.assumptions.alt_apy_by_currency`), horizon (`exit.horizon_days`). Pass them to `vaultDecide`.
+- Assumptions (editable, grade D): alternative yield (`exit.alt_apy`, per currency `VAULTS.report.assumptions.alt_apy_by_currency`), horizon (`exit.horizon_days`). Pass them to `vaultDecideAt` (`altApy`, `horizonDays`).
 - What would change the answer: `RiskModel.vaultSensitivity(inc, v.exit, amount, severity)` -> `candidates` (`alternative`, `grade`, `verdict`, `flips`; the larger deposit is a `comparison`) and `weakest` (lowest-graded assumption that flips the verdict, or `null` = robust: "No tested assumption changes the answer"). The default result is also stored as `inc.sensitivity`.
 - Break-even severity: `r.severity_break_even_free` ("withdrawing pays once {symbol} loses more than this"), `r.severity_break_even_forced` ("forcing out pays once it loses more than this"); `null` = never.
 
