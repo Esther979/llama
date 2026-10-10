@@ -20,6 +20,9 @@ Current test position: **PT-sUSDe-26NOV2026** on Ethereum (Pendle market `0x47ad
 | `crawl.py` | Generic dependency crawler: from any contracts (or a Morpho market id), calls every view function that returns addresses (ABI from Etherscan), enumerates `f(uint256)` + `fLength()`, turns Morpho market ids into market nodes weighted by allocation. Edge kinds: data (followed), role, operator, infra. | `data/edges_<tag>.csv` (`src, dst, type, kind, weight_usd, evidence`), `data/nodes_<tag>.json` |
 | `oracle_types.py` | Oracle type table: decides from verified source and on-chain parameters whether a Morpho oracle follows the collateral's market price and / or its underlying (linear discount, MorphoChainlinkOracleV2, meta-oracle with timelock, Chainlink market / reported-rate feeds, constant feeds; unknown -> both branches, D). | printed / used by `vault_pipeline.py` |
 | `vault_pipeline.py` | Vault risk for a list in the RockawayX dashboard format: routes each row (ethereum + morpho = full, other ethereum protocols = dependency graph only, other chains / Solana = not covered, no numbers), and for each Morpho VaultV2: markets and allocations, every borrower, oracle types, incidents per collateral and underlying, vault loss per outcome, exit tranches, break-even and the manager sentence. | `data/vaults/<address>.json`, `data/vaults/edges_<address>.csv`, `data/vaults_report.json` |
+| `frontend_contract.py` | Builds the front-end fields of `dashboard.json`: dependency graph by layer, failure types, position presets, detector feed. | used by `export_dashboard.py` |
+| `web/risk_model.js` | JS port of the loss model, oracle rule, `decide()` and break-even for the front end. | — |
+| `check_js_port.py` | Checks `web/risk_model.js` against Python on 500 random cases (needs node). | printed |
 | `onchain_positions.py` | Every borrower of our Morpho market read on chain over JSON-RPC (`RPC_URL`, standard library only): positions, LTVs, liquidation curve vs Pendle capacity. 7 gates. | `data/morpho_positions_<id[:10]>.json` |
 | `llama_graph.py` | DeFiLlama free endpoints: protocol-level dependency edges, price and stablecoin replay data. Needs `pip install defillama-sdk`. | `data/edges_*.csv`, `data/replay_*.json` |
 | `sample_data/dashboard.sample.json` | A ready `dashboard.json` built from the 10 Oct 2026 run, so the dashboard can be built without running anything. | — |
@@ -122,6 +125,47 @@ All fractions are 0–1 (multiply by 100 for %). All money in USD.
 `lender` fields: `supply_usdc` (assumed), `total_supply_usdc`, `total_borrow_usdc`, `utilization`, `liquidity_usdc` (= supply − borrow: what can be withdrawn now), `share_of_supply`, `withdrawable_now_usdc`, `withdrawable_fraction`, `locked_fraction`, `block`, `scenarios[]` (`key`, `bad_debt_usdc_per_branch` summed over the real borrowers with loss_model, `L_low`, `L_high` = bad debt / total supply: Morpho takes bad debt from all suppliers pro rata), `incidents[]` (`key`, `outcomes[]`, `expected_loss`, `expected_loss_usdc`, `tail_loss_95`, `tail_loss_95_usdc`, `loss_on_locked_part_usdc`), `decision_text`, `evidence`.
 
 `borrowers.exit_later[]`: the `exit_later` fields for every oracle drop of `liquidation_curve` ("exit now vs later" table).
+
+## Frontend integration (Risk Desk v2)
+
+Step-by-step instructions for the front end (to hand to Claude with the page): `FRONTEND_GUIDE.md`. The Risk Desk's 9 nodes, layer rows, edges and fault-injection rules are in `ui` (`nodes`, `layers`, `edges`, `injections`); `RiskModel.inject(d, preset, node, fail, sev)` in `web/risk_model.js` computes one outcome. `export_dashboard.py --js-out file.js` writes the same data as `window.DASHBOARD = {...}` for pages opened from disk (`sample_data/dashboard.sample.js`).
+
+The front end should load `dashboard.json` (or `sample_data/dashboard.sample.json`) instead of a hard-coded snapshot, and compute losses with `web/risk_model.js`: a line-by-line port of the Python loss model, oracle rule, `decide()` and break-even. `python3 check_js_port.py` checks it against Python (500 random cases, all equal); rerun it after any change to either side.
+
+```html
+<script src="risk_model.js"></script>   <!-- global RiskModel: positionLoss, oracleFalls, decide, breakEven, slippageAt, lif -->
+```
+
+New top-level fields (additions only; nothing existing changed):
+
+| Field | Meaning |
+|---|---|
+| `oracle` | Type tree of the Morpho market's oracle at the `--positions` block (`oracle_types.classify`): `kind`, `tracks_market`, `tracks_underlying` (true / false / null), for a meta-oracle also `primary`, `backup`, `current`, `deviation_threshold`, `challenge_timelock_s`, `healing_timelock_s`, `deviation_now`, `challenged`, `tracks_*_after_switch`; `rule`, `evidence`. `null` without `--positions` |
+| `ui` | The Risk Desk's 9 nodes (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`: `label`, `kind`, `layer`, `address`, `contract_name`, `members` = ids in `dependency_graph.nodes`, `evidence`, `note`, `failures`), `layers`, `edges` (`from`, `to`, `type`, `grade`, `evidence`), `injections` (`"node:fail"` -> `type` = loss_model / exit_later / exit_only / not_modelled, `scenario_layer`, `permanent`, `hours`, `oracle` = "rule" (oracleFalls) / true / false, `note`) |
+| `dependency_graph` | Crawl of the Morpho market (`crawl.py --tag pt_susde_market`) in the brief's five layers: `block`, `layers[]` (`n`, `name`, `nodes` = ids), `nodes{id: {label, contract_name, address, kind, layer, verified, evidence}}`, `edges[]` (`from`, `to`, `type` = function that returned it, `kind` = data / role / operator / infra, `evidence`), `counts`. Adds the chain, the Pendle market (Pendle API) and the off-chain issuer (grade D, not verified) |
+| `failure_types` | `types{key}` with the front end's FAIL keys (`shortfall`, `depeg`, `oracleLow`, `stale`, `cascade`, `drain`, `halt`): `label`, `layer`, `unit`, `min`, `max`, `default_severity`, `anchors[]` (historical values with source), `model` (`type`: `loss_model`, `exit_later`, `exit_only` or `not_modelled`; `scenario_layer`, `permanent`, `hours`, `oracle` rule), `probabilities` (`outcomes` {resolved, partial, severe}, `p_severe`, `partial_to_severe_prob`, `partial_severity_share`, `evidence`). `by_node{node id: [failure keys]}` |
+| `position_presets` | `spot`, `lev_market_avg`, `lev_largest_borrower`, `lev_closest_to_liquidation`: `label`, `collateral_usd`, `debt_usd`, `lltv`, `can_hold`, `ltv`, `evidence`, `oracle_rule` |
+| `detected` | Detector feed: `[]` until the detector exists. Entry schema in `detector.schema`: `node`, `fail`, `sev`, `signal`, `block`, `evidence` (same shape as the front end's `DETECTED`) |
+
+UI element -> data:
+
+| Risk Desk element | Read / compute |
+|---|---|
+| Position select | `position_presets` (replaces the hard-coded `POS`; the levered presets use real LTVs) |
+| Snapshot stamp | `generated_at`; on-chain block in `borrowers.block` |
+| Step 1 "Which incident / test a failure at" | `dependency_graph.layers[].nodes` grouped by layer; allowed failures per node from `failure_types.by_node` |
+| Step 2 failure + severity slider | `failure_types.types[key]`: `label`, `min`, `max`, `unit`, start at `default_severity`, show `anchors` as tick marks |
+| Step 3 probability slider | start at `types[key].probabilities.p_severe` (C, with `evidence.source`); `null` = no historical default, keep the sample value and say so |
+| Loss of an outcome | `scenario = {layer: model.scenario_layer, shock: sev/100, permanent: model.permanent, hours: model.hours}`; `position = preset + {oracle_tracks_underlying / oracle_tracks_market: RiskModel.oracleFalls(oracle, layer, shock, hours)}` (for `oracleLow` set the flag to `true`); `RiskModel.positionLoss(scenario, position)` -> show `L_low`-`L_high`, decide with `L_high` |
+| Partial case | same with `shock x partial_severity_share`, probability `p_severe x partial_to_severe_prob` (replaces the `pk` / `ps` assumptions) |
+| Verdict and bars | `el = sum p x L`; `RiskModel.decide(1, el, curve, carry)` as today; for levered presets multiply curve losses by collateral / equity; exact thresholds `RiskModel.breakEven(curve, L_high, scale, carry)` |
+| Chain panel | `dependency_graph`: grade A nodes solid, D dashed; edge evidence in the drawer; role / operator / infra edges as counts ("USDe / USD reported by 16 transmitters") |
+| Oracle facts | `oracle`: e.g. "PT priced by a linear discount (no market input); switches to a USDe-tracking backup only after a deviation above 0.75% lasting 16 h" |
+| Exit panel "If this plays out" | `borrowers.exit_later[]` at the oracle drop nearest the severity (`cascade`, and `depeg` / `oracleLow` when the oracle falls): `sellable_later`, `avg_cost_later` (replaces the 50% pool-drain assumption, which stays only for `drain`) |
+| Detector feed | `detected` (empty today) |
+| Vault page | `vaults_report.json` and `vaults/<address>.json` (contract below) |
+
+Texts in Risk Desk v2 that the backend now contradicts: "oracle type Unknown", "upstream feeds not resolved", "starting probabilities are samples, not calibrated" (depeg / shortfall defaults are calibrated, C), "USDe / sUSDe not verified" (both read on chain).
 
 ## Vault report contract (`vaults_report.json`, `vaults/<address>.json`)
 

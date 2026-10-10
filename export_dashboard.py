@@ -24,6 +24,7 @@ import os
 import sys
 
 import backtest_reusd
+import frontend_contract
 import incidents as inc_mod
 import onchain_positions
 from decision_core import Scenario, decide, load_curve
@@ -123,7 +124,7 @@ def run_grid(curve, L, pstep):
 
 def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=True,
           oracle_tracks_underlying=None, oracle_tracks_market=None, positions=None, borrower=None,
-          calibration=None, lender_supply=1e6):
+          calibration=None, lender_supply=1e6, graph_tag="pt_susde_market"):
     mk = load_json(os.path.join(data_dir, "pendle_markets.json"))
     if not mk:
         sys.exit(f"missing {data_dir}/pendle_markets.json - run fetch_data.py step1")
@@ -447,6 +448,11 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                         curve, gas_pts, notional, pt_price, sz, x["shock"])})
         incidents_out.append(o)
 
+    graph = frontend_contract.dependency_graph(os.path.join(data_dir, f"edges_{graph_tag}.csv"),
+                                               os.path.join(data_dir, f"nodes_{graph_tag}.json"),
+                                               {"chain_id": m.get("chainId"), "name": m.get("name"), "market": market.lower(),
+                                                "pt": pt, "underlying": und, "expiry": str(m.get("expiry"))[:10]},
+                                               lending[0] if lending else None)
     lender_out = None
     if onc:
         lender_out = inc_mod.lender(onc, lender_supply, presets, [s.key for s in PRESETS],
@@ -502,6 +508,21 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         "scenarios": scenarios,
         **({"borrowers": borrowers_block} if borrowers_block else {}),
         "incidents": incidents_out,
+        # ---- front-end contract (README "Frontend integration") ----
+        "oracle": (onc or {}).get("oracle"),
+        "dependency_graph": graph,
+        "ui": frontend_contract.ui_view(graph, (onc or {}).get("oracle"),
+                                        {"chain_id": m.get("chainId"), "name": m.get("name"), "market": market.lower(),
+                                         "pt": pt, "underlying": und, "expiry": str(m.get("expiry"))[:10]},
+                                        lending[0] if lending else None, onc),
+        "failure_types": frontend_contract.failure_types(cal, graph),
+        "position_presets": frontend_contract.position_presets(notional, lending[0] if lending else None, onc,
+                                                               (onc or {}).get("oracle")),
+        "detected": [],
+        "detector": {"connected": False, "schema": {"node": "dependency_graph node id", "fail": "failure_types key",
+                                                     "sev": "observed severity in the failure's unit",
+                                                     "signal": "what was seen", "block": "block number",
+                                                     "evidence": "{grade, source}"}},
         **({"lender": lender_out} if lender_out else {}),
         "exit_costs": {**costs, "gas_included": gas_ok,
                        "evidence": {"costs": derived("Pendle quotes + gas", exit_curve="A", gas=e_gas["grade"]),
@@ -543,6 +564,8 @@ def main():
     ap.add_argument("--calibration", default=os.path.join(HERE, "data", "depeg_calibration.json"),
                     help="calibrate_depeg.py output (default probabilities of the depeg incident)")
     ap.add_argument("--lender-supply", type=float, default=1e6, help="USDC supplied, for the lender block")
+    ap.add_argument("--js-out", help="also write the same data as 'window.DASHBOARD = {...};' (for pages opened "
+                                     "from disk, where fetch() of a local JSON file is blocked)")
     a = ap.parse_args()
     out = build(a.market, a.curves, a.L, a.pstep, a.data_dir, a.debt, a.lltv, a.can_hold,
                 a.oracle_tracks_underlying, a.oracle_tracks_market, a.positions, a.borrower,
@@ -550,6 +573,9 @@ def main():
     path = a.out or os.path.join(a.data_dir, "dashboard.json")
     with open(path, "w") as f:
         json.dump(out, f, indent=1)
+    if a.js_out:
+        with open(a.js_out, "w") as f:
+            f.write("window.DASHBOARD = " + json.dumps(out) + ";\n")
     t = out["thresholds"]
     print(f"saved -> {path}")
     print(f"max exit now {out['max_exit_fraction']:.0%} of ${out['position']['notional_usd']:,.0f}; "

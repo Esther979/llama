@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T12:42:51+00:00",
+ "generated_at": "2026-10-10T14:45:58+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -59,49 +59,49 @@
    "fraction": 0.01,
    "usd": 100000.0,
    "loss": 0.00015346219030587527,
-   "gas_usd": 0.13666210184637265
+   "gas_usd": 0.1159943849593369
   },
   {
    "fraction": 0.05,
    "usd": 500000.0,
    "loss": 0.00019884813232873277,
-   "gas_usd": 0.18534183408782323
+   "gas_usd": 0.15731217185888133
   },
   {
    "fraction": 0.1,
    "usd": 1000000.0,
    "loss": 0.0003297370541375244,
-   "gas_usd": 0.2596599297575881
+   "gas_usd": 0.2203909748488585
   },
   {
    "fraction": 0.25,
    "usd": 2500000.0,
    "loss": 0.0008204485568178432,
-   "gas_usd": 0.3052438142191971
+   "gas_usd": 0.25908110598796297
   },
   {
    "fraction": 0.3,
    "usd": 3000000.0,
    "loss": 0.0013752540226035226,
-   "gas_usd": 0.3051631371575265
+   "gas_usd": 0.2590126298996958
   },
   {
    "fraction": 0.35,
    "usd": 3500000.0,
    "loss": 0.0021244049666646614,
-   "gas_usd": 0.30521235016514564
+   "gas_usd": 0.25905440031353877
   },
   {
    "fraction": 0.4,
    "usd": 4000000.0,
    "loss": 0.003134602082053295,
-   "gas_usd": 0.30521907325361813
+   "gas_usd": 0.2590601066542277
   },
   {
    "fraction": 0.45,
    "usd": 4500000.0,
    "loss": 0.004908559181059591,
-   "gas_usd": 0.30524515883689163
+   "gas_usd": 0.2590822472561008
   }
  ],
  "max_exit_fraction": 0.45,
@@ -3913,7 +3913,7 @@
     "p_exit_sellable": null,
     "p_sell_to_cap": null,
     "L": 0.0,
-    "exit_cost_sellable": 0.004908627013317111,
+    "exit_cost_sellable": 0.0049086167548923155,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -3928,13 +3928,13 @@
    },
    "exit_later": {
     "oracle_drop": 0.016185490170549488,
-    "pt_seized": 3092196.83843112,
-    "seized_in_position_units": 0.3070546241194922,
+    "pt_seized": 3092155.434598758,
+    "seized_in_position_units": 0.30705051272592726,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.14294537588050782,
-    "avg_cost_later": 0.012271437562343526,
-    "market_impact_of_liquidations": 0.006156473914141047,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.14294948727407275,
+    "avg_cost_later": 0.012271230681991666,
+    "market_impact_of_liquidations": 0.006156350711966206,
     "note": null,
     "condition": "if the lending oracle falls by the shock (liquidators sell first)"
    }
@@ -6007,7 +6007,7 @@
     "p_exit_sellable": null,
     "p_sell_to_cap": null,
     "L": 0.0,
-    "exit_cost_sellable": 0.004908627013317111,
+    "exit_cost_sellable": 0.0049086167548923155,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -6022,13 +6022,13 @@
    },
    "exit_later": {
     "oracle_drop": 0.02966625463535233,
-    "pt_seized": 3257996.021547581,
-    "seized_in_position_units": 0.3235184550174546,
+    "pt_seized": 3257952.397700794,
+    "seized_in_position_units": 0.323514123176832,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.12648154498254544,
-    "avg_cost_later": 0.013045047289620715,
-    "market_impact_of_liquidations": 0.0066498296925439,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.12648587682316803,
+    "avg_cost_later": 0.013044793693296999,
+    "market_impact_of_liquidations": 0.006649699884444214,
     "note": null,
     "condition": "if the lending oracle falls by the shock (liquidators sell first)"
    }
@@ -8105,11 +8105,11 @@
     ]
    },
    "break_even": {
-    "p_start": 0.000309657622648678,
-    "p_exit_sellable": 0.009817254026634222,
-    "p_sell_to_cap": 0.04174834624857485,
+    "p_start": 0.0003092442683109373,
+    "p_exit_sellable": 0.009817233509784631,
+    "p_sell_to_cap": 0.04174834623279492,
     "L": 0.5,
-    "exit_cost_sellable": 0.004908627013317111,
+    "exit_cost_sellable": 0.0049086167548923155,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -8127,7 +8127,7 @@
     "pt_seized": 7982358.346812968,
     "seized_in_position_units": 0.7926468364838362,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10207,11 +10207,11 @@
     ]
    },
    "break_even": {
-    "p_start": 0.00015502341083486316,
-    "p_exit_sellable": 0.0049147965137218905,
-    "p_sell_to_cap": 0.020900409222322645,
+    "p_start": 0.00015481647389989657,
+    "p_exit_sellable": 0.004914786242403601,
+    "p_sell_to_cap": 0.020900409214422766,
     "L": 0.9987447088831543,
-    "exit_cost_sellable": 0.004908627013317111,
+    "exit_cost_sellable": 0.0049086167548923155,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -10229,7 +10229,7 @@
     "pt_seized": 7982359.346812968,
     "seized_in_position_units": 0.7926469357836674,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10239,20 +10239,20 @@
   }
  ],
  "borrowers": {
-  "block": 26162100,
-  "block_timestamp": 1791636095,
+  "block": 26162679,
+  "block_timestamp": 1791643079,
   "market_id": "0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05",
-  "oracle_price": 0.9923609113394216,
+  "oracle_price": 0.9923741990106545,
   "lltv": 0.915,
   "lif": 1.026167265264238,
   "total_borrow_usdc": 6992654.071526,
   "discovery": {
    "mode": "auto",
    "sources": [
-    "eth_getLogs SupplyCollateral/Borrow, blocks 26152101-26162100 only (0 logs; older blocks need an archive RPC)",
+    "eth_getLogs SupplyCollateral/Borrow, blocks 26152680-26162679 only (0 logs; older blocks need an archive RPC)",
     "Morpho GraphQL marketPositions: 19 addresses (amounts not used)"
    ],
-   "logs_cover_from_block": 26152101,
+   "logs_cover_from_block": 26152680,
    "candidates": 19
   },
   "gates_passed": 7,
@@ -10261,140 +10261,140 @@
    {
     "address": "0x5c430ff6f374da12218b380d2040299ae5b6d40e",
     "collateral_pt": 3272383.785063586,
-    "collateral_usdc": 3247385.7551980466,
+    "collateral_usdc": 3247429.23755793,
     "borrow_usdc": 2941926.701332,
     "borrow_shares": "2928397225278780003",
-    "ltv": 0.905936936079398,
-    "distance_to_liquidation": 0.0099049878913684,
+    "ltv": 0.9059248057840151,
+    "distance_to_liquidation": 0.009918245044792218,
     "healthy": true
    },
    {
     "address": "0x4264ef782fc3385c62e16969618e81e079afd880",
     "collateral_pt": 15898.138666175497,
-    "collateral_usdc": 15776.691375366412,
+    "collateral_usdc": 15776.902624606224,
     "borrow_usdc": 14082.580763,
     "borrow_shares": "14017817102984410",
-    "ltv": 0.8926193983225417,
-    "distance_to_liquidation": 0.02445967396443538,
+    "ltv": 0.8926074463460465,
+    "distance_to_liquidation": 0.02447273623382895,
     "healthy": true
    },
    {
     "address": "0xe3a5bcb68ea2be70c029687bf02d3357417d8d67",
     "collateral_pt": 114321.47002506429,
-    "collateral_usdc": 113448.15817973517,
+    "collateral_usdc": 113449.67724584372,
     "borrow_usdc": 101185.977411,
     "borrow_shares": "100720638400387040",
-    "ltv": 0.8919137959973905,
-    "distance_to_liquidation": 0.025230824046567735,
+    "ltv": 0.8919018534687545,
+    "distance_to_liquidation": 0.02524387599043232,
     "healthy": true
    },
    {
     "address": "0x03babeb24619902253fdb0d5675a816879115d98",
     "collateral_pt": 413030.32398526685,
-    "collateral_usdc": 409875.148720836,
+    "collateral_usdc": 409880.63693199033,
     "borrow_usdc": 357147.515246,
     "borrow_shares": "355505047827188788",
-    "ltv": 0.8713568421032803,
-    "distance_to_liquidation": 0.0476974403242838,
+    "ltv": 0.8713451748277143,
+    "distance_to_liquidation": 0.04771019144512101,
     "healthy": true
    },
    {
     "address": "0xdf81987465681d0515058fe0a47a3bd174012730",
     "collateral_pt": 3961491.3541291417,
-    "collateral_usdc": 3931229.1704468345,
+    "collateral_usdc": 3931281.80944154,
     "borrow_usdc": 3414343.109055,
     "borrow_shares": "3398641061377110652",
-    "ltv": 0.8685179522787566,
-    "distance_to_liquidation": 0.05080005215436445,
+    "ltv": 0.8685063230152982,
+    "distance_to_liquidation": 0.050812761731914624,
     "healthy": true
    },
    {
     "address": "0x405b07642e7c4e1b9eda4ef21f16b22207d0f2cc",
     "collateral_pt": 18798.941538810985,
-    "collateral_usdc": 18655.33475767098,
+    "collateral_usdc": 18655.584551825672,
     "borrow_usdc": 16114.869929,
     "borrow_shares": "16040760077936299",
-    "ltv": 0.863821000176566,
-    "distance_to_liquidation": 0.05593333314036497,
+    "ltv": 0.8638094338042582,
+    "distance_to_liquidation": 0.05594597398441725,
     "healthy": true
    },
    {
     "address": "0xbfcdb32f9e2c6d2a7c5c8c435b3da59ff6049212",
     "collateral_pt": 19625.387394236488,
-    "collateral_usdc": 19475.46731993372,
+    "collateral_usdc": 19475.72809562923,
     "borrow_usdc": 16495.364038,
     "borrow_shares": "16419504352423581",
-    "ltv": 0.8469816804404229,
-    "distance_to_liquidation": 0.07433696126729739,
+    "ltv": 0.8469703395428853,
+    "distance_to_liquidation": 0.07434935569083578,
     "healthy": true
    },
    {
     "address": "0xde79a400ec22ff42d875e8c12819183a8e12e141",
     "collateral_pt": 121330.89275927603,
-    "collateral_usdc": 120404.03531222079,
+    "collateral_usdc": 120405.64751723417,
     "borrow_usdc": 100407.713152,
     "borrow_shares": "99945953261772889",
-    "ltv": 0.8339231562433257,
-    "distance_to_liquidation": 0.08860857241166598,
+    "ltv": 0.8339119901965414,
+    "distance_to_liquidation": 0.08862077574148486,
     "healthy": true
    },
    {
     "address": "0x91ab152b06edc600b4a123c2ea1387ebe5b83795",
     "collateral_pt": 12793.92035958004,
-    "collateral_usdc": 12696.18646763683,
+    "collateral_usdc": 12696.356469044347,
     "borrow_usdc": 10327.972861,
     "borrow_shares": "10280476074868801",
-    "ltv": 0.8134704769283662,
-    "distance_to_liquidation": 0.11096122740069281,
+    "ltv": 0.8134595847384384,
+    "distance_to_liquidation": 0.1109731314334007,
     "healthy": true
    },
    {
     "address": "0x9f72e6cd13c4da05bafb173e9ff83eb6e324315f",
     "collateral_pt": 15606.547027648327,
-    "collateral_usdc": 15487.327231218635,
+    "collateral_usdc": 15487.534605884619,
     "borrow_usdc": 12023.401898,
     "borrow_shares": "11968108090529110",
-    "ltv": 0.7763380807092256,
-    "distance_to_liquidation": 0.15154308119210325,
+    "ltv": 0.7763276857138778,
+    "distance_to_liquidation": 0.15155444184275657,
     "healthy": true
    },
    {
     "address": "0x7640aecb5a149ee48e79465f9aed3508b1efa164",
     "collateral_pt": 877.6116059341042,
-    "collateral_usdc": 870.907453066821,
+    "collateral_usdc": 870.9191144813108,
     "borrow_usdc": 579.164444,
     "borrow_shares": "576500954167251",
-    "ltv": 0.6650126163928503,
-    "distance_to_liquidation": 0.2732102553083604,
+    "ltv": 0.6650037120208692,
+    "distance_to_liquidation": 0.2732199868624381,
     "healthy": true
    },
    {
     "address": "0xa4818ef55ac5b27308808c633dc6e00a8361a810",
     "collateral_pt": 16199.974258248803,
-    "collateral_usdc": 16076.221218590954,
+    "collateral_usdc": 16076.436478522877,
     "borrow_usdc": 8019.430055,
     "borrow_shares": "7982549908190356",
-    "ltv": 0.4988380009181589,
-    "distance_to_liquidation": 0.45482185692004495,
+    "ltv": 0.4988313215875584,
+    "distance_to_liquidation": 0.45482915673490887,
     "healthy": true
    },
    {
     "address": "0xb91745297802ad852b286809d25199c7467584a8",
     "collateral_pt": 1.0,
-    "collateral_usdc": 0.9923609113394216,
+    "collateral_usdc": 0.9923741990106545,
     "borrow_usdc": 0.271348,
     "borrow_shares": "270100000000",
-    "ltv": 0.2734368080195267,
-    "distance_to_liquidation": 0.7011619584486047,
+    "ltv": 0.27343314676109054,
+    "distance_to_liquidation": 0.7011659598239448,
     "healthy": true
    }
   ],
   "distribution": {
    "n_borrowers": 13,
-   "ltv_min": 0.2734368080195267,
-   "ltv_median": 0.8469816804404229,
-   "ltv_max": 0.905936936079398,
-   "ltv_debt_weighted": 0.8835538078404368,
+   "ltv_min": 0.27343314676109054,
+   "ltv_median": 0.8469703395428853,
+   "ltv_max": 0.9059248057840151,
+   "ltv_debt_weighted": 0.8835419772501951,
    "distance_buckets": [
     {
      "distance_from": 0,
@@ -10454,7 +10454,7 @@
     "oracle_drop": 0.01,
     "n_liquidatable": 1,
     "debt_liquidatable_usdc": 2941926.701332,
-    "pt_seized": 3072876.885754837,
+    "pt_seized": 3072835.7406123723,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10462,7 +10462,7 @@
     "oracle_drop": 0.015,
     "n_liquidatable": 1,
     "debt_liquidatable_usdc": 2941926.701332,
-    "pt_seized": 3088475.245581004,
+    "pt_seized": 3088433.8915799474,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10470,7 +10470,7 @@
     "oracle_drop": 0.02,
     "n_liquidatable": 1,
     "debt_liquidatable_usdc": 2941926.701332,
-    "pt_seized": 3104232.7723441725,
+    "pt_seized": 3104191.207353315,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10478,7 +10478,7 @@
     "oracle_drop": 0.025,
     "n_liquidatable": 2,
     "debt_liquidatable_usdc": 2956009.282095,
-    "pt_seized": 3135087.6340393447,
+    "pt_seized": 3135045.655908707,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10486,7 +10486,7 @@
     "oracle_drop": 0.03,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3259116.9917230774,
+    "pt_seized": 3259073.3528667483,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10494,7 +10494,7 @@
     "oracle_drop": 0.035,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3276003.6082605026,
+    "pt_seized": 3275959.74329611,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10502,7 +10502,7 @@
     "oracle_drop": 0.04,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3293066.1270535267,
+    "pt_seized": 3293022.0336257773,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10510,7 +10510,7 @@
     "oracle_drop": 0.045,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3310307.310964801,
+    "pt_seized": 3310262.9866814096,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10518,7 +10518,7 @@
     "oracle_drop": 0.05,
     "n_liquidatable": 4,
     "debt_liquidatable_usdc": 3414342.774752,
-    "pt_seized": 3716481.8902884736,
+    "pt_seized": 3716432.12741722,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10526,7 +10526,7 @@
     "oracle_drop": 0.055,
     "n_liquidatable": 5,
     "debt_liquidatable_usdc": 6828685.883807,
-    "pt_seized": 7472291.997079011,
+    "pt_seized": 7472191.944740374,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10534,7 +10534,7 @@
     "oracle_drop": 0.06,
     "n_liquidatable": 6,
     "debt_liquidatable_usdc": 6844800.753736,
-    "pt_seized": 7529765.729640262,
+    "pt_seized": 7529664.9077410465,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10542,7 +10542,7 @@
     "oracle_drop": 0.065,
     "n_liquidatable": 6,
     "debt_liquidatable_usdc": 6844800.753736,
-    "pt_seized": 7570031.856536735,
+    "pt_seized": 7569930.4954829775,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10550,7 +10550,7 @@
     "oracle_drop": 0.07,
     "n_liquidatable": 6,
     "debt_liquidatable_usdc": 6844800.753736,
-    "pt_seized": 7610730.95253962,
+    "pt_seized": 7610629.046533962,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10558,48 +10558,48 @@
     "oracle_drop": 0.075,
     "n_liquidatable": 7,
     "debt_liquidatable_usdc": 6861296.117774,
-    "pt_seized": 7653885.378396744,
-    "bad_debt_usdc": 14692.589274540544,
+    "pt_seized": 7653826.71105862,
+    "bad_debt_usdc": 14653.39373181155,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.08,
     "n_liquidatable": 7,
     "debt_liquidatable_usdc": 6861296.117774,
-    "pt_seized": 7677697.887056163,
-    "bad_debt_usdc": 30515.47636674298,
+    "pt_seized": 7677638.900873811,
+    "bad_debt_usdc": 30476.492691813037,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.085,
     "n_liquidatable": 7,
     "debt_liquidatable_usdc": 6861296.117774,
-    "pt_seized": 7701722.091852176,
-    "bad_debt_usdc": 46381.32309227232,
+    "pt_seized": 7701664.527602814,
+    "bad_debt_usdc": 46341.008419179605,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.09,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7839440.614054168,
-    "bad_debt_usdc": 62833.858263931514,
+    "pt_seized": 7839381.205784227,
+    "bad_debt_usdc": 62793.7638895994,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.095,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7863953.526873502,
-    "bad_debt_usdc": 79286.39343559167,
+    "pt_seized": 7863893.790381074,
+    "bad_debt_usdc": 79246.5193600192,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.1,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7888738.805390827,
-    "bad_debt_usdc": 95738.92860725134,
+    "pt_seized": 7888678.737028997,
+    "bad_debt_usdc": 95699.27483043852,
     "seized_exceeds_capacity": true
    }
   ],
@@ -10610,117 +10610,117 @@
     "pt_seized": 0.0,
     "seized_in_position_units": 0.0,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.45,
-    "avg_cost_later": 0.004908627013317111,
+    "avg_cost_later": 0.0049086167548923155,
     "market_impact_of_liquidations": 0.0,
     "note": null
    },
    {
     "oracle_drop": 0.01,
-    "pt_seized": 3072876.885754837,
-    "seized_in_position_units": 0.30513615607978223,
+    "pt_seized": 3072835.7406123723,
+    "seized_in_position_units": 0.3051320703740804,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.14486384392021778,
-    "avg_cost_later": 0.012189083185925915,
-    "market_impact_of_liquidations": 0.006098985028417044,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.1448679296259196,
+    "avg_cost_later": 0.012188880783248264,
+    "market_impact_of_liquidations": 0.0060988625960057,
     "note": null
    },
    {
     "oracle_drop": 0.015,
-    "pt_seized": 3088475.245581004,
-    "seized_in_position_units": 0.3066850705776491,
+    "pt_seized": 3088433.8915799474,
+    "seized_in_position_units": 0.30668096413232443,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.1433149294223509,
-    "avg_cost_later": 0.01225546206963054,
-    "market_impact_of_liquidations": 0.0061453998587509065,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.14331903586767558,
+    "avg_cost_later": 0.012255256065023538,
+    "market_impact_of_liquidations": 0.006145276804855263,
     "note": null
    },
    {
     "oracle_drop": 0.02,
-    "pt_seized": 3104232.7723441725,
-    "seized_in_position_units": 0.30824979032549427,
+    "pt_seized": 3104191.207353315,
+    "seized_in_position_units": 0.308245662928918,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.14175020967450574,
-    "avg_cost_later": 0.012323476254289386,
-    "market_impact_of_liquidations": 0.006192288309802499,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.14175433707108204,
+    "avg_cost_later": 0.012323266497251824,
+    "market_impact_of_liquidations": 0.0061921646280808105,
     "note": null
    },
    {
     "oracle_drop": 0.025,
-    "pt_seized": 3135087.6340393447,
-    "seized_in_position_units": 0.31131367288378475,
+    "pt_seized": 3135045.655908707,
+    "seized_in_position_units": 0.311309504462498,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.13868632711621526,
-    "avg_cost_later": 0.012459567727056396,
-    "market_impact_of_liquidations": 0.006284100730243936,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.138690495537502,
+    "avg_cost_later": 0.012459350271130855,
+    "market_impact_of_liquidations": 0.006283975819174233,
     "note": null
    },
    {
     "oracle_drop": 0.03,
-    "pt_seized": 3259116.9917230774,
-    "seized_in_position_units": 0.323629767166671,
+    "pt_seized": 3259073.3528667483,
+    "seized_in_position_units": 0.32362543383560344,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.126370232833329,
-    "avg_cost_later": 0.01305074495537041,
-    "market_impact_of_liquidations": 0.006653165276610754,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.12637456616439657,
+    "avg_cost_later": 0.013050490982423321,
+    "market_impact_of_liquidations": 0.006653035423848336,
     "note": null
    },
    {
     "oracle_drop": 0.035,
-    "pt_seized": 3276003.6082605026,
-    "seized_in_position_units": 0.3253066053385191,
+    "pt_seized": 3275959.74329611,
+    "seized_in_position_units": 0.32530224955495896,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.12469339466148094,
-    "avg_cost_later": 0.013137446791724088,
-    "market_impact_of_liquidations": 0.006703413472589851,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.12469775044504106,
+    "avg_cost_later": 0.013137187026615498,
+    "market_impact_of_liquidations": 0.0067032829470151925,
     "note": null
    },
    {
     "oracle_drop": 0.04,
-    "pt_seized": 3293066.1270535267,
-    "seized_in_position_units": 0.32700091057465724,
+    "pt_seized": 3293022.0336257773,
+    "seized_in_position_units": 0.32699653210472435,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.12299908942534277,
-    "avg_cost_later": 0.013226757067394871,
-    "market_impact_of_liquidations": 0.006754185087277063,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.12300346789527566,
+    "avg_cost_later": 0.013226491215173964,
+    "market_impact_of_liquidations": 0.00675405388188173,
     "note": null
    },
    {
     "oracle_drop": 0.045,
-    "pt_seized": 3310307.310964801,
-    "seized_in_position_units": 0.32871295722688054,
+    "pt_seized": 3310262.9866814096,
+    "seized_in_position_units": 0.32870855583302133,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.12128704277311947,
-    "avg_cost_later": 0.013318816649858315,
-    "market_impact_of_liquidations": 0.00680548834190867,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.12129144416697868,
+    "avg_cost_later": 0.01331854439357307,
+    "market_impact_of_liquidations": 0.006805356449574073,
     "note": null
    },
    {
     "oracle_drop": 0.05,
-    "pt_seized": 3716481.8902884736,
-    "seized_in_position_units": 0.36904602439488166,
+    "pt_seized": 3716432.12741722,
+    "seized_in_position_units": 0.36904108295016574,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
-    "sellable_later": 0.08095397560511836,
-    "avg_cost_later": 0.015846792900362273,
-    "market_impact_of_liquidations": 0.010066414042057195,
+    "avg_cost_now": 0.0049086167548923155,
+    "sellable_later": 0.08095891704983427,
+    "avg_cost_later": 0.015846390705708324,
+    "market_impact_of_liquidations": 0.01006621436872928,
     "note": null
    },
    {
     "oracle_drop": 0.055,
-    "pt_seized": 7472291.997079011,
-    "seized_in_position_units": 0.7419973340501475,
+    "pt_seized": 7472191.944740374,
+    "seized_in_position_units": 0.7419873988698087,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10728,10 +10728,10 @@
    },
    {
     "oracle_drop": 0.06,
-    "pt_seized": 7529765.729640262,
-    "seized_in_position_units": 0.7477044659923988,
+    "pt_seized": 7529664.9077410465,
+    "seized_in_position_units": 0.7476944543948246,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10739,10 +10739,10 @@
    },
    {
     "oracle_drop": 0.065,
-    "pt_seized": 7570031.856536735,
-    "seized_in_position_units": 0.7517028855966363,
+    "pt_seized": 7569930.4954829775,
+    "seized_in_position_units": 0.7516928204611072,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10750,10 +10750,10 @@
    },
    {
     "oracle_drop": 0.07,
-    "pt_seized": 7610730.95253962,
-    "seized_in_position_units": 0.7557442989600591,
+    "pt_seized": 7610629.046533962,
+    "seized_in_position_units": 0.7557341797108981,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10761,10 +10761,10 @@
    },
    {
     "oracle_drop": 0.075,
-    "pt_seized": 7653885.378396744,
-    "seized_in_position_units": 0.7600295261635688,
+    "pt_seized": 7653826.71105862,
+    "seized_in_position_units": 0.7600237005067957,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10772,10 +10772,10 @@
    },
    {
     "oracle_drop": 0.08,
-    "pt_seized": 7677697.887056163,
-    "seized_in_position_units": 0.7623941042540986,
+    "pt_seized": 7677638.900873811,
+    "seized_in_position_units": 0.7623882469361475,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10783,10 +10783,10 @@
    },
    {
     "oracle_drop": 0.085,
-    "pt_seized": 7701722.091852176,
-    "seized_in_position_units": 0.7647797037352598,
+    "pt_seized": 7701664.527602814,
+    "seized_in_position_units": 0.7647739876150146,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10794,10 +10794,10 @@
    },
    {
     "oracle_drop": 0.09,
-    "pt_seized": 7839440.614054168,
-    "seized_in_position_units": 0.7784551297441938,
+    "pt_seized": 7839381.205784227,
+    "seized_in_position_units": 0.7784492305130164,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10805,10 +10805,10 @@
    },
    {
     "oracle_drop": 0.095,
-    "pt_seized": 7863953.526873502,
-    "seized_in_position_units": 0.7808892578495811,
+    "pt_seized": 7863893.790381074,
+    "seized_in_position_units": 0.780883326025966,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10816,10 +10816,10 @@
    },
    {
     "oracle_drop": 0.1,
-    "pt_seized": 7888738.805390827,
-    "seized_in_position_units": 0.7833504318228057,
+    "pt_seized": 7888678.737028997,
+    "seized_in_position_units": 0.783344467044615,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908627013317111,
+    "avg_cost_now": 0.0049086167548923155,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10830,23 +10830,23 @@
   "evidence": {
    "list": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100 (morpho_positions_0x5613b170.json)",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679 (morpho_positions_0x5613b170.json)",
+    "block": 26162679
    },
    "distribution": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100 (morpho_positions_0x5613b170.json)",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679 (morpho_positions_0x5613b170.json)",
+    "block": 26162679
    },
    "oracle_price": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100 (morpho_positions_0x5613b170.json)",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679 (morpho_positions_0x5613b170.json)",
+    "block": 26162679
    },
    "lltv": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100 (morpho_positions_0x5613b170.json)",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679 (morpho_positions_0x5613b170.json)",
+    "block": 26162679
    },
    "capacity_pt": {
     "grade": "A",
@@ -10858,7 +10858,7 @@
    },
    "liquidation_curve": {
     "grade": "B",
-    "source": "onchain_positions.liquidation_curve: borrowers at block 26162100, full liquidation, LIF",
+    "source": "onchain_positions.liquidation_curve: borrowers at block 26162679, full liquidation, LIF",
     "basis": {
      "borrowers": "A",
      "formula": "B"
@@ -10980,18 +10980,18 @@
    "break_even": {
     "worst_outcome": "severe",
     "L_worst": 0.9987447088831543,
-    "exit_cost_sellable": 0.004908627013317111,
-    "exit_cost_value": 0.004908627013317111,
+    "exit_cost_sellable": 0.0049086167548923155,
+    "exit_cost_value": 0.0049086167548923155,
     "exit_cost_scale": 1.0,
     "sellable_fraction": 0.45,
-    "p_worst_alone": 0.0049147965137218905,
+    "p_worst_alone": 0.004914786242403601,
     "p_worst_given_default_partial": 0.0,
     "p_partial": 0.2668711656441718,
     "alternatives": [
      {
       "preset": "issuer_half",
       "L": 0.5,
-      "p_worst_alone": 0.009817254026634222
+      "p_worst_alone": 0.009817233509784631
      }
     ]
    },
@@ -11047,25 +11047,25 @@
     {
      "outcome": "resolved",
      "oracle_drop": 0.016185490170549488,
-     "pt_seized": 3092196.83843112,
-     "seized_in_position_units": 0.3070546241194922,
+     "pt_seized": 3092155.434598758,
+     "seized_in_position_units": 0.30705051272592726,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908627013317111,
-     "sellable_later": 0.14294537588050782,
-     "avg_cost_later": 0.012271437562343526,
-     "market_impact_of_liquidations": 0.006156473914141047,
+     "avg_cost_now": 0.0049086167548923155,
+     "sellable_later": 0.14294948727407275,
+     "avg_cost_later": 0.012271230681991666,
+     "market_impact_of_liquidations": 0.006156350711966206,
      "note": null
     },
     {
      "outcome": "partial",
      "oracle_drop": 0.022665999999999964,
-     "pt_seized": 3112700.5884347507,
-     "seized_in_position_units": 0.30909064303399286,
+     "pt_seized": 3112658.910061707,
+     "seized_in_position_units": 0.30908650437858454,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908627013317111,
-     "sellable_later": 0.14090935696600715,
-     "avg_cost_later": 0.01236043476162895,
-     "market_impact_of_liquidations": 0.00621748533381803,
+     "avg_cost_now": 0.0049086167548923155,
+     "sellable_later": 0.14091349562141547,
+     "avg_cost_later": 0.012360222939073873,
+     "market_impact_of_liquidations": 0.006217361314713755,
      "note": null
     },
     {
@@ -11074,7 +11074,7 @@
      "pt_seized": 7982359.346812968,
      "seized_in_position_units": 0.7926469357836674,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908627013317111,
+     "avg_cost_now": 0.0049086167548923155,
      "sellable_later": 0.0,
      "avg_cost_later": null,
      "market_impact_of_liquidations": null,
@@ -11158,8 +11158,8 @@
    "break_even": {
     "worst_outcome": "partial",
     "L_worst": 0.0,
-    "exit_cost_sellable": 0.004908627013317111,
-    "exit_cost_value": 0.004908627013317111,
+    "exit_cost_sellable": 0.0049086167548923155,
+    "exit_cost_value": 0.0049086167548923155,
     "exit_cost_scale": 1.0,
     "sellable_fraction": 0.45,
     "p_worst_alone": null,
@@ -11207,18 +11207,1940 @@
     {
      "outcome": "partial",
      "oracle_drop": 0.02966625463535233,
-     "pt_seized": 3257996.021547581,
-     "seized_in_position_units": 0.3235184550174546,
+     "pt_seized": 3257952.397700794,
+     "seized_in_position_units": 0.323514123176832,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908627013317111,
-     "sellable_later": 0.12648154498254544,
-     "avg_cost_later": 0.013045047289620715,
-     "market_impact_of_liquidations": 0.0066498296925439,
+     "avg_cost_now": 0.0049086167548923155,
+     "sellable_later": 0.12648587682316803,
+     "avg_cost_later": 0.013044793693296999,
+     "market_impact_of_liquidations": 0.006649699884444214,
      "note": null
     }
    ]
   }
  ],
+ "oracle": {
+  "address": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+  "contract_name": "MetaOracleDeviationTimelock",
+  "kind": "meta_oracle_timelock",
+  "primary": {
+   "address": "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+   "contract_name": "MorphoChainlinkOracleV2",
+   "kind": "morpho_chainlink_v2",
+   "tracks_market": false,
+   "tracks_underlying": false,
+   "parts": {
+    "BASE_FEED_1": {
+     "address": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+     "contract_name": "PendleSparkLinearDiscountOracle",
+     "kind": "linear_discount",
+     "tracks_market": false,
+     "tracks_underlying": false,
+     "base_discount_per_year": 0.06,
+     "maturity": 1795651200,
+     "update": "computed every block from time to maturity",
+     "rule": "1 - timeLeft x baseDiscountPerYear / 365 days: no market or underlying input",
+     "evidence": {
+      "grade": "B",
+      "source": "Etherscan verified source (PendleSparkLinearDiscountOracle); eth_call @ block 26162679"
+     }
+    }
+   },
+   "loan_side": [],
+   "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
+   "evidence": {
+    "grade": "B",
+    "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162679"
+   }
+  },
+  "backup": {
+   "address": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+   "contract_name": "MorphoChainlinkOracleV2",
+   "kind": "morpho_chainlink_v2",
+   "tracks_market": false,
+   "tracks_underlying": true,
+   "parts": {
+    "BASE_FEED_1": {
+     "address": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+     "contract_name": "PendleSparkLinearDiscountOracle",
+     "kind": "linear_discount",
+     "tracks_market": false,
+     "tracks_underlying": false,
+     "base_discount_per_year": 0.06,
+     "maturity": 1795651200,
+     "update": "computed every block from time to maturity",
+     "rule": "1 - timeLeft x baseDiscountPerYear / 365 days: no market or underlying input",
+     "evidence": {
+      "grade": "B",
+      "source": "Etherscan verified source (PendleSparkLinearDiscountOracle); eth_call @ block 26162679"
+     }
+    },
+    "BASE_FEED_2": {
+     "address": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+     "contract_name": "EACAggregatorProxy",
+     "kind": "market_price_feed",
+     "description": "USDe / USD",
+     "last_update": {
+      "answer": 99959682,
+      "updated_at": 1791604751,
+      "age_seconds": 38328
+     },
+     "prices": "usde",
+     "tracks_market": true,
+     "tracks_underlying": true,
+     "rule": "Chainlink price feed of the described pair: follows its market price",
+     "evidence": {
+      "grade": "C",
+      "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162679; classified from description 'USDe / USD'"
+     }
+    },
+    "QUOTE_FEED_1": {
+     "address": "0xc3866d726c204c0836e0677a31973c649888973d",
+     "contract_name": "DummyFeed",
+     "kind": "constant",
+     "tracks_market": false,
+     "tracks_underlying": false,
+     "last_update": {
+      "answer": 1000000000000,
+      "updated_at": 1791643079,
+      "age_seconds": 0
+     },
+     "rule": "constant answer",
+     "evidence": {
+      "grade": "C",
+      "source": "Etherscan verified source (DummyFeed); eth_call @ block 26162679"
+     }
+    }
+   },
+   "loan_side": [
+    "QUOTE_FEED_1"
+   ],
+   "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
+   "evidence": {
+    "grade": "C",
+    "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162679"
+   }
+  },
+  "current": "primary",
+  "deviation_threshold": 0.0075,
+  "challenge_timelock_s": 57600,
+  "healing_timelock_s": 86400,
+  "deviation_now": 0.000403342619677401,
+  "challenged": false,
+  "tracks_market": false,
+  "tracks_underlying": false,
+  "tracks_market_after_switch": false,
+  "tracks_underlying_after_switch": true,
+  "rule": "current oracle now; backup only after deviation > threshold persists for the challenge timelock and acceptChallenge() is called",
+  "evidence": {
+   "grade": "C",
+   "source": "Etherscan verified source (MetaOracleDeviationTimelock); eth_call @ block 26162679"
+  }
+ },
+ "dependency_graph": {
+  "block": 26162694,
+  "source": "edges_pt_susde_market.csv",
+  "layers": [
+   {
+    "n": 1,
+    "name": "Settlement chain",
+    "nodes": [
+     "chain:1"
+    ]
+   },
+   {
+    "n": 2,
+    "name": "Underlying yield source and its issuer",
+    "nodes": [
+     "0xbf98480425a29197e5d99d003017f63a1e595d02",
+     "0x2ad631f72fb16d91c4953a7f4260a97c2fe2f31e",
+     "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+     "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3",
+     "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94",
+     "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+     "0x7fc7c91d556b400afa565013e3f32055a0713425",
+     "offchain:ethena"
+    ]
+   },
+   {
+    "n": 3,
+    "name": "Oracle pricing the asset",
+    "nodes": [
+     "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+     "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+     "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+     "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+     "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+     "0x21f73d42eb58ba49ddb685dc29d3bf5c0f0373ca",
+     "0xc3866d726c204c0836e0677a31973c649888973d",
+     "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+     "0x9db83cef9f68b63989e4e82d65d549e7ff2acda9",
+     "0x514910771af9ca656af840dff83e8264ecf986ca",
+     "0x641b698ad1c6e503470520b0eecb472c0589dfe6",
+     "0x97360a89b5adb7d82dbde6c66a49de8a48d550e6",
+     "0x2dbbd12bf0f6a23cf4455cc6be874b7a246288ce",
+     "0xfe31f3ecfde29fc4915d80eb8a9d67bff14180b3",
+     "0x0c46dc0ba85eab5a515f819f1a705ed324da687b",
+     "0x30d872350fe74f47c85847d6784b42f9b0816f04",
+     "0x7b740d24396b09f992b655a590139d7fbb5c73c8",
+     "0xe7b837a55df42ecc95bf893c3c31750264932596",
+     "0xc917e3bf6c211b326ffd4ed13e7d9a67682095ca",
+     "0x990cfbbdc5aeb794b657b4309017f84479e8eb7d",
+     "0x9a5b545aa8b6289288e529c4099b0cca62bcb708",
+     "0x522bb49be4fb6e3cec18df911c2a66457e6fc3e2",
+     "0xd8d2297bdf4a84569bcec83c92a81549be9c51e6",
+     "0x1d36a4c2ab15ccd29b312991176d85622299cc11",
+     "0xba4555a80e47477bbf23b721563d38b10eb65dfa",
+     "0x87b331d3bb9cf70dd85c3dc606b684a0bd61c772",
+     "0xae80a59ba821544cb508808942c20c11442d8a9b"
+    ]
+   },
+   {
+    "n": 4,
+    "name": "PT market and its AMM curve",
+    "nodes": [
+     "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+     "0x3e6eba46abc5ab18ed95f6667d8b2fd4020e4637",
+     "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+     "pendle_market:0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e"
+    ]
+   },
+   {
+    "n": 5,
+    "name": "Lending market holding it as collateral",
+    "nodes": [
+     "morpho_market:0x5613b170",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "0x0a06be16275b95a7d2567fbdae118b36c7da78f9",
+     "0xe982615d461dd5cd06575bbea87624fda4e3de17",
+     "0xfcb19e6a322b27c06842a71e8c725399f049ae3a",
+     "0x4914f61d25e5c567143774b76edbf4d5109a8566",
+     "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+     "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+     "0xcba28b38103307ec8da98377fff9816c164f9afa"
+    ]
+   }
+  ],
+  "nodes": {
+   "morpho_market:0x5613b170": {
+    "id": "morpho_market:0x5613b170",
+    "label": "Morpho Blue market",
+    "contract_name": "Morpho Blue market",
+    "address": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+    "kind": "morpho_market",
+    "layer": 5,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+    "id": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "label": "USDC",
+    "contract_name": "FiatTokenV2_2",
+    "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "kind": "contract",
+    "layer": 5,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x0a06be16275b95a7d2567fbdae118b36c7da78f9": {
+    "id": "0x0a06be16275b95a7d2567fbdae118b36c7da78f9",
+    "label": "0x0a06be16...",
+    "contract_name": null,
+    "address": "0x0a06be16275b95a7d2567fbdae118b36c7da78f9",
+    "kind": "role_holder",
+    "layer": 5,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0xe982615d461dd5cd06575bbea87624fda4e3de17": {
+    "id": "0xe982615d461dd5cd06575bbea87624fda4e3de17",
+    "label": "0xe982615d...",
+    "contract_name": null,
+    "address": "0xe982615d461dd5cd06575bbea87624fda4e3de17",
+    "kind": "role_holder",
+    "layer": 5,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0xfcb19e6a322b27c06842a71e8c725399f049ae3a": {
+    "id": "0xfcb19e6a322b27c06842a71e8c725399f049ae3a",
+    "label": "0xfcb19e6a...",
+    "contract_name": null,
+    "address": "0xfcb19e6a322b27c06842a71e8c725399f049ae3a",
+    "kind": "role_holder",
+    "layer": 5,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0x4914f61d25e5c567143774b76edbf4d5109a8566": {
+    "id": "0x4914f61d25e5c567143774b76edbf4d5109a8566",
+    "label": "0x4914f61d...",
+    "contract_name": null,
+    "address": "0x4914f61d25e5c567143774b76edbf4d5109a8566",
+    "kind": "role_holder",
+    "layer": 5,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0xb195b618ea52b77cb2a58846f452f59f8dfa9390": {
+    "id": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "label": "PT-sUSDe (2026-11-26)",
+    "contract_name": "PendlePrincipalToken",
+    "address": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "kind": "contract",
+    "layer": 4,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x3e6eba46abc5ab18ed95f6667d8b2fd4020e4637": {
+    "id": "0x3e6eba46abc5ab18ed95f6667d8b2fd4020e4637",
+    "label": "0x3e6eba46...",
+    "contract_name": null,
+    "address": "0x3e6eba46abc5ab18ed95f6667d8b2fd4020e4637",
+    "kind": "infra_holder",
+    "layer": 4,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (infra_holder)"
+    }
+   },
+   "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08": {
+    "id": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "label": "MetaOracleDeviationTimelock",
+    "contract_name": "MetaOracleDeviationTimelock",
+    "address": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x870ac11d48b15db9a138cf899d20f13f79ba00bc": {
+    "id": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+    "label": "AdaptiveCurveIrm",
+    "contract_name": "AdaptiveCurveIrm",
+    "address": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+    "kind": "contract",
+    "layer": 5,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xbf98480425a29197e5d99d003017f63a1e595d02": {
+    "id": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "label": "PendleSUSDESY",
+    "contract_name": "PendleSUSDESY",
+    "address": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "kind": "contract",
+    "layer": 2,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x2ad631f72fb16d91c4953a7f4260a97c2fe2f31e": {
+    "id": "0x2ad631f72fb16d91c4953a7f4260a97c2fe2f31e",
+    "label": "0x2ad631f7...",
+    "contract_name": null,
+    "address": "0x2ad631f72fb16d91c4953a7f4260a97c2fe2f31e",
+    "kind": "role_holder",
+    "layer": 2,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44": {
+    "id": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+    "label": "PendleYieldToken",
+    "contract_name": "PendleYieldToken",
+    "address": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+    "kind": "contract",
+    "layer": 4,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465": {
+    "id": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+    "label": "MorphoChainlinkOracleV2",
+    "contract_name": "MorphoChainlinkOracleV2",
+    "address": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d": {
+    "id": "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+    "label": "MorphoChainlinkOracleV2",
+    "contract_name": "MorphoChainlinkOracleV2",
+    "address": "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb": {
+    "id": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+    "label": "Morpho",
+    "contract_name": "Morpho",
+    "address": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+    "kind": "contract",
+    "layer": 5,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xcba28b38103307ec8da98377fff9816c164f9afa": {
+    "id": "0xcba28b38103307ec8da98377fff9816c164f9afa",
+    "label": "0xcba28b38...",
+    "contract_name": null,
+    "address": "0xcba28b38103307ec8da98377fff9816c164f9afa",
+    "kind": "role_holder",
+    "layer": 5,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0x4c9edd5852cd905f086c759e8383e09bff1e68b3": {
+    "id": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "label": "USDe",
+    "contract_name": "USDe",
+    "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "kind": "contract",
+    "layer": 2,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3": {
+    "id": "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3",
+    "label": "0xe3490297...",
+    "contract_name": null,
+    "address": "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3",
+    "kind": "role_holder",
+    "layer": 2,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94": {
+    "id": "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94",
+    "label": "0xe8dc0fab...",
+    "contract_name": null,
+    "address": "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94",
+    "kind": "role_holder",
+    "layer": 2,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0x9d39a5de30e57443bff2a8307a4256c8797a3497": {
+    "id": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "label": "sUSDe",
+    "contract_name": "StakedUSDeV2",
+    "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "kind": "contract",
+    "layer": 2,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xa572dad7db3d975e9ce780db1cf3bf959401cd35": {
+    "id": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+    "label": "PendleSparkLinearDiscountOracle",
+    "contract_name": "PendleSparkLinearDiscountOracle",
+    "address": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xa569d910839ae8865da8f8e70fffb0cba869f961": {
+    "id": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+    "label": "EACAggregatorProxy",
+    "contract_name": "EACAggregatorProxy",
+    "address": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x21f73d42eb58ba49ddb685dc29d3bf5c0f0373ca": {
+    "id": "0x21f73d42eb58ba49ddb685dc29d3bf5c0f0373ca",
+    "label": "0x21f73d42...",
+    "contract_name": null,
+    "address": "0x21f73d42eb58ba49ddb685dc29d3bf5c0f0373ca",
+    "kind": "role_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0xc3866d726c204c0836e0677a31973c649888973d": {
+    "id": "0xc3866d726c204c0836e0677a31973c649888973d",
+    "label": "DummyFeed",
+    "contract_name": "DummyFeed",
+    "address": "0xc3866d726c204c0836e0677a31973c649888973d",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x7fc7c91d556b400afa565013e3f32055a0713425": {
+    "id": "0x7fc7c91d556b400afa565013e3f32055a0713425",
+    "label": "USDeSilo",
+    "contract_name": "USDeSilo",
+    "address": "0x7fc7c91d556b400afa565013e3f32055a0713425",
+    "kind": "contract",
+    "layer": 2,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0xcc16f670129f965b396f2e81312f6e339ffdb18e": {
+    "id": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "label": "AccessControlledOCR2Aggregator",
+    "contract_name": "AccessControlledOCR2Aggregator",
+    "address": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "kind": "contract",
+    "layer": 3,
+    "verified": true,
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    }
+   },
+   "0x9db83cef9f68b63989e4e82d65d549e7ff2acda9": {
+    "id": "0x9db83cef9f68b63989e4e82d65d549e7ff2acda9",
+    "label": "0x9db83cef...",
+    "contract_name": null,
+    "address": "0x9db83cef9f68b63989e4e82d65d549e7ff2acda9",
+    "kind": "role_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0x514910771af9ca656af840dff83e8264ecf986ca": {
+    "id": "0x514910771af9ca656af840dff83e8264ecf986ca",
+    "label": "0x51491077...",
+    "contract_name": null,
+    "address": "0x514910771af9ca656af840dff83e8264ecf986ca",
+    "kind": "infra_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (infra_holder)"
+    }
+   },
+   "0x641b698ad1c6e503470520b0eecb472c0589dfe6": {
+    "id": "0x641b698ad1c6e503470520b0eecb472c0589dfe6",
+    "label": "0x641b698a...",
+    "contract_name": null,
+    "address": "0x641b698ad1c6e503470520b0eecb472c0589dfe6",
+    "kind": "role_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (role_holder)"
+    }
+   },
+   "0x97360a89b5adb7d82dbde6c66a49de8a48d550e6": {
+    "id": "0x97360a89b5adb7d82dbde6c66a49de8a48d550e6",
+    "label": "0x97360a89...",
+    "contract_name": null,
+    "address": "0x97360a89b5adb7d82dbde6c66a49de8a48d550e6",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x2dbbd12bf0f6a23cf4455cc6be874b7a246288ce": {
+    "id": "0x2dbbd12bf0f6a23cf4455cc6be874b7a246288ce",
+    "label": "0x2dbbd12b...",
+    "contract_name": null,
+    "address": "0x2dbbd12bf0f6a23cf4455cc6be874b7a246288ce",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0xfe31f3ecfde29fc4915d80eb8a9d67bff14180b3": {
+    "id": "0xfe31f3ecfde29fc4915d80eb8a9d67bff14180b3",
+    "label": "0xfe31f3ec...",
+    "contract_name": null,
+    "address": "0xfe31f3ecfde29fc4915d80eb8a9d67bff14180b3",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x0c46dc0ba85eab5a515f819f1a705ed324da687b": {
+    "id": "0x0c46dc0ba85eab5a515f819f1a705ed324da687b",
+    "label": "0x0c46dc0b...",
+    "contract_name": null,
+    "address": "0x0c46dc0ba85eab5a515f819f1a705ed324da687b",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x30d872350fe74f47c85847d6784b42f9b0816f04": {
+    "id": "0x30d872350fe74f47c85847d6784b42f9b0816f04",
+    "label": "0x30d87235...",
+    "contract_name": null,
+    "address": "0x30d872350fe74f47c85847d6784b42f9b0816f04",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x7b740d24396b09f992b655a590139d7fbb5c73c8": {
+    "id": "0x7b740d24396b09f992b655a590139d7fbb5c73c8",
+    "label": "0x7b740d24...",
+    "contract_name": null,
+    "address": "0x7b740d24396b09f992b655a590139d7fbb5c73c8",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0xe7b837a55df42ecc95bf893c3c31750264932596": {
+    "id": "0xe7b837a55df42ecc95bf893c3c31750264932596",
+    "label": "0xe7b837a5...",
+    "contract_name": null,
+    "address": "0xe7b837a55df42ecc95bf893c3c31750264932596",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0xc917e3bf6c211b326ffd4ed13e7d9a67682095ca": {
+    "id": "0xc917e3bf6c211b326ffd4ed13e7d9a67682095ca",
+    "label": "0xc917e3bf...",
+    "contract_name": null,
+    "address": "0xc917e3bf6c211b326ffd4ed13e7d9a67682095ca",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x990cfbbdc5aeb794b657b4309017f84479e8eb7d": {
+    "id": "0x990cfbbdc5aeb794b657b4309017f84479e8eb7d",
+    "label": "0x990cfbbd...",
+    "contract_name": null,
+    "address": "0x990cfbbdc5aeb794b657b4309017f84479e8eb7d",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x9a5b545aa8b6289288e529c4099b0cca62bcb708": {
+    "id": "0x9a5b545aa8b6289288e529c4099b0cca62bcb708",
+    "label": "0x9a5b545a...",
+    "contract_name": null,
+    "address": "0x9a5b545aa8b6289288e529c4099b0cca62bcb708",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x522bb49be4fb6e3cec18df911c2a66457e6fc3e2": {
+    "id": "0x522bb49be4fb6e3cec18df911c2a66457e6fc3e2",
+    "label": "0x522bb49b...",
+    "contract_name": null,
+    "address": "0x522bb49be4fb6e3cec18df911c2a66457e6fc3e2",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0xd8d2297bdf4a84569bcec83c92a81549be9c51e6": {
+    "id": "0xd8d2297bdf4a84569bcec83c92a81549be9c51e6",
+    "label": "0xd8d2297b...",
+    "contract_name": null,
+    "address": "0xd8d2297bdf4a84569bcec83c92a81549be9c51e6",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x1d36a4c2ab15ccd29b312991176d85622299cc11": {
+    "id": "0x1d36a4c2ab15ccd29b312991176d85622299cc11",
+    "label": "0x1d36a4c2...",
+    "contract_name": null,
+    "address": "0x1d36a4c2ab15ccd29b312991176d85622299cc11",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0xba4555a80e47477bbf23b721563d38b10eb65dfa": {
+    "id": "0xba4555a80e47477bbf23b721563d38b10eb65dfa",
+    "label": "0xba4555a8...",
+    "contract_name": null,
+    "address": "0xba4555a80e47477bbf23b721563d38b10eb65dfa",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0x87b331d3bb9cf70dd85c3dc606b684a0bd61c772": {
+    "id": "0x87b331d3bb9cf70dd85c3dc606b684a0bd61c772",
+    "label": "0x87b331d3...",
+    "contract_name": null,
+    "address": "0x87b331d3bb9cf70dd85c3dc606b684a0bd61c772",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "0xae80a59ba821544cb508808942c20c11442d8a9b": {
+    "id": "0xae80a59ba821544cb508808942c20c11442d8a9b",
+    "label": "0xae80a59b...",
+    "contract_name": null,
+    "address": "0xae80a59ba821544cb508808942c20c11442d8a9b",
+    "kind": "operator_holder",
+    "layer": 3,
+    "verified": null,
+    "evidence": {
+     "grade": "A",
+     "source": "eth_getCode @ block 26162694 (operator_holder)"
+    }
+   },
+   "chain:1": {
+    "id": "chain:1",
+    "label": "Ethereum mainnet",
+    "kind": "chain",
+    "layer": 1,
+    "address": null,
+    "evidence": {
+     "grade": "A",
+     "source": "Pendle API chain_id = 1; RPC block 26162694"
+    }
+   },
+   "pendle_market:0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e": {
+    "id": "pendle_market:0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+    "label": "Pendle sUSDe market",
+    "kind": "amm_market",
+    "layer": 4,
+    "address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+    "contract_name": null,
+    "evidence": {
+     "grade": "A",
+     "source": "Pendle API markets list (fetch_data.py step1)"
+    }
+   },
+   "offchain:ethena": {
+    "id": "offchain:ethena",
+    "label": "Ethena: issuer, exchanges, custodians",
+    "kind": "offchain_issuer",
+    "layer": 2,
+    "address": null,
+    "evidence": {
+     "grade": "D",
+     "source": "not verified: off-chain, needs documents"
+    }
+   }
+  },
+  "edges": [
+   {
+    "from": "morpho_market:0x5613b170",
+    "to": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "type": "marketParams.loanToken",
+    "kind": "data",
+    "evidence": "eth_call Morpho.idToMarketParams(0x5613b170...) @ block 26162694"
+   },
+   {
+    "from": "morpho_market:0x5613b170",
+    "to": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "type": "marketParams.collateralToken",
+    "kind": "data",
+    "evidence": "eth_call Morpho.idToMarketParams(0x5613b170...) @ block 26162694"
+   },
+   {
+    "from": "morpho_market:0x5613b170",
+    "to": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "type": "marketParams.oracle",
+    "kind": "data",
+    "evidence": "eth_call Morpho.idToMarketParams(0x5613b170...) @ block 26162694"
+   },
+   {
+    "from": "morpho_market:0x5613b170",
+    "to": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+    "type": "marketParams.irm",
+    "kind": "data",
+    "evidence": "eth_call Morpho.idToMarketParams(0x5613b170...) @ block 26162694"
+   },
+   {
+    "from": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "to": "0x0a06be16275b95a7d2567fbdae118b36c7da78f9",
+    "type": "blacklister",
+    "kind": "role",
+    "evidence": "eth_call FiatTokenV2_2.blacklister @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "to": "0xe982615d461dd5cd06575bbea87624fda4e3de17",
+    "type": "masterMinter",
+    "kind": "role",
+    "evidence": "eth_call FiatTokenV2_2.masterMinter @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "to": "0xfcb19e6a322b27c06842a71e8c725399f049ae3a",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call FiatTokenV2_2.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "to": "0x4914f61d25e5c567143774b76edbf4d5109a8566",
+    "type": "pauser",
+    "kind": "role",
+    "evidence": "eth_call FiatTokenV2_2.pauser @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "to": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "type": "SY",
+    "kind": "data",
+    "evidence": "eth_call PendlePrincipalToken.SY @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "to": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+    "type": "YT",
+    "kind": "data",
+    "evidence": "eth_call PendlePrincipalToken.YT @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "to": "0x3e6eba46abc5ab18ed95f6667d8b2fd4020e4637",
+    "type": "factory",
+    "kind": "infra",
+    "evidence": "eth_call PendlePrincipalToken.factory @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "to": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+    "type": "backupOracle",
+    "kind": "data",
+    "evidence": "eth_call MetaOracleDeviationTimelock.backupOracle @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "to": "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+    "type": "currentOracle",
+    "kind": "data",
+    "evidence": "eth_call MetaOracleDeviationTimelock.currentOracle @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "to": "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+    "type": "primaryOracle",
+    "kind": "data",
+    "evidence": "eth_call MetaOracleDeviationTimelock.primaryOracle @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+    "to": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+    "type": "MORPHO",
+    "kind": "data",
+    "evidence": "eth_call AdaptiveCurveIrm.MORPHO @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "type": "asset",
+    "kind": "data",
+    "evidence": "eth_call PendleSUSDESY.asset @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "type": "assetInfo.assetAddress",
+    "kind": "data",
+    "evidence": "eth_call PendleSUSDESY.assetInfo @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "type": "getTokensIn[0]",
+    "kind": "data",
+    "evidence": "eth_call PendleSUSDESY.getTokensIn @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "type": "getTokensIn[1]",
+    "kind": "data",
+    "evidence": "eth_call PendleSUSDESY.getTokensIn @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "type": "getTokensOut[0]",
+    "kind": "data",
+    "evidence": "eth_call PendleSUSDESY.getTokensOut @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x2ad631f72fb16d91c4953a7f4260a97c2fe2f31e",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call PendleSUSDESY.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "to": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "type": "yieldToken",
+    "kind": "data",
+    "evidence": "eth_call PendleSUSDESY.yieldToken @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+    "to": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "type": "PT",
+    "kind": "data",
+    "evidence": "eth_call PendleYieldToken.PT @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+    "to": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+    "type": "SY",
+    "kind": "data",
+    "evidence": "eth_call PendleYieldToken.SY @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+    "to": "0x3e6eba46abc5ab18ed95f6667d8b2fd4020e4637",
+    "type": "factory",
+    "kind": "infra",
+    "evidence": "eth_call PendleYieldToken.factory @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+    "to": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+    "type": "BASE_FEED_1",
+    "kind": "data",
+    "evidence": "eth_call MorphoChainlinkOracleV2.BASE_FEED_1 @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+    "to": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+    "type": "BASE_FEED_2",
+    "kind": "data",
+    "evidence": "eth_call MorphoChainlinkOracleV2.BASE_FEED_2 @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+    "to": "0xc3866d726c204c0836e0677a31973c649888973d",
+    "type": "QUOTE_FEED_1",
+    "kind": "data",
+    "evidence": "eth_call MorphoChainlinkOracleV2.QUOTE_FEED_1 @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d",
+    "to": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+    "type": "BASE_FEED_1",
+    "kind": "data",
+    "evidence": "eth_call MorphoChainlinkOracleV2.BASE_FEED_1 @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+    "to": "0xcba28b38103307ec8da98377fff9816c164f9afa",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call Morpho.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "to": "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3",
+    "type": "minter",
+    "kind": "role",
+    "evidence": "eth_call USDe.minter @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "to": "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call USDe.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "to": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "type": "asset",
+    "kind": "data",
+    "evidence": "eth_call StakedUSDeV2.asset @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "to": "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call StakedUSDeV2.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "to": "0x7fc7c91d556b400afa565013e3f32055a0713425",
+    "type": "silo",
+    "kind": "data",
+    "evidence": "eth_call StakedUSDeV2.silo @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+    "to": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "type": "PT",
+    "kind": "data",
+    "evidence": "eth_call PendleSparkLinearDiscountOracle.PT @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+    "to": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "type": "aggregator",
+    "kind": "data",
+    "evidence": "eth_call EACAggregatorProxy.aggregator @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+    "to": "0x21f73d42eb58ba49ddb685dc29d3bf5c0f0373ca",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call EACAggregatorProxy.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x9db83cef9f68b63989e4e82d65d549e7ff2acda9",
+    "type": "getBillingAccessController",
+    "kind": "role",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getBillingAccessController @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x514910771af9ca656af840dff83e8264ecf986ca",
+    "type": "getLinkToken.linkToken",
+    "kind": "infra",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getLinkToken @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x641b698ad1c6e503470520b0eecb472c0589dfe6",
+    "type": "getRequesterAccessController",
+    "kind": "role",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getRequesterAccessController @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x97360a89b5adb7d82dbde6c66a49de8a48d550e6",
+    "type": "getTransmitters[0]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x2dbbd12bf0f6a23cf4455cc6be874b7a246288ce",
+    "type": "getTransmitters[1]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0xfe31f3ecfde29fc4915d80eb8a9d67bff14180b3",
+    "type": "getTransmitters[2]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x0c46dc0ba85eab5a515f819f1a705ed324da687b",
+    "type": "getTransmitters[3]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x30d872350fe74f47c85847d6784b42f9b0816f04",
+    "type": "getTransmitters[4]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x7b740d24396b09f992b655a590139d7fbb5c73c8",
+    "type": "getTransmitters[5]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0xe7b837a55df42ecc95bf893c3c31750264932596",
+    "type": "getTransmitters[6]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0xc917e3bf6c211b326ffd4ed13e7d9a67682095ca",
+    "type": "getTransmitters[7]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x990cfbbdc5aeb794b657b4309017f84479e8eb7d",
+    "type": "getTransmitters[8]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x9a5b545aa8b6289288e529c4099b0cca62bcb708",
+    "type": "getTransmitters[9]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x522bb49be4fb6e3cec18df911c2a66457e6fc3e2",
+    "type": "getTransmitters[10]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0xd8d2297bdf4a84569bcec83c92a81549be9c51e6",
+    "type": "getTransmitters[11]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x1d36a4c2ab15ccd29b312991176d85622299cc11",
+    "type": "getTransmitters[12]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0xba4555a80e47477bbf23b721563d38b10eb65dfa",
+    "type": "getTransmitters[13]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x87b331d3bb9cf70dd85c3dc606b684a0bd61c772",
+    "type": "getTransmitters[14]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0xae80a59ba821544cb508808942c20c11442d8a9b",
+    "type": "getTransmitters[15]",
+    "kind": "operator",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.getTransmitters @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+    "to": "0x21f73d42eb58ba49ddb685dc29d3bf5c0f0373ca",
+    "type": "owner",
+    "kind": "role",
+    "evidence": "eth_call AccessControlledOCR2Aggregator.owner @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "pendle_market:0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+    "to": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "type": "liquidity",
+    "kind": "data",
+    "evidence": "Pendle API market.pt, details.liquidity"
+   },
+   {
+    "from": "offchain:ethena",
+    "to": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "type": "backing",
+    "kind": "data",
+    "evidence": "not verified (off-chain)"
+   }
+  ],
+  "counts": {
+   "data": 28,
+   "role": 13,
+   "operator": 16,
+   "infra": 3
+  }
+ },
+ "ui": {
+  "nodes": {
+   "eth": {
+    "label": "Ethereum mainnet",
+    "kind": "Chain",
+    "layer": 1,
+    "members": [
+     "chain:1"
+    ],
+    "address": null,
+    "contract_name": null,
+    "evidence": {
+     "grade": "A",
+     "source": "Pendle API chain_id = 1; RPC block 26162694"
+    },
+    "failures": [
+     "halt"
+    ]
+   },
+   "ethena": {
+    "label": "Ethena: issuer, exchanges, custodians",
+    "kind": "Issuer",
+    "layer": 2,
+    "members": [
+     "offchain:ethena",
+     "0x7fc7c91d556b400afa565013e3f32055a0713425"
+    ],
+    "address": null,
+    "note": "minting and silo contracts read on chain; exchanges and custodians off-chain (not verified)",
+    "contract_name": null,
+    "evidence": {
+     "grade": "A",
+     "source": "EthenaMinting / USDeSilo found by the crawler (on-chain part); off-chain part D"
+    },
+    "failures": [
+     "shortfall"
+    ]
+   },
+   "usde": {
+    "label": "USDe",
+    "kind": "Asset",
+    "layer": 2,
+    "members": [
+     "0x4c9edd5852cd905f086c759e8383e09bff1e68b3"
+    ],
+    "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "contract_name": "USDe",
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    },
+    "failures": [
+     "depeg"
+    ]
+   },
+   "susde": {
+    "label": "sUSDe",
+    "kind": "Asset (PT redeems to this)",
+    "layer": 2,
+    "members": [
+     "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+     "0xbf98480425a29197e5d99d003017f63a1e595d02"
+    ],
+    "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "contract_name": "StakedUSDeV2",
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    },
+    "failures": [
+     "depeg"
+    ]
+   },
+   "feeds": {
+    "label": "Upstream price feeds",
+    "kind": "Oracle feeds",
+    "layer": 3,
+    "members": [
+     "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+     "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+     "0xc3866d726c204c0836e0677a31973c649888973d",
+     "0xcc16f670129f965b396f2e81312f6e339ffdb18e"
+    ],
+    "address": "0xa572dad7db3d975e9ce780db1cf3bf959401cd35",
+    "note": "PT linear discount feed, Chainlink USDe / USD (reported by 16 transmitters), constant quote feed",
+    "contract_name": "PendleSparkLinearDiscountOracle",
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    },
+    "failures": [
+     "oracleLow",
+     "stale"
+    ]
+   },
+   "oracle": {
+    "label": "Morpho market oracle",
+    "kind": "Oracle",
+    "layer": 3,
+    "members": [
+     "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+     "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465",
+     "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d"
+    ],
+    "address": "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08",
+    "note": "MetaOracleDeviationTimelock: price from a linear discount feed (no market input); switches to a backup with USDe / USD only after a deviation above 0.75% lasting 16 h (deviation now 0.040%)",
+    "contract_name": "MetaOracleDeviationTimelock",
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    },
+    "failures": [
+     "oracleLow",
+     "stale"
+    ]
+   },
+   "market": {
+    "label": "Pendle PT-sUSDe market",
+    "kind": "AMM market",
+    "layer": 4,
+    "members": [
+     "pendle_market:0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e"
+    ],
+    "address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+    "contract_name": null,
+    "evidence": {
+     "grade": "A",
+     "source": "Pendle API markets list (fetch_data.py step1)"
+    },
+    "failures": [
+     "drain"
+    ]
+   },
+   "pt": {
+    "label": "PT-sUSDe (2026-11-26)",
+    "kind": "Asset",
+    "layer": 4,
+    "members": [
+     "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+     "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44"
+    ],
+    "address": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+    "contract_name": "PendlePrincipalToken",
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    },
+    "failures": [
+     "depeg"
+    ]
+   },
+   "lending": {
+    "label": "Morpho market PT-sUSDe / USDC",
+    "kind": "Lending market",
+    "layer": 5,
+    "members": [
+     "morpho_market:0x5613b170",
+     "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+     "0x870ac11d48b15db9a138cf899d20f13f79ba00bc"
+    ],
+    "address": null,
+    "market_id": "0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05",
+    "contract_name": "Morpho Blue market",
+    "evidence": {
+     "grade": "A",
+     "source": "Etherscan verified source + eth_call @ block 26162694"
+    },
+    "failures": [
+     "cascade"
+    ]
+   }
+  },
+  "layers": [
+   {
+    "n": 1,
+    "name": "Settlement chain",
+    "nodes": [
+     "eth"
+    ]
+   },
+   {
+    "n": 2,
+    "name": "Yield source and its issuer",
+    "nodes": [
+     "ethena",
+     "usde",
+     "susde"
+    ]
+   },
+   {
+    "n": 3,
+    "name": "Oracle",
+    "nodes": [
+     "feeds",
+     "oracle"
+    ]
+   },
+   {
+    "n": 4,
+    "name": "PT and its market",
+    "nodes": [
+     "market",
+     "pt"
+    ]
+   },
+   {
+    "n": 5,
+    "name": "Lending market",
+    "nodes": [
+     "lending"
+    ]
+   }
+  ],
+  "edges": [
+   {
+    "from": "ethena",
+    "to": "usde",
+    "type": "backing",
+    "grade": "D",
+    "evidence": "off-chain backing: not verified"
+   },
+   {
+    "from": "usde",
+    "to": "susde",
+    "type": "staking",
+    "grade": "A",
+    "evidence": "eth_call PendleSUSDESY.asset @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "susde",
+    "to": "pt",
+    "type": "redemption",
+    "grade": "A",
+    "evidence": "eth_call PendlePrincipalToken.SY @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "market",
+    "to": "pt",
+    "type": "liquidity",
+    "grade": "A",
+    "evidence": "Pendle API market.pt, details.liquidity"
+   },
+   {
+    "from": "feeds",
+    "to": "oracle",
+    "type": "price",
+    "grade": "A",
+    "evidence": "eth_call MorphoChainlinkOracleV2.BASE_FEED_1 @ block 26162694; ABI from Etherscan verified source"
+   },
+   {
+    "from": "oracle",
+    "to": "lending",
+    "type": "liquidation",
+    "grade": "A",
+    "evidence": "eth_call Morpho.idToMarketParams(0x5613b170...) @ block 26162694"
+   },
+   {
+    "from": "pt",
+    "to": "lending",
+    "type": "collateral",
+    "grade": "A",
+    "evidence": "eth_call Morpho.idToMarketParams(0x5613b170...) @ block 26162694"
+   },
+   {
+    "from": "lending",
+    "to": "market",
+    "type": "forced selling",
+    "grade": "B",
+    "evidence": "liquidators sell seized PT into the pool: borrowers.exit_later"
+   }
+  ],
+  "injections": {
+   "eth:halt": {
+    "type": "not_modelled",
+    "note": "no exit and no liquidation while the chain is halted"
+   },
+   "ethena:shortfall": {
+    "type": "loss_model",
+    "scenario_layer": 2,
+    "permanent": 1.0,
+    "hours": null,
+    "oracle": "rule",
+    "note": "USDe loses backing; the oracle follows only after the meta-oracle switches to its USDe / USD backup (deviation above threshold for the challenge timelock)"
+   },
+   "usde:depeg": {
+    "type": "loss_model",
+    "scenario_layer": 2,
+    "permanent": 1.0,
+    "hours": null,
+    "oracle": "rule",
+    "note": "USDe / USD is priced only by the backup oracle: falls after the meta-oracle switch"
+   },
+   "susde:depeg": {
+    "type": "loss_model",
+    "scenario_layer": 2,
+    "permanent": 1.0,
+    "hours": null,
+    "oracle": false,
+    "note": "no feed of this oracle prices sUSDe (linear discount x USDe / USD), so a sUSDe-only fall liquidates nobody; holders still lose the value"
+   },
+   "feeds:oracleLow": {
+    "type": "loss_model",
+    "scenario_layer": 3,
+    "permanent": 0.0,
+    "hours": null,
+    "oracle": true,
+    "note": "the feed reports the low price itself; the price recovers but liquidations stay"
+   },
+   "feeds:stale": {
+    "type": "not_modelled",
+    "note": "liquidations use the last price; the PT feed is computed every block and cannot go stale, the USDe / USD feed can"
+   },
+   "oracle:oracleLow": {
+    "type": "loss_model",
+    "scenario_layer": 3,
+    "permanent": 0.0,
+    "hours": null,
+    "oracle": true,
+    "note": "the oracle reports the low price itself; the price recovers but liquidations stay"
+   },
+   "oracle:stale": {
+    "type": "not_modelled",
+    "note": "liquidations use the last price until it updates"
+   },
+   "market:drain": {
+    "type": "exit_only",
+    "note": "pool liquidity removed is the severity (assumption): sellable = max_exit_fraction x (1 - d), each sale costs what a sale 1/(1-d) times larger costs today"
+   },
+   "pt:depeg": {
+    "type": "loss_model",
+    "scenario_layer": 3,
+    "permanent": 0.0,
+    "hours": null,
+    "oracle": false,
+    "note": "the PT market price falls; the oracle prices the PT by a linear discount (no market input), and the PT still redeems at expiry, so holding to expiry recovers it"
+   },
+   "lending:cascade": {
+    "type": "exit_later",
+    "note": "other borrowers are liquidated and their PT is sold into the pool first; severity = oracle drop that liquidates them (borrowers.exit_later). The PT market price alone does not move this oracle"
+   }
+  }
+ },
+ "failure_types": {
+  "types": {
+   "shortfall": {
+    "label": "Issuer cannot back the asset",
+    "layer": 2,
+    "unit": "%",
+    "min": 1,
+    "max": 100,
+    "default_severity": 50,
+    "anchors": [
+     {
+      "value": 50,
+      "source": "Stream xUSD, Nov 2025 (C)"
+     },
+     {
+      "value": 99.87,
+      "source": "Elixir deUSD, Nov 2025 (C)"
+     }
+    ],
+    "model": {
+     "type": "loss_model",
+     "scenario_layer": 2,
+     "permanent": 1.0,
+     "hours": null,
+     "oracle": "oracleFalls(oracle, 2, shock, hours)"
+    },
+    "probabilities": {
+     "outcomes": {
+      "resolved": 0.6871165644171779,
+      "partial": 0.2668711656441718,
+      "severe": 0.046012269938650305
+     },
+     "p_severe": 0.046012269938650305,
+     "partial_to_severe_prob": 5.800000000000001,
+     "partial_severity_share": 0.02693701422154456,
+     "evidence": {
+      "grade": "C",
+      "source": "by analogy: 326 stablecoin depeg episodes, 2020-12-30..2026-10-10 (calibrate_depeg.py); severe 2.5%-5.4% across samples"
+     }
+    }
+   },
+   "depeg": {
+    "label": "Loses value",
+    "layer": 2,
+    "unit": "%",
+    "min": 1,
+    "max": 100,
+    "default_severity": 84.1,
+    "anchors": [
+     {
+      "value": 1.62,
+      "source": "USDe daily low, 1 Feb 2026, recovered next day (C)"
+     },
+     {
+      "value": 2.3,
+      "source": "median day-30 loss of partial depegs (C)"
+     },
+     {
+      "value": 84.1,
+      "source": "median day-30 loss of severe depegs (C)"
+     }
+    ],
+    "model": {
+     "type": "loss_model",
+     "scenario_layer": 2,
+     "permanent": 1.0,
+     "hours": null,
+     "oracle": "oracleFalls(oracle, 2, shock, hours)"
+    },
+    "probabilities": {
+     "outcomes": {
+      "resolved": 0.6871165644171779,
+      "partial": 0.2668711656441718,
+      "severe": 0.046012269938650305
+     },
+     "p_severe": 0.046012269938650305,
+     "partial_to_severe_prob": 5.800000000000001,
+     "partial_severity_share": 0.02693701422154456,
+     "evidence": {
+      "grade": "C",
+      "source": "326 stablecoin depeg episodes, 2020-12-30..2026-10-10 (calibrate_depeg.py); severe 2.5%-5.4% across samples"
+     }
+    }
+   },
+   "oracleLow": {
+    "label": "Reports a price that is too low",
+    "layer": 3,
+    "unit": "%",
+    "min": 1,
+    "max": 40,
+    "default_severity": 2.77,
+    "anchors": [
+     {
+      "value": 2.77,
+      "source": "PT-reUSD oracle drop, 25 Aug 2026 (HackMD, back-tested 9/9)"
+     }
+    ],
+    "model": {
+     "type": "loss_model",
+     "scenario_layer": 3,
+     "permanent": 0.0,
+     "hours": null,
+     "oracle": "true: the oracle itself reports the low price"
+    },
+    "probabilities": {
+     "outcomes": {
+      "resolved": 0.5,
+      "partial": 0.5,
+      "severe": 0.0
+     },
+     "p_severe": null,
+     "evidence": {
+      "grade": "D",
+      "source": "one historical event only: placeholder"
+     }
+    }
+   },
+   "stale": {
+    "label": "Stops updating",
+    "layer": 3,
+    "unit": "h",
+    "min": 1,
+    "max": 48,
+    "default_severity": 6,
+    "anchors": [],
+    "model": {
+     "type": "not_modelled",
+     "note": "liquidations use the last price; no direct loss modelled"
+    },
+    "probabilities": {
+     "outcomes": null,
+     "p_severe": null,
+     "evidence": {
+      "grade": "D",
+      "source": "no sample"
+     }
+    }
+   },
+   "cascade": {
+    "label": "Other borrowers are liquidated into the pool",
+    "layer": 5,
+    "unit": "%",
+    "min": 1,
+    "max": 10,
+    "default_severity": 1.0,
+    "anchors": [],
+    "model": {
+     "type": "exit_later",
+     "source_field": "borrowers.exit_later",
+     "oracle": "oracleFalls(oracle, 3, shock, hours): false for this market, so the PT price fall alone liquidates nobody here",
+     "note": "severity = oracle drop of the liquidation curve (0.5%..10%)"
+    },
+    "probabilities": {
+     "outcomes": null,
+     "p_severe": null,
+     "evidence": {
+      "grade": "D",
+      "source": "no sample"
+     }
+    }
+   },
+   "drain": {
+    "label": "Liquidity leaves the pool",
+    "layer": 4,
+    "unit": "%",
+    "min": 10,
+    "max": 90,
+    "default_severity": 50,
+    "anchors": [],
+    "model": {
+     "type": "exit_only",
+     "note": "share of pool liquidity removed is an assumption (D); measured alternative: borrowers.exit_later"
+    },
+    "probabilities": {
+     "outcomes": null,
+     "p_severe": null,
+     "evidence": {
+      "grade": "D",
+      "source": "no sample"
+     }
+    }
+   },
+   "halt": {
+    "label": "Chain halts",
+    "layer": 1,
+    "unit": "h",
+    "min": 1,
+    "max": 48,
+    "default_severity": 6,
+    "anchors": [],
+    "model": {
+     "type": "not_modelled",
+     "note": "no exit and no liquidation while halted"
+    },
+    "probabilities": {
+     "outcomes": null,
+     "p_severe": null,
+     "evidence": {
+      "grade": "D",
+      "source": "no sample"
+     }
+    }
+   }
+  },
+  "by_node": {
+   "morpho_market:0x5613b170": [
+    "cascade"
+   ],
+   "0xb195b618ea52b77cb2a58846f452f59f8dfa9390": [
+    "depeg"
+   ],
+   "0xf8b29e7e9c00ce531434775f7923cc9fbca01b08": [
+    "oracleLow",
+    "stale"
+   ],
+   "0xbf98480425a29197e5d99d003017f63a1e595d02": [
+    "depeg"
+   ],
+   "0xe2f4cfe07aecd7fd8fb0d293a22cde7d08175465": [
+    "oracleLow",
+    "stale"
+   ],
+   "0x8fca98c9abee4dcb33ba9f3d17db4ad57f72706d": [
+    "oracleLow",
+    "stale"
+   ],
+   "0x4c9edd5852cd905f086c759e8383e09bff1e68b3": [
+    "depeg"
+   ],
+   "0x9d39a5de30e57443bff2a8307a4256c8797a3497": [
+    "depeg"
+   ],
+   "0xa572dad7db3d975e9ce780db1cf3bf959401cd35": [
+    "oracleLow",
+    "stale"
+   ],
+   "0xa569d910839ae8865da8f8e70fffb0cba869f961": [
+    "oracleLow",
+    "stale"
+   ],
+   "chain:1": [
+    "halt"
+   ],
+   "pendle_market:0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e": [
+    "drain"
+   ],
+   "offchain:ethena": [
+    "shortfall"
+   ]
+  }
+ },
+ "position_presets": {
+  "spot": {
+   "collateral_usd": 10000000.0,
+   "lltv": 0.915,
+   "can_hold": true,
+   "label": "PT held outright",
+   "debt_usd": 0.0,
+   "evidence": {
+    "grade": "D",
+    "source": "position size assumed"
+   },
+   "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
+  },
+  "lev_market_avg": {
+   "collateral_usd": 10000000.0,
+   "lltv": 0.915,
+   "can_hold": true,
+   "label": "PT as collateral, LTV of the Morpho market average",
+   "debt_usd": 8820836.996944975,
+   "evidence": {
+    "grade": "A",
+    "source": "Morpho API aggregate LTV x assumed size"
+   },
+   "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
+  },
+  "lev_largest_borrower": {
+   "collateral_usd": 10000000.0,
+   "lltv": 0.915,
+   "can_hold": true,
+   "label": "PT as collateral, LTV of the largest real borrower (0xdf819874...)",
+   "debt_usd": 8685063.230152981,
+   "ltv": 0.8685063230152982,
+   "evidence": {
+    "grade": "A",
+    "source": "eth_call @ block 26162679 x assumed size"
+   },
+   "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
+  },
+  "lev_closest_to_liquidation": {
+   "collateral_usd": 10000000.0,
+   "lltv": 0.915,
+   "can_hold": true,
+   "label": "PT as collateral, LTV of the real borrower closest to liquidation (0x5c430ff6...)",
+   "debt_usd": 9059248.057840152,
+   "ltv": 0.9059248057840151,
+   "evidence": {
+    "grade": "A",
+    "source": "eth_call @ block 26162679 x assumed size"
+   },
+   "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
+  }
+ },
+ "detected": [],
+ "detector": {
+  "connected": false,
+  "schema": {
+   "node": "dependency_graph node id",
+   "fail": "failure_types key",
+   "sev": "observed severity in the failure's unit",
+   "signal": "what was seen",
+   "block": "block number",
+   "evidence": "{grade, source}"
+  }
+ },
  "lender": {
   "supply_usdc": 1000000.0,
   "total_supply_usdc": 7757170.494619,
@@ -11229,7 +13151,7 @@
   "withdrawable_now_usdc": 764516.4230929995,
   "withdrawable_fraction": 0.7645164230929995,
   "locked_fraction": 0.2354835769070005,
-  "block": 26162100,
+  "block": 26162679,
   "scenarios": [
    {
     "key": "usde_mild",
@@ -11252,20 +13174,20 @@
    {
     "key": "issuer_half",
     "bad_debt_usdc_per_branch": [
-     3132961.1984903556,
-     3031982.278897717
+     3132909.5173673243,
+     3031929.353050994
     ],
-    "L_low": 0.3908618846267392,
-    "L_high": 0.40387937852643957
+    "L_low": 0.3908550617978792,
+    "L_high": 0.4038727161586256
    },
    {
     "key": "issuer_total",
     "bad_debt_usdc_per_branch": [
-     6982963.994644739,
-     6982710.431832399
+     6982963.864895016,
+     6982710.298687478
     ],
-    "L_low": 0.9001620419038322,
-    "L_high": 0.9001947294427377
+    "L_low": 0.9001620247397231,
+    "L_high": 0.9001947127163138
    }
   ],
   "incidents": [
@@ -11288,14 +13210,14 @@
       "outcome": "severe",
       "preset": "issuer_total",
       "probability": 0.046012269938650305,
-      "L_used": 0.9001947294427377
+      "L_used": 0.9001947127163138
      }
     ],
-    "expected_loss": 0.041420002888469525,
-    "expected_loss_usdc": 41420.00288846953,
-    "tail_loss_95": 0.8284000577693897,
-    "tail_loss_95_usdc": 828400.0577693897,
-    "loss_on_locked_part_usdc": 9753.730435675097
+    "expected_loss": 0.04142000211884879,
+    "expected_loss_usdc": 41420.00211884879,
+    "tail_loss_95": 0.8284000423769751,
+    "tail_loss_95_usdc": 828400.0423769751,
+    "loss_on_locked_part_usdc": 9753.730254442053
    },
    {
     "key": "oracle_dip",
@@ -11334,23 +13256,23 @@
    },
    "total_supply_usdc": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679",
+    "block": 26162679
    },
    "total_borrow_usdc": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679",
+    "block": 26162679
    },
    "utilization": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679",
+    "block": 26162679
    },
    "liquidity_usdc": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162100",
-    "block": 26162100
+    "source": "Ethereum eth_call at block 26162679",
+    "block": 26162679
    },
    "withdrawable_fraction": {
     "grade": "D",
@@ -11383,12 +13305,12 @@
  },
  "exit_costs": {
   "first_size": 0.01,
-  "cost_first": 0.000154828811324339,
+  "cost_first": 0.00015462213415546865,
   "cap": 0.45,
-  "cost_avg_cap": 0.004908627013317111,
-  "cost_marginal_cap": 0.020874173124287423,
-  "gas_usd_first": 0.13666210184637265,
-  "gas_usd_cap": 0.30524515883689163,
+  "cost_avg_cap": 0.0049086167548923155,
+  "cost_marginal_cap": 0.02087417311639746,
+  "gas_usd_first": 0.1159943849593369,
+  "gas_usd_cap": 0.2590822472561008,
   "gas_included": true,
   "evidence": {
    "costs": {
@@ -11401,7 +13323,7 @@
    },
    "gas": {
     "grade": "A",
-    "source": "Pendle routes[0].data.gasUsed per quote x (0.1078 + 0) gwei at block 26162100 x ETH $2,496 (baseFeePerGas of block 26162100 and eth_maxPriorityFeePerGas (https://ethereum-rpc.publicnode.com); ETH = WETH price from https://coins.llama.fi/prices/current)"
+    "source": "Pendle routes[0].data.gasUsed per quote x (0.09111 + 0) gwei at block 26162679 x ETH $2,505 (baseFeePerGas of block 26162679 and eth_maxPriorityFeePerGas (https://ethereum-rpc.publicnode.com); ETH = WETH price from https://coins.llama.fi/prices/current)"
    }
   }
  },

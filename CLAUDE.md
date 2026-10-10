@@ -34,6 +34,8 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `crawl.py` | Generic ABI-driven dependency crawler -> edges_<tag>.csv (src, dst, type, kind, weight_usd, evidence) |
 | `oracle_types.py` | Oracle type table (linear discount, Chainlink V2 combiner, meta-oracle timelock, Chainlink market / rate feeds); unknown -> D |
 | `vault_pipeline.py` | RockawayX-format input -> per-vault dependency graph, borrowers, incidents, vault loss, exit tranches, sentence |
+| `frontend_contract.py` | dashboard.json fields for the Risk Desk front end (graph by layer, failure types, presets, detector) |
+| `web/risk_model.js` | JS port of loss model + oracle rule + decide + break-even; check_js_port.py keeps it equal to Python |
 | `onchain_positions.py` | Morpho borrowers on chain over JSON-RPC (stdlib): positions, LTVs, liquidation curve vs capacity; 7 gates |
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |

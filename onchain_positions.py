@@ -488,6 +488,16 @@ def run(a):
               + ("  > capacity" if r["seized_exceeds_capacity"] else ""))
     print(f"first drop where seized PT > Pendle capacity: {first}")
 
+    # oracle type tree at the same block (oracle_types.py; imported here to avoid an import cycle)
+    oracle_cls = None
+    try:
+        import oracle_types
+        sym = oracle_types._str(rpc.eth_call(params["collateral_token"], "0x95d89b41", head))   # symbol()
+        oracle_cls = oracle_types.classify(params["oracle"], rpc, head, ts, collateral_symbol=sym)
+        print(f"oracle {params['oracle'][:10]}: {oracle_cls['kind']}, tracks market={oracle_cls['tracks_market']}, "
+              f"underlying={oracle_cls['tracks_underlying']}")
+    except Exception as e:                       # Etherscan key missing etc.: oracle stays unclassified
+        print(f"oracle not classified ({type(e).__name__}: {str(e)[:80]})")
     ev = {"grade": "A", "source": f"Ethereum JSON-RPC eth_call at block {head} (Morpho {MORPHO})", "block": head}
     return {
         "block": head, "block_timestamp": ts, "rpc": a.rpc.split("?")[0], "morpho": MORPHO,
@@ -500,6 +510,7 @@ def run(a):
         "discovery": {"mode": a.discover, "sources": sources, "logs_cover_from_block": covered_from,
                       "candidates": len(found)},
         "selectors": sel_note,
+        "oracle": oracle_cls,
         "gas": {"base_fee_gwei": base_fee / 1e9, "priority_fee_gwei": None if prio is None else prio / 1e9,
                 "eth_usd": eth_usd, "eth_price_timestamp": eth_ts,
                 "source": f"baseFeePerGas of block {head} and eth_maxPriorityFeePerGas ({a.rpc.split('?')[0]}); "

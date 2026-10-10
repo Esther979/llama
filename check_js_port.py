@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""
+Check that web/risk_model.js gives the same numbers as the Python backend (needs node).
+
+  python3 check_js_port.py [--n 500]
+
+Random cases (unlevered / levered, oracle true / false / unknown, shocks up to 100%, meta-oracle rules) for
+positionLoss, oracleFalls, decide and breakEven, compared field by field. Prints GATE PASS / GATE FAIL.
+"""
+import argparse
+import json
+import os
+import random
+import subprocess
+import sys
+import tempfile
+
+from decision_core import Scenario as DScenario, decide
+from incidents import exit_costs
+from loss_model import Position, Scenario, position_loss
+from oracle_types import oracle_falls
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+JS = os.path.join(HERE, "web", "risk_model.js")
+CURVE = [[0.01, 0.000153], [0.05, 0.000199], [0.1, 0.00033], [0.25, 0.00082], [0.3, 0.001375], [0.35, 0.002124],
+         [0.4, 0.003135], [0.45, 0.004909]]
+ORACLES = [
+    {"kind": "meta_oracle_timelock", "tracks_market": False, "tracks_underlying": False,
+     "tracks_market_after_switch": False, "tracks_underlying_after_switch": True,
+     "deviation_threshold": 0.0075, "challenge_timelock_s": 57600},
+    {"kind": "meta_oracle_timelock", "tracks_market": False, "tracks_underlying": False,
+     "tracks_market_after_switch": None, "tracks_underlying_after_switch": None,
+     "deviation_threshold": 0.01, "challenge_timelock_s": 3600},
+    {"kind": "morpho_chainlink_v2", "tracks_market": True, "tracks_underlying": None},
+    {"kind": "linear_discount", "tracks_market": False, "tracks_underlying": False},
+    {"kind": "unknown", "tracks_market": None, "tracks_underlying": None},
+]
+
+
+def cases(n, rnd):
+    out = []
+    for i in range(n):
+        C = rnd.choice([1e5, 1e6, 1e7, rnd.uniform(1e4, 2e7)])
+        lltv = rnd.choice([0.77, 0.86, 0.915, 0.945])
+        D = 0.0 if rnd.random() < 0.25 else C * lltv * rnd.uniform(0.3, 0.999)
+        flag = rnd.choice([True, False, None])
+        s = {"layer": rnd.choice([2, 3]), "shock": rnd.choice([0.0162, 0.0297, 0.5, 0.9987, 1.0, rnd.random()]),
+             "permanent": rnd.choice([0.0, 0.5, 1.0, rnd.random()]), "hours": rnd.choice([None, 1, 24, rnd.uniform(0, 48)])}
+        p = {"collateral_usd": C, "debt_usd": D, "lltv": lltv, "can_hold": rnd.random() < 0.5,
+             "oracle_tracks_underlying": flag if s["layer"] == 2 else rnd.choice([True, False, None]),
+             "oracle_tracks_market": flag if s["layer"] == 3 else rnd.choice([True, False, None])}
+        out.append({"s": s, "p": p, "oracle": rnd.choice(ORACLES), "prob": rnd.random() ** 3,
+                    "L": rnd.random(), "carry": rnd.choice([0.0, 0.001, rnd.uniform(0, 0.01)]),
+                    "scale": rnd.choice([1.0, rnd.uniform(1, 12)])})
+    return out
+
+
+def python_side(c):
+    s, p = c["s"], c["p"]
+    r = position_loss(Scenario("t", s["layer"], s["shock"], s["permanent"], s["hours"], "", False),
+                      Position("t", p["collateral_usd"], p["debt_usd"], p["lltv"], p["can_hold"],
+                               p["oracle_tracks_underlying"], p["oracle_tracks_market"]))
+    d = decide([DScenario("e", c["prob"], c["L"])], CURVE, carry_lost=c["carry"])
+    ec = exit_costs(CURVE, None, 1.0)
+    f = lambda x: (x + c["carry"]) * c["scale"] / c["L"] if c["L"] > 0 else None
+    return {"L_low": r["L_low"], "L_high": r["L_high"], "oracle_known": r["oracle_known"],
+            "branches": [[b["oracle_falls"], b["liquidated"], b["bad_debt_usd"], b["loss_of_equity"]]
+                         for b in r["branches"]],
+            "oracle_falls": oracle_falls(c["oracle"], s["layer"], s["shock"], s["hours"]),
+            "exit_fraction": d["best_exit_fraction"], "expected_cost": d["expected_total_cost_at_best"],
+            "be": [f(ec["cost_first"]), f(ec["cost_avg_cap"]), f(ec["cost_marginal_cap"])]}
+
+
+NODE = r"""
+const M = require(process.argv[2]); const cs = JSON.parse(require('fs').readFileSync(process.argv[3]));
+const curve = JSON.parse(process.argv[4]);
+console.log(JSON.stringify(cs.map(c => {
+  const r = M.positionLoss(c.s, c.p), d = M.decide(c.prob, c.L, curve, c.carry), b = M.breakEven(curve, c.L, c.scale, c.carry);
+  return {L_low: r.L_low, L_high: r.L_high, oracle_known: r.oracle_known,
+          branches: r.branches.map(x => [x.oracle_falls, x.liquidated, x.bad_debt_usd, x.loss_of_equity]),
+          oracle_falls: M.oracleFalls(c.oracle, c.s.layer, c.s.shock, c.s.hours),
+          exit_fraction: d.exitFraction, expected_cost: d.expectedCost,
+          be: [b.p_start, b.p_exit_sellable, b.p_sell_to_cap]};
+})));
+"""
+
+
+def same(a, b, tol=1e-9):
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(same(x, y, tol) for x, y in zip(a, b))
+    if isinstance(a, bool) or isinstance(b, bool) or a is None or b is None:
+        return a == b
+    return abs(a - b) <= tol * max(1.0, abs(a), abs(b))
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--n", type=int, default=500)
+    ap.add_argument("--seed", type=int, default=7)
+    a = ap.parse_args()
+    cs = cases(a.n, random.Random(a.seed))
+    with tempfile.TemporaryDirectory() as d:
+        cf, sf = os.path.join(d, "cases.json"), os.path.join(d, "run.js")
+        json.dump(cs, open(cf, "w"))
+        open(sf, "w").write(NODE)
+        js = json.loads(subprocess.run(["node", sf, JS, cf, json.dumps(CURVE)], check=True, capture_output=True,
+                                       text=True).stdout)
+    fails = {}
+    for i, (c, j) in enumerate(zip(cs, js)):
+        py = python_side(c)
+        for k in py:
+            if not same(py[k], j[k]):
+                fails.setdefault(k, []).append((i, py[k], j[k]))
+    for k in ("L_low", "L_high", "oracle_known", "branches", "oracle_falls", "exit_fraction", "expected_cost", "be"):
+        n_bad = len(fails.get(k, []))
+        print(f"GATE {'PASS' if not n_bad else 'FAIL'}  {k}: {len(cs) - n_bad}/{len(cs)} equal"
+              + (f"  first mismatch {fails[k][0]}" if n_bad else ""))
+    # fault injection on the Risk Desk's nodes, on the real sample dashboard
+    dpath = os.path.join(HERE, "sample_data", "dashboard.sample.json")
+    d = json.load(open(dpath))
+    from frontend_contract import inject
+    combos = [(pk, k.split(":")[0], k.split(":")[1], sev) for pk in d["position_presets"] for k in d["ui"]["injections"]
+              for sev in (0.5, 1, 2.77, 10, 50, 99)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "c.json"), os.path.join(tmp, "i.js")
+        json.dump(combos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);"
+                            "const cs=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(cs.map(c=>M.inject(d,c[0],c[1],c[2],c[3]))));")
+        jout = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    keys = ("L_low", "L_high", "loss_usd", "oracle_falls", "liquidated", "sellable_later", "avg_cost_later")
+    bad = [(c, k, inject(d, *c)[k], j.get(k)) for c, j in zip(combos, jout) for k in keys if not same(inject(d, *c)[k], j.get(k))]
+    print(f"GATE {'PASS' if not bad else 'FAIL'}  inject: {len(combos)} (preset, node, failure, severity) combinations "
+          f"equal on {', '.join(keys)}" + (f"  first mismatch {bad[0]}" if bad else ""))
+    sys.exit(1 if fails or bad else 0)
+
+
+if __name__ == "__main__":
+    main()
