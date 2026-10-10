@@ -97,6 +97,16 @@ def failure_types(cal, graph):
                   "model": {"type": "loss_model", "scenario_layer": 2, "permanent": 1.0, "hours": None,
                             "oracle": "oracleFalls(oracle, 2, shock, hours)"},
                   "probabilities": c or nd("no calibration file")},
+        "navLoss": {"label": "NAV falls (USDe per sUSDe)", "layer": 2, "unit": "%", "min": 0.5, "max": 100,
+                    "default_severity": 5, "anchors": [],
+                    "model": {"type": "loss_model", "scenario_layer": 2, "permanent": 1.0, "hours": None,
+                              "oracle": "false: no feed prices sUSDe's NAV"},
+                    "probabilities": nd("no historical sUSDe NAV loss in our data")},
+        "discount": {"label": "Trades below its NAV", "layer": 2, "unit": "%", "min": 0.5, "max": 30,
+                     "default_severity": 3, "anchors": [],
+                     "model": {"type": "loss_model", "scenario_layer": 2, "permanent": 0.0, "hours": None,
+                               "oracle": "false: no feed prices sUSDe"},
+                     "probabilities": nd("no sample")},
         "oracleLow": {"label": "Reports a price that is too low", "layer": 3, "unit": "%", "min": 1, "max": 40,
                       "default_severity": 2.77, "anchors": [{"value": 2.77, "source": "PT-reUSD oracle drop, 25 Aug "
                                                                                         "2026 (HackMD, back-tested 9/9)"}],
@@ -132,8 +142,10 @@ def failure_types(cal, graph):
                 by_node[k] = ["halt"]
             elif kind == "offchain_issuer":
                 by_node[k] = ["shortfall"]
-            elif L == 2 and cn in ("USDe", "StakedUSDeV2", "PendleSUSDESY"):
+            elif L == 2 and cn == "USDe":
                 by_node[k] = ["depeg"]
+            elif L == 2 and cn in ("StakedUSDeV2", "PendleSUSDESY"):
+                by_node[k] = ["navLoss", "discount"]
             elif L == 3 and cn in ("MetaOracleDeviationTimelock", "MorphoChainlinkOracleV2", "EACAggregatorProxy",
                                    "PendleSparkLinearDiscountOracle"):
                 by_node[k] = ["oracleLow", "stale"]
@@ -185,10 +197,17 @@ INJECTIONS = {
                          "note": "USDe loses backing; the oracle follows only after the meta-oracle switches to its "
                                  "USDe / USD backup (deviation above threshold for the challenge timelock)"},
     "usde:depeg": {"type": "loss_model", "scenario_layer": 2, "permanent": 1.0, "hours": None, "oracle": "rule",
-                   "note": "USDe / USD is priced only by the backup oracle: falls after the meta-oracle switch"},
-    "susde:depeg": {"type": "loss_model", "scenario_layer": 2, "permanent": 1.0, "hours": None, "oracle": False,
-                    "note": "no feed of this oracle prices sUSDe (linear discount x USDe / USD), so a sUSDe-only fall "
-                            "liquidates nobody; holders still lose the value"},
+                   "token": "USDe",
+                   "note": "USDe falls against USD: the PT is denominated in USDe, so it falls by the same share; USDe / USD "
+                           "is priced only by the backup oracle, which takes over after the meta-oracle switch"},
+    "susde:navLoss": {"type": "loss_model", "scenario_layer": 2, "permanent": 1.0, "hours": None, "oracle": False,
+                      "note": "sUSDe's NAV (USDe per sUSDe = totalAssets / totalSupply) falls: the SY exchange rate falls "
+                              "with it and the PT index never decreases (max of rate and stored index), so PT holders "
+                              "lose the same share for good (Pendle PendleERC4626SY / PendleYieldToken source). No feed "
+                              "prices sUSDe's NAV, so nobody is liquidated and lenders' bad debt builds silently"},
+    "susde:discount": {"type": "loss_model", "scenario_layer": 2, "permanent": 0.0, "hours": None, "oracle": False,
+                       "note": "sUSDe trades below its NAV on markets while the NAV is unchanged: the PT still redeems at "
+                               "the NAV-based rate, so holding to expiry recovers it; selling now would lock in the loss"},
     "feeds:oracleLow": {"type": "loss_model", "scenario_layer": 3, "permanent": 0.0, "hours": None, "oracle": True,
                         "note": "the feed reports the low price itself; the price recovers but liquidations stay"},
     "feeds:stale": {"type": "not_modelled", "note": "liquidations use the last price; the PT feed is computed every "
@@ -304,7 +323,8 @@ def inject(d, preset_key, node, fail, sev):
 
     if m["type"] == "loss_model":
         shock = sev / 100
-        flag = oracle_falls(d["oracle"], m["scenario_layer"], shock, m["hours"]) if m["oracle"] == "rule" else m["oracle"]
+        flag = (oracle_falls(d["oracle"], m["scenario_layer"], shock, m["hours"], m.get("token"))
+                if m["oracle"] == "rule" else m["oracle"])
         s = Scenario("inject", m["scenario_layer"], shock, m["permanent"], m["hours"], "", False)
         r = position_loss(s, Position("p", C, D_, p["lltv"] or 0.915, p["can_hold"],
                                       flag if m["scenario_layer"] == 2 else None,

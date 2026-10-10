@@ -112,10 +112,14 @@ def classify(a, rpc, block, now=None, depth=0, chain=1, collateral_symbol=None):
                      "rule": "vault conversion rate (getAssets): follows the vault's own accounting",
                      "evidence": {"grade": "B", "source": "MorphoChainlinkOracleV2 source"}}
         base = [relative(p, collateral_symbol) for k, p in parts.items() if k.startswith("BASE")]
+        assets = sorted({a for k, p in parts.items() if k.startswith("BASE") for a in (p.get("underlying_assets") or [])}
+                        | {p["prices"] for k, p in parts.items() if k.startswith("BASE") and p.get("kind") == "market_price_feed"
+                           and p.get("prices") and p["prices"] != (collateral_symbol or "").lower()})
         comb = lambda xs: True if True in xs else (None if None in xs else False)
         out.update(kind="morpho_chainlink_v2", tracks_market=comb([t[0] for t in base]),
                    tracks_underlying=comb([t[1] for t in base]), parts=parts,
                    loan_side=[k for k in parts if k.startswith("QUOTE")],
+                   underlying_assets=assets,
                    rule="base side prices the collateral (quote side prices the loan token): tracks what any base "
                         "part tracks",
                    evidence={"grade": max([p["evidence"]["grade"] for k, p in parts.items() if k.startswith("BASE")]
@@ -135,6 +139,8 @@ def classify(a, rpc, block, now=None, depth=0, chain=1, collateral_symbol=None):
                    challenged=bool(challenged),
                    tracks_market=current["tracks_market"], tracks_underlying=current["tracks_underlying"],
                    tracks_market_after_switch=b["tracks_market"], tracks_underlying_after_switch=b["tracks_underlying"],
+                   underlying_assets=current.get("underlying_assets") or [],
+                   underlying_assets_after_switch=b.get("underlying_assets") or [],
                    rule="current oracle now; backup only after deviation > threshold persists for the challenge "
                         "timelock and acceptChallenge() is called",
                    evidence={"grade": max(["B", p["evidence"]["grade"], b["evidence"]["grade"]], key="ABCD".index),
@@ -162,15 +168,26 @@ def classify(a, rpc, block, now=None, depth=0, chain=1, collateral_symbol=None):
     return out
 
 
-def oracle_falls(cls, layer, shock, hours):
+def _sees(cls, token, suffix=""):
+    """For an underlying shock on `token`: False if the oracle prices named underlying assets and not this one."""
+    assets = cls.get("underlying_assets" + suffix)
+    return not (token and assets and token.lower() not in assets)
+
+
+def oracle_falls(cls, layer, shock, hours, token=None):
     """Does this oracle fall with a shock on the collateral? layer 2 = underlying / issuer, 3 = market price.
-    Meta-oracle: the backup takes over only if the shock exceeds the deviation threshold and lasts longer than
-    the challenge timelock (hours None = permanent)."""
+    token (optional, layer 2): the asset that fails; an oracle whose feeds price other underlying assets (e.g.
+    USDe / USD when sUSDe's NAV falls) does not see it. Meta-oracle: the backup takes over only if the shock
+    exceeds the deviation threshold and lasts longer than the challenge timelock (hours None = permanent)."""
     key = "tracks_underlying" if layer == 2 else "tracks_market"
     now = cls.get(key)
+    if layer == 2 and now is True and not _sees(cls, token):
+        now = False
     if cls.get("kind") != "meta_oracle_timelock" or now is True:
         return now
     after = cls.get(key + "_after_switch")
+    if layer == 2 and after is True and not _sees(cls, token, "_after_switch"):
+        after = False
     lasts = hours is None or (cls.get("challenge_timelock_s") is not None and hours * 3600 >= cls["challenge_timelock_s"])
     big = cls.get("deviation_threshold") is not None and shock > cls["deviation_threshold"]
     if after is True and lasts and big:

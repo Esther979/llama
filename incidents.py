@@ -41,7 +41,8 @@ def incident_types(cal):
                + " (calibrate_depeg.py)") if cal else None
     return [
         {"key": "underlying_depeg", "layer": 2, "type": "depeg",
-         "description": "the underlying (sUSDe / USDe) trades below 0.97",
+         "description": "USDe (the PT's accounting asset) trades below 0.97 USD; sUSDe is not a $1 coin (it is worth "
+                        "more than 1 USDe), its own failure is a NAV loss, not a depeg",
          "outcomes": {"resolved": "usde_mild", "partial": "depeg_partial", "severe": "issuer_total"},
          "severe_alternatives": ["issuer_half"],
          "probabilities": p_dep or {"resolved": 0.0, "partial": 0.0, "severe": 0.0},

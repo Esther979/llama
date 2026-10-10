@@ -27,11 +27,13 @@ CURVE = [[0.01, 0.000153], [0.05, 0.000199], [0.1, 0.00033], [0.25, 0.00082], [0
 ORACLES = [
     {"kind": "meta_oracle_timelock", "tracks_market": False, "tracks_underlying": False,
      "tracks_market_after_switch": False, "tracks_underlying_after_switch": True,
-     "deviation_threshold": 0.0075, "challenge_timelock_s": 57600},
+     "deviation_threshold": 0.0075, "challenge_timelock_s": 57600,
+     "underlying_assets": [], "underlying_assets_after_switch": ["usde"]},
     {"kind": "meta_oracle_timelock", "tracks_market": False, "tracks_underlying": False,
      "tracks_market_after_switch": None, "tracks_underlying_after_switch": None,
      "deviation_threshold": 0.01, "challenge_timelock_s": 3600},
     {"kind": "morpho_chainlink_v2", "tracks_market": True, "tracks_underlying": None},
+    {"kind": "morpho_chainlink_v2", "tracks_market": False, "tracks_underlying": True, "underlying_assets": ["usde"]},
     {"kind": "linear_discount", "tracks_market": False, "tracks_underlying": False},
     {"kind": "unknown", "tracks_market": None, "tracks_underlying": None},
 ]
@@ -49,7 +51,8 @@ def cases(n, rnd):
         p = {"collateral_usd": C, "debt_usd": D, "lltv": lltv, "can_hold": rnd.random() < 0.5,
              "oracle_tracks_underlying": flag if s["layer"] == 2 else rnd.choice([True, False, None]),
              "oracle_tracks_market": flag if s["layer"] == 3 else rnd.choice([True, False, None])}
-        out.append({"s": s, "p": p, "oracle": rnd.choice(ORACLES), "prob": rnd.random() ** 3,
+        out.append({"s": s, "p": p, "oracle": rnd.choice(ORACLES), "token": rnd.choice([None, "USDe", "sUSDe"]),
+                    "prob": rnd.random() ** 3,
                     "L": rnd.random(), "carry": rnd.choice([0.0, 0.001, rnd.uniform(0, 0.01)]),
                     "scale": rnd.choice([1.0, rnd.uniform(1, 12)])})
     return out
@@ -66,7 +69,7 @@ def python_side(c):
     return {"L_low": r["L_low"], "L_high": r["L_high"], "oracle_known": r["oracle_known"],
             "branches": [[b["oracle_falls"], b["liquidated"], b["bad_debt_usd"], b["loss_of_equity"]]
                          for b in r["branches"]],
-            "oracle_falls": oracle_falls(c["oracle"], s["layer"], s["shock"], s["hours"]),
+            "oracle_falls": oracle_falls(c["oracle"], s["layer"], s["shock"], s["hours"], c["token"]),
             "exit_fraction": d["best_exit_fraction"], "expected_cost": d["expected_total_cost_at_best"],
             "be": [f(ec["cost_first"]), f(ec["cost_avg_cap"]), f(ec["cost_marginal_cap"])]}
 
@@ -78,7 +81,7 @@ console.log(JSON.stringify(cs.map(c => {
   const r = M.positionLoss(c.s, c.p), d = M.decide(c.prob, c.L, curve, c.carry), b = M.breakEven(curve, c.L, c.scale, c.carry);
   return {L_low: r.L_low, L_high: r.L_high, oracle_known: r.oracle_known,
           branches: r.branches.map(x => [x.oracle_falls, x.liquidated, x.bad_debt_usd, x.loss_of_equity]),
-          oracle_falls: M.oracleFalls(c.oracle, c.s.layer, c.s.shock, c.s.hours),
+          oracle_falls: M.oracleFalls(c.oracle, c.s.layer, c.s.shock, c.s.hours, c.token),
           exit_fraction: d.exitFraction, expected_cost: d.expectedCost,
           be: [b.p_start, b.p_exit_sellable, b.p_sell_to_cap]};
 })));

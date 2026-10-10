@@ -65,11 +65,15 @@
   }
 
   /* Does the market's oracle fall with this shock? cls = dashboard.json "oracle" (oracle_types.classify). */
-  function oracleFalls(cls, layer, shock, hours) {
+  function oracleFalls(cls, layer, shock, hours, token = null) {
     const key = layer === 2 ? 'tracks_underlying' : 'tracks_market';
-    const now = cls[key];
+    const sees = suffix => { const a = cls['underlying_assets' + suffix];
+      return !(token && a && a.length && !a.includes(token.toLowerCase())); };
+    let now = cls[key];
+    if (layer === 2 && now === true && !sees('')) now = false;
     if (cls.kind !== 'meta_oracle_timelock' || now === true) return now;
-    const after = cls[key + '_after_switch'];
+    let after = cls[key + '_after_switch'];
+    if (layer === 2 && after === true && !sees('_after_switch')) after = false;
     const lasts = hours === null || hours === undefined ||
       (cls.challenge_timelock_s != null && hours * 3600 >= cls.challenge_timelock_s);
     const big = cls.deviation_threshold != null && shock > cls.deviation_threshold;
@@ -129,7 +133,7 @@
     };
     if (m.type === 'loss_model') {
       const shock = sev / 100, L2 = m.scenario_layer === 2;
-      const flag = m.oracle === 'rule' ? oracleFalls(d.oracle, m.scenario_layer, shock, m.hours) : m.oracle;
+      const flag = m.oracle === 'rule' ? oracleFalls(d.oracle, m.scenario_layer, shock, m.hours, m.token || null) : m.oracle;
       const r = positionLoss({layer: m.scenario_layer, shock, permanent: m.permanent, hours: m.hours},
         {collateral_usd: C, debt_usd: D, lltv: p.lltv || 0.915, can_hold: p.can_hold,
          oracle_tracks_underlying: L2 ? flag : null, oracle_tracks_market: L2 ? null : flag});

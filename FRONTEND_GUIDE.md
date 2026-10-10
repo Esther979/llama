@@ -29,7 +29,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 1. Do not hard-code numbers from the old snapshot. Read everything from `const d = window.DASHBOARD;`.
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
 3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), plus the detected incidents (`d.detected`, empty today; keep the prototype sample feed, still labelled as invented).
-4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`).
+4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
 5. Step 3 stays the manager's probability. Start it at `d.failure_types.types[fail].probabilities.p_severe` when that is not null, with the note "historical default (C): " + `evidence.source`. When it is null, keep the page's sample value and its "not calibrated" note.
 6. Show evidence grades: A = read from chain / API, B = contract rule back-tested, C = analogy from history, D = assumption. Dashed style = D.
 7. Keep the field names of `dashboard.json`. If something is missing, ask the backend (do not invent it).
@@ -44,7 +44,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 | `NODES` | `d.ui.nodes`: same 9 keys (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`) with `label`, `kind`, `layer`, `address`, `contract_name`, `members` (ids in `d.dependency_graph.nodes`), `evidence {grade, source}`, `note`, `failures` |
 | `LAY` | `d.ui.layers` (`n`, `name`, `nodes`); facts per layer: see section 6 |
 | `EDGES` | `d.ui.edges` (`from`, `to`, `type`, `grade`, `evidence`) |
-| `FBN` | `d.ui.nodes[k].failures` |
+| `FBN` | `d.ui.nodes[k].failures` (sUSDe now has `navLoss` and `discount` instead of `depeg`) |
 | `POS` | `d.position_presets`: `spot`, `lev_market_avg`, `lev_largest_borrower`, `lev_closest_to_liquidation` (`label`, `collateral_usd`, `debt_usd`, `lltv`, `ltv`, `evidence`). Fill the header position `<select>` from it |
 | `FAIL[k].loss` | delete; `RiskModel.inject` |
 | `FAIL[k].prob` | `d.failure_types.types[k].probabilities.p_severe` when not null |
@@ -70,7 +70,8 @@ How each node and failure is modelled (`d.ui.injections`):
 | Node · failure | Oracle follows? | What it means |
 |---|---|---|
 | `ethena:shortfall`, `usde:depeg` | after the meta-oracle switch (deviation > 0.75% for 16 h) | USDe / USD is priced only by the backup oracle |
-| `susde:depeg` | no | no feed prices sUSDe: holders lose value, nobody is liquidated |
+| `susde:navLoss` | no | sUSDe's NAV (USDe per sUSDe) falls: the PT loses the same share for good (Pendle's PT index never decreases), no feed prices the NAV, so nobody is liquidated |
+| `susde:discount` | no | sUSDe trades below its NAV while the NAV is unchanged: the PT still redeems at the NAV-based rate, holding to expiry recovers it |
 | `pt:depeg` | no | the oracle prices the PT by a linear discount; holding to expiry recovers the PT |
 | `feeds:oracleLow`, `oracle:oracleLow` | yes (by definition) | liquidations happen at the low price, then the price recovers |
 | `lending:cascade` | (the cause) | severity = oracle drop that liquidates other borrowers; their PT is sold into the pool first |
@@ -148,21 +149,23 @@ After the change, these inputs must give these numbers (from `RiskModel.inject`;
 
 | Position preset | Node · failure | Severity | L_low - L_high (of equity) | Loss USD | Oracle falls | Liquidated | Sellable later | Avg cost later |
 |---|---|---|---|---|---|---|---|---|
-| `spot` | `susde:depeg` | 10% | 0.1000 - 0.1000 | $1,000,000 | False | [False] | 0.4500 | 0.491% |
+| `spot` | `susde:navLoss` | 10% | 0.1000 - 0.1000 | $1,000,000 | False | [False] | 0.4500 | 0.491% |
+| `spot` | `susde:discount` | 3% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
 | `spot` | `pt:depeg` | 10% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
 | `spot` | `usde:depeg` | 10% | 0.1000 - 0.1000 | $1,000,000 | True | [False] | 0.0000 | - |
 | `lev_closest_to_liquidation` | `usde:depeg` | 0.5% | 0.0531 - 0.0531 | $50,000 | False | [False] | 0.4500 | 0.491% |
-| `lev_closest_to_liquidation` | `usde:depeg` | 2% | 0.4646 - 0.4646 | $437,056 | True | [True] | 0.1418 | 1.232% |
-| `lev_closest_to_liquidation` | `susde:depeg` | 2% | 0.2126 - 0.2126 | $200,000 | False | [False] | 0.4500 | 0.491% |
+| `lev_closest_to_liquidation` | `usde:depeg` | 2% | 0.4646 - 0.4646 | $437,054 | True | [True] | 0.1418 | 1.232% |
+| `lev_closest_to_liquidation` | `susde:navLoss` | 2% | 0.2126 - 0.2126 | $200,000 | False | [False] | 0.4500 | 0.491% |
+| `lev_closest_to_liquidation` | `susde:discount` | 2% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
 | `lev_closest_to_liquidation` | `pt:depeg` | 10% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
-| `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | 0.5335 - 0.5335 | $501,900 | True | [True] | 0.1264 | 1.305% |
+| `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | 0.5335 - 0.5335 | $501,897 | True | [True] | 0.1264 | 1.305% |
 | `lev_market_avg` | `ethena:shortfall` | 50% | 1.0000 - 1.0000 | $1,179,163 | True | [True] | 0.0000 | - |
 | `spot` | `market:drain` | 60% | 0.0000 - 0.0000 | $0 | None | None | 0.1800 | 0.491% |
 | `spot` | `lending:cascade` | 1% | 0.0000 - 0.0000 | $0 | None | None | 0.1449 | 1.219% |
 | `spot` | `lending:cascade` | 6% | 0.0000 - 0.0000 | $0 | None | None | 0.0000 | - |
 | `lev_market_avg` | `eth:halt` | 6h | 0.0000 - 0.0000 | $0 | None | None | 0.4500 | 0.491% |
 
-What the table shows (good demo points): the same 2% fall liquidates the closest borrower if it is USDe (the oracle follows after its 16 h switch) but not if it is sUSDe (no feed sees it); a 10% PT price fall costs nothing because the oracle ignores the PT market price and the PT redeems at expiry; when other borrowers are liquidated at a 1% oracle drop, only 14.5% of the position can still be sold.
+What the table shows (good demo points): the same 2% fall liquidates the closest borrower if it is USDe against USD (the oracle follows after its 16 h switch) but not if it is sUSDe's NAV (no feed sees it: the loss is real but nobody is liquidated) or a sUSDe market discount (no loss if held to expiry); a 10% PT price fall costs nothing because the oracle ignores the PT market price and the PT redeems at expiry; when other borrowers are liquidated at a 1% oracle drop, only 14.5% of the position can still be sold.
 
 ## 10. Do not
 

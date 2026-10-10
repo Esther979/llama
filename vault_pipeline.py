@@ -407,7 +407,9 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
         sc = presets[key]
         per, lo_sum, hi_sum = [], 0.0, 0.0
         for m in affected:
-            falls = oracle_falls(m["oracle"], layer, sc.shock, sc.hours)
+            # the failing asset: for an underlying incident it is the underlying token, not the collateral
+            falls = oracle_falls(m["oracle"], layer, sc.shock, sc.hours,
+                                 t["symbol"] if kind == "depeg" and t["type"] == "underlying_stablecoin" else None)
             br = {}
             for b in m["read"]["borrowers"]:
                 if b["borrow_usdc"] <= 0:
