@@ -50,7 +50,8 @@ class Position:
 # Anchors measured in this repo's data or cited sources (see README / CLAUDE.md).
 PRESETS = [
     Scenario("usde_mild", 2, 1 - 0.9838145098294505, 0.0, 24,
-             "USDe daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after", False),
+             "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near "
+             "1.00 after; used for sUSDe / the PT by analogy", True),
     Scenario("oracle_dip", 3, 1 - 0.9420 / 0.9708, 0.0, 1,
              "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); "
              "back to -0.4% within 5h", True),
@@ -80,7 +81,8 @@ def _one_branch(s: Scenario, p: Position, oracle_falls: bool) -> dict:
     out["liquidation_drop_threshold"] = threshold
     if oracle_drop > threshold:
         f = lif(p.lltv)
-        seized_units = D * f / (C * (1 - oracle_drop))   # share of PT units taken by the liquidator
+        # share of PT units taken by the liquidator (oracle at 0: collateral worthless, all of it is taken)
+        seized_units = D * f / (C * (1 - oracle_drop)) if oracle_drop < 1 else float("inf")
         out["liquidated"] = True
         out["lif"] = f
         if seized_units >= 1:                        # collateral exhausted: borrower loses all equity

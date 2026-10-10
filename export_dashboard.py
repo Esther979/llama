@@ -22,8 +22,10 @@ import json
 import os
 import sys
 
+import backtest_reusd
 from decision_core import Scenario, decide, load_curve
 from loss_model import PRESETS, Position, position_loss
+from reasoning import check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -46,6 +48,31 @@ def notional_of(csv_path):
     with open(csv_path) as f:
         r = next(csv.DictReader(f))
     return float(r["usd"]) / float(r["fraction"])
+
+
+def saved_at(path):
+    return dt.datetime.fromtimestamp(os.path.getmtime(path), dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+
+def pt_price_of(csv_path, decimals):
+    """USD per PT used by fetch_data.py step3 to size the quotes (Pendle /v1/prices/assets)."""
+    import csv
+    with open(csv_path) as f:
+        r = next(csv.DictReader(f))
+    return float(r["usd"]) / (int(r["pt_amount_wei"]) / 10 ** decimals)
+
+
+def refusals(curves, max_x):
+    """Quotes above max_x that Pendle refused, read from the raw files next to the curve CSVs."""
+    out = []
+    for c in curves:
+        raw = c.replace("exit_curve_", "exit_quotes_raw_").replace(".csv", ".json")
+        for q in load_json(raw) or []:
+            if q.get("fraction", 0) > max_x and q.get("status") not in (200, 201):
+                msg = str((q.get("response") or {}).get("_error", ""))
+                out.append((q["fraction"], "MarketProportionTooHigh" if "MarketProportionTooHigh" in msg
+                            else f"HTTP {q.get('status')}", os.path.basename(raw)))
+    return sorted(out)
 
 
 def tri(v):
@@ -90,8 +117,18 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
     max_x = max(x for x, _ in curve)
     notional = notional_of(curves[0])
 
+    morpho_path = os.path.join(data_dir, f"morpho_markets_{pt[:10]}.json")
+    morpho = load_json(morpho_path) or []
+    src = {
+        "pendle": f"Pendle GET /{mk.get('source', 'v2')}/markets/all, fetched {mk.get('fetched_at')} "
+                  f"(data/pendle_markets.json)",
+        "quotes": f"Pendle POST /v3/sdk/{m.get('chainId')}/convert sell quotes PT -> underlying, saved "
+                  f"{saved_at(curves[0])} ({', '.join(os.path.basename(c) for c in curves)})",
+        "morpho": f"Morpho GraphQL marketById, saved {saved_at(morpho_path)} (data/{os.path.basename(morpho_path)})"
+                  if morpho else None,
+    }
     lending = []
-    for mm in load_json(os.path.join(data_dir, f"morpho_markets_{pt[:10]}.json")) or []:
+    for mm in morpho:
         if "error" in mm:
             continue
         s, o = mm.get("state") or {}, mm.get("oracle") or {}
@@ -110,6 +147,12 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "aggregate_ltv": (bor / col) if col and bor else None,
             "oracle_address": o.get("address"), "oracle_type": o.get("type"),
         })
+        x = lending[-1]
+        x["aggregate_liquidation_drop_threshold"] = (1 - x["aggregate_ltv"] / lltv
+                                                     if x["aggregate_ltv"] and isinstance(lltv, float) else None)
+    pt_dec = next((int((mm.get("collateralAsset") or {})["decimals"]) for mm in morpho
+                   if (mm.get("collateralAsset") or {}).get("decimals") is not None), None)
+    pt_price = pt_price_of(curves[0], pt_dec if pt_dec is not None else 18)
 
     grid, thresholds = run_grid(curve, L, pstep)
 
@@ -137,6 +180,59 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                    oracle_tracks_underlying, oracle_tracks_market)
     # exit cost per unit of equity: slippage x collateral / equity
     eq_curve = [(x, s * scale) for x, s in curve]
+
+    # ---- evidence grades (see reasoning.py) ----
+    validation = backtest_reusd.run(data_dir)
+    mech = ev("B" if validation["all_pass"] else "D",
+              "github.com/morpho-org/morpho-blue src/Morpho.sol (health check, LIF = min(1.15, 1/(1 - 0.3(1 - LLTV))), "
+              f"no close factor); back-test backtest_reusd.py: {validation['passed']}/{validation['total']} checks pass"
+              + ("" if validation["all_pass"] else " - FAILED, so graded D"))
+    for x in lending:
+        x["evidence"] = {k: ev("A", src["morpho"]) for k in ("lltv", "collateral_usd", "borrow_usd", "liquidity_usd",
+                                                             "oracle_address", "oracle_type")}
+        x["evidence"]["aggregate_ltv"] = derived("borrow_usd / collateral_usd", borrow_usd="A", collateral_usd="A")
+        x["evidence"]["aggregate_liquidation_drop_threshold"] = derived(
+            "1 - aggregate_ltv / lltv (Morpho health check)", formula=mech["grade"], aggregate_ltv="A", lltv="A")
+    oracle_src = ("unknown: Morpho API oracle type "
+                  f"'{lending[0]['oracle_type'] if lending else 'n/a'}', on-chain crawler not built; both branches computed")
+    e_in = {
+        "collateral": ev("D", "position size assumed by us (= notional_usd of the quotes), not Belem's"),
+        "debt": ev("D", "typed in (--debt), not read from chain" if debt > 0 else "default 0: assumed unlevered"),
+        "lltv": (ev("A", src["morpho"]) if lltv_source.startswith("morpho_markets")
+                 else ev("D", "typed in (--lltv)" if lltv_source == "--lltv" else lltv_source)),
+        "can_hold": ev("D", "assumption (--can-hold / --must-sell)"),
+        "pt_price": ev("A", f"Pendle GET /v1/prices/assets at quote time (usd / PT amount in "
+                            f"{os.path.basename(curves[0])})"),
+    }
+    for fl, val in (("oracle_tracks_underlying", oracle_tracks_underlying),
+                    ("oracle_tracks_market", oracle_tracks_market)):
+        e_in[fl] = ev("D", oracle_src if val is None else f"typed in (--{fl.replace('_', '-')}), not verified on-chain")
+    e_in["scale"] = derived("collateral / equity", collateral_usd="D", debt_usd="D")
+    ev_scen = {}
+    for sc in PRESETS:
+        lev = {"mechanism": mech["grade"], "debt_usd": "D"} if debt > 0 else {"debt_usd": "D"}
+        ev_scen[sc.key] = {
+            "shock": ev("C", sc.source),
+            "permanent": ev("D", ("assumption: full recovery by the end" if sc.permanent == 0 else
+                                  "assumption: no recovery" if sc.permanent == 1 else "assumption")
+                            + " (anchor: see shock source)"),
+            "hours": ev("C", sc.source) if sc.hours is not None else ev("D", "unknown"),
+            "L": derived("loss_model.position_loss", shock="C", permanent="D", can_hold="D",
+                         **({"oracle": "D"} if debt > 0 else {}), **lev),
+            "liquidated": derived("shock vs liquidation threshold", shock="C", **lev,
+                                  **({"lltv": e_in["lltv"]["grade"], "oracle": "D"} if debt > 0 else {})),
+            "threshold": derived("1 - debt / (collateral x LLTV)", **lev,
+                                 **({"lltv": e_in["lltv"]["grade"]} if debt > 0 else {})),
+            "bad_debt": derived("loss_model.position_loss", shock="C", permanent="D", **lev,
+                                **({"oracle": "D"} if debt > 0 else {})),
+        }
+    ctx = {"collateral": notional, "debt": debt, "lltv": lltv, "can_hold": can_hold,
+           "oracle_tracks_underlying": oracle_tracks_underlying, "oracle_tracks_market": oracle_tracks_market,
+           "name": m.get("name") and f"PT-{m.get('name')} (expiry {str(m.get('expiry'))[:10]})",
+           "pt": pt, "pt_price": pt_price, "curve": curve, "max_x": max_x, "scale": scale, "pstep": pstep,
+           "lending": lending[0] if lending else None, "src": src, "ev": e_in, "ev_scen": ev_scen}
+    grid_fn = lambda L_, sc_: run_grid([(x, s * sc_) for x, s in curve], L_, pstep)[1]
+
     scenarios = []
     for sc in PRESETS:
         r = position_loss(sc, pos)
@@ -158,6 +254,27 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "thresholds": sthr,
             "decision_grid": sgrid,
         })
+        S = scenario_reasoning(ctx, sc, r, sthr, mech)
+        texts = decision_texts(S, sc, r)
+        bad = check_texts(S, texts)
+        if bad:
+            sys.exit(f"GATE FAIL  decision_text for {sc.key} uses numbers not in its reasoning steps: {bad}")
+        es = ev_scen[sc.key]
+        g_grid = derived("decision_core.decide with L_used and the exit curve", exit_curve="A",
+                         L_used=es["L"]["grade"])
+        scenarios[-1].update({
+            "evidence": {"shock": es["shock"], "permanent": es["permanent"], "hours": es["hours"],
+                         "L_low": es["L"], "L_high": es["L"], "L_used": es["L"],
+                         "branches": es["L"], "liquidated": es["liquidated"],
+                         "liquidation_drop_threshold": es["threshold"], "bad_debt_usd": es["bad_debt"],
+                         "thresholds": g_grid, "decision_grid": g_grid},
+            "reasoning": S,
+            "decision_text": texts,
+            "weakest_link": weakest_link(ctx, sc, r, sthr, grid_fn),
+        })
+    refused = refusals(curves, max_x)
+    g_pos = ev("A", src["pendle"])
+    placeholder = ev("D", "placeholder L (--L), not from the loss model")
 
     return {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -166,6 +283,10 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "pt": pt, "underlying": und, "expiry": str(m.get("expiry"))[:10],
             "pool_liquidity_usd": d.get("liquidity"), "implied_apy": d.get("impliedApy"),
             "notional_usd": notional,
+            "pt_price_usd": pt_price,
+            "evidence": {**{k: g_pos for k in ("chain_id", "name", "market", "pt", "underlying", "expiry",
+                                                "pool_liquidity_usd", "implied_apy")},
+                         "notional_usd": e_in["collateral"], "pt_price_usd": e_in["pt_price"]},
         },
         "exit_curve": [{"fraction": x, "usd": round(x * notional, 2), "loss": s} for x, s in curve],
         "max_exit_fraction": max_x,
@@ -180,11 +301,33 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "oracle_tracks_underlying": oracle_tracks_underlying,
             "oracle_tracks_market": oracle_tracks_market,
             "exit_cost_scale": scale,
+            "ltv": debt / notional,
+            "evidence": {"collateral_usd": e_in["collateral"], "debt_usd": e_in["debt"],
+                         "equity_usd": derived("collateral - debt", collateral_usd="D", debt_usd="D"),
+                         "lltv": e_in["lltv"], "can_hold": e_in["can_hold"],
+                         "oracle_tracks_underlying": e_in["oracle_tracks_underlying"],
+                         "oracle_tracks_market": e_in["oracle_tracks_market"],
+                         "exit_cost_scale": e_in["scale"],
+                         "ltv": derived("debt / collateral", collateral_usd="D", debt_usd="D")},
             "note": "scenarios[].decision_grid is per unit of equity: exit cost = slippage x exit_cost_scale "
                     "(collateral / equity), stay cost = p x L_used. The unsold part keeps the full "
                     "position's L; the deleveraging effect of a sale is not modelled.",
         },
         "scenarios": scenarios,
+        "weakest_link": overall_weakest(scenarios),
+        "validation": validation,
+        "evidence": {
+            "grades": {"A": "measured now from live API / chain data",
+                       "B": "mechanism verified in contract source and back-tested",
+                       "C": "analogy from another asset's history", "D": "assumption or unknown"},
+            "exit_curve": ev("A", src["quotes"]),
+            "max_exit_fraction": ev("A", f"largest quoted fraction; " + (
+                "; ".join(f"{f:g} refused ({why}, {fn})" for f, why, fn in refused) if refused
+                else "no refused quote above it in the raw files")),
+            "lending": ev("A", src["morpho"]) if lending else ev("D", "no Morpho data in data/"),
+            "assumptions": placeholder, "thresholds": placeholder, "decision_grid": placeholder,
+            "mechanism": mech,
+        },
     }
 
 
@@ -219,8 +362,15 @@ def main():
     for s in out["scenarios"]:
         t = s["thresholds"]
         L = (f"{s['L_low']:.4f}" if s["L_basis"] == "exact" else f"{s['L_low']:.4f}-{s['L_high']:.4f}")
+        w = s["weakest_link"]
         print(f"  {s['key']:13s} L={L:15s} liquidated={s['liquidated']}  "
-              f"start p>={t['start_selling_p']}  cap p>={t['sell_to_cap_p']}")
+              f"start p>={t['start_selling_p']}  cap p>={t['sell_to_cap_p']}  "
+              f"weakest: {w['input']} ({w['grade']}) -> {w['alternative']}")
+    w, v = out["weakest_link"], out["validation"]
+    print(f"overall weakest link: {w.get('input')} ({w.get('grade')}) in {w.get('scenarios')}")
+    print(f"GATE {'PASS' if v['all_pass'] else 'FAIL'}  back-test {v['passed']}/{v['total']}; "
+          f"mechanism graded {out['evidence']['mechanism']['grade']}")
+    print("GATE PASS  every decision_text number comes from its reasoning steps")
 
 
 if __name__ == "__main__":

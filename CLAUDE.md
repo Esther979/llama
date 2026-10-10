@@ -25,6 +25,9 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `fetch_data.py` | step0 connectivity · step1 Pendle markets · step2 history · step3 real sell quotes · step4 Morpho markets with the PT as collateral |
 | `decision_core.py` | Picks exit fraction x minimising `x·slippage(x) + (1−x)·p·L`, capped at the largest size with a real quote |
 | `export_dashboard.py` | Builds `data/dashboard.json` (position, exit curve, capacity, lending, thresholds, decision grid over p) |
+| `loss_model.py` | L = shock × transmission (Morpho liquidation rules) per preset scenario |
+| `reasoning.py` | Evidence grades A–D, per-scenario reasoning steps, decision texts, weakest link |
+| `backtest_reusd.py` | Back-test of the Morpho rules on PT-reUSD 25 Aug 2026; grade B depends on it passing |
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |
 
@@ -54,18 +57,20 @@ Done
   LIF = min(1.15, 1/(1 − 0.3·(1 − LLTV))), no close factor, bad debt when collateral runs out).
   Unknown oracle behaviour → both branches, reported as a range. 8 hand-calculated cases pass.
 
+- `export_dashboard.py` uses `loss_model.py`: `scenarios[]` with per-scenario L, grid per unit of equity,
+  evidence grade + source on every number, reasoning chain, decision texts, weakest link, `validation`
+  (PT-reUSD back-test 9/9).
+
 Not done (in priority order)
-1. Wire `loss_model.py` into `export_dashboard.py` / `decision_core.py` (per-scenario L instead of 0.5).
-   For levered positions, express exit cost per unit of equity (slippage × collateral / equity).
-2. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`
+1. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`
    (evidence = which API/contract call and block). Today the data sits in separate JSON files.
-3. On-chain crawler over RPC: start from the position, read referenced contracts layer by layer, resolve the
+2. On-chain crawler over RPC: start from the position, read referenced contracts layer by layer, resolve the
    Unknown Morpho oracle. Verify function signatures from the Pendle and Morpho GitHub sources before coding.
    Needs an RPC URL (asked from Belem); historical replay needs an archive node.
-4. Off-chain dependencies for L2 (Ethena: exchanges, custodians) via GraphRAG + LLM agent, each edge with a source URL.
+3. Off-chain dependencies for L2 (Ethena: exchanges, custodians) via GraphRAG + LLM agent, each edge with a source URL.
    The LLM never produces the loss numbers; numbers come from code.
-5. `carry_lost` (yield given up by selling the PT early) is 0; make the alternative yield an input.
-6. Replays: Stream xUSD / Elixir deUSD (Nov 2025, L2 issuer failure) and PT-reUSD on Morpho (25 Aug 2026,
+4. `carry_lost` (yield given up by selling the PT early) is 0; make the alternative yield an input.
+5. Replays: Stream xUSD / Elixir deUSD (Nov 2025, L2 issuer failure) and PT-reUSD on Morpho (25 Aug 2026,
    L3 oracle manipulation, analysis at hackmd.io/@kanveuler/BJe_n1ivGe).
 
 Assumptions to keep visible: position size $10M is ours, not Belem's; capacity is a snapshot and counts only

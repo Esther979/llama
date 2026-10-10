@@ -12,9 +12,11 @@ Current test position: **PT-sUSDe-26NOV2026** on Ethereum (Pendle market `0x47ad
 | `decision_core.py` | Decision maths: picks the exit fraction x that minimises `x·slippage(x) + (1−x)·p·L`, never beyond the largest size that got a real quote. | printed |
 | `export_dashboard.py` | Packs everything the dashboard needs into one JSON, including one loss L per preset scenario from `loss_model.py`. | `data/dashboard.json` |
 | `loss_model.py` | L = shock (cited preset) × transmission (Morpho liquidation rules, position debt / LLTV). Unknown oracle behaviour → both branches, a range. | printed / `--json` |
+| `reasoning.py` | Evidence grades (A–D), per-scenario reasoning chain, decision texts and weakest link; used by `export_dashboard.py`. | — |
+| `backtest_reusd.py` | Back-tests the Morpho liquidation rules in `loss_model.py` on the 25 Aug 2026 PT-reUSD liquidations (HackMD figures + our Pendle data). Its result is what earns grade B. | printed, and `validation` in `dashboard.json` |
 | `llama_graph.py` | DeFiLlama free endpoints: protocol-level dependency edges, price and stablecoin replay data. Needs `pip install defillama-sdk`. | `data/edges_*.csv`, `data/replay_*.json` |
 | `sample_data/dashboard.sample.json` | A ready `dashboard.json` built from the 10 Oct 2026 run, so the dashboard can be built without running anything. | — |
-| `sample_data/dashboard.levered.sample.json` | Same run with `--debt 8950000` (LTV 89.5%, oracle unknown): shows liquidations, bad debt and L ranges in `scenarios[]`. | — |
+| `sample_data/dashboard.levered.sample.json` | Same run with `--debt 8950000` (LTV 89.5%, oracle unknown): shows liquidations, bad debt, L ranges and the oracle as weakest link in `scenarios[]`. | — |
 
 ## Run order
 
@@ -29,6 +31,7 @@ python3 fetch_data.py step2 --chain 1 --market $M
 python3 fetch_data.py step3 --chain 1 --market $M --notional 10000000 --tag 10m
 python3 fetch_data.py step3 --chain 1 --market $M --notional 10000000 --fractions 0.25,0.3,0.35,0.4,0.45 --tag cap
 python3 fetch_data.py step4 --chain 1 --market $M
+python3 backtest_reusd.py           # 9 GATE lines; export_dashboard.py runs it too
 python3 export_dashboard.py --market $M --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv --L 0.5
 # levered example: $8.8M USDC borrowed against the $10M PT, oracle behaviour unknown
 #   ... --debt 8800000 [--lltv 0.915] [--must-sell] [--oracle-tracks-underlying true|false|unknown] [--oracle-tracks-market true|false|unknown]
@@ -45,15 +48,18 @@ All fractions are 0–1 (multiply by 100 for %). All money in USD.
 
 | Field | Meaning |
 |---|---|
-| `position` | `chain_id`, `name`, `market`, `pt`, `underlying` (sUSDe), `expiry`, `pool_liquidity_usd`, `implied_apy`, `notional_usd` (position size used for quotes) |
+| `position` | `chain_id`, `name`, `market`, `pt`, `underlying` (sUSDe), `expiry`, `pool_liquidity_usd`, `implied_apy`, `notional_usd` (position size used for quotes), `pt_price_usd` (USD per PT used to size the quotes), `evidence` |
 | `exit_curve[]` | Real Pendle quotes: `fraction` of the position sold, `usd`, `loss` = cost of selling it as a fraction of value |
 | `max_exit_fraction` | Largest fraction that got a quote. Above it Pendle refused (`MarketProportionTooHigh`): that part cannot be sold through the AMM now |
-| `lending[]` | Morpho markets holding the PT as collateral: `lltv`, `collateral_usd`, `borrow_usd`, `liquidity_usd` (what lenders can withdraw now), `aggregate_ltv`, `oracle_address`, `oracle_type` |
+| `lending[]` | Morpho markets holding the PT as collateral: `lltv`, `collateral_usd`, `borrow_usd`, `liquidity_usd` (what lenders can withdraw now), `aggregate_ltv`, `oracle_address`, `oracle_type`, `aggregate_liquidation_drop_threshold` (= `1 − aggregate_ltv / lltv`: oracle fall at which the market as a whole becomes liquidatable), `evidence` |
 | `assumptions.L` | Loss used by the top-level `decision_grid`. **Placeholder (0.5)**, kept for compatibility; per-scenario L is in `scenarios[]` |
 | `thresholds` | `start_selling_p`: smallest grid p where the tool starts selling; `sell_to_cap_p`: smallest grid p where it sells up to `max_exit_fraction` (`null` = never on the grid) |
 | `decision_grid[]` | Pre-computed result for p = 0, 0.005, …, 1 with the placeholder L, unlevered terms: `verdict`, `exit_fraction`, `stuck_fraction`, `expected_cost`, `stay_cost` |
-| `position_inputs` | The position the loss model was run for: `collateral_usd` (= `notional_usd`), `debt_usd`, `equity_usd` (= collateral − debt), `lltv`, `lltv_source` (`--lltv`, the Morpho file in `data/`, or the unused default when there is no debt), `can_hold`, `oracle_tracks_underlying`, `oracle_tracks_market` (`true` / `false` / `null` = unknown), `exit_cost_scale` (= collateral / equity, 1 when unlevered), `note` |
+| `position_inputs` | The position the loss model was run for: `collateral_usd` (= `notional_usd`), `debt_usd`, `equity_usd` (= collateral − debt), `lltv`, `lltv_source` (`--lltv`, the Morpho file in `data/`, or the unused default when there is no debt), `can_hold`, `oracle_tracks_underlying`, `oracle_tracks_market` (`true` / `false` / `null` = unknown), `exit_cost_scale` (= collateral / equity, 1 when unlevered), `ltv` (= debt / collateral), `note`, `evidence` |
 | `scenarios[]` | One entry per preset in `loss_model.PRESETS` (fields below) |
+| `weakest_link` | Across scenarios: the lowest-graded input that changes the verdict in the most scenarios. `id`, `step`, `input`, `grade`, `source`, `scenarios` (keys where it is that scenario's weakest link), `total_effect`, `why`. `{"id": null, "note"}` if no tested input changes any verdict |
+| `validation` | Back-test from `backtest_reusd.py`: `name`, `event`, `source`, `figures` (the HackMD inputs), `oracle_drop`, `lif`, `checks[]` (`name`, `expected`, `got`, `tolerance`, `pass`), `passed`, `total`, `all_pass` |
+| `evidence` | Grades for top-level fields: `grades` (legend), `exit_curve`, `max_exit_fraction` (source names the refused sizes), `lending`, `assumptions` / `thresholds` / `decision_grid` (D: placeholder L), `mechanism` (Morpho rules: B only if `validation.all_pass`) |
 
 `scenarios[]` fields:
 
@@ -70,6 +76,37 @@ All fractions are 0–1 (multiply by 100 for %). All money in USD.
 | `liquidation_drop_threshold` | Oracle price drop that makes the position liquidatable, `1 − debt / (collateral · lltv)`; `null` when unlevered |
 | `bad_debt_usd` | Largest `bad_debt_usd` over the branches |
 | `thresholds`, `decision_grid[]` | As the top-level ones, but with `L_used` and **per unit of equity**: exit cost = curve `loss × exit_cost_scale`, stay cost = `p × L_used`. The unsold part is assumed to keep the full position's L (deleveraging by the sale is not modelled) |
+| `evidence` | Grade per field: `shock`, `permanent`, `hours`, `L_low`, `L_high`, `L_used`, `branches`, `liquidated`, `liquidation_drop_threshold`, `bad_debt_usd`, `thresholds`, `decision_grid` |
+| `reasoning[]` | Ordered steps `{step, id, claim, value, unit, evidence, source, basis?}` (below) |
+| `decision_text` | `stay`, `partial`, `sell_to_cap`: each `{p_from, p_to, text}` or `null` when the zone does not exist. The zone holds for `p_from ≤ p < p_to` (`p_to` `null` = up to 1). Replace `{p}` in `text` with the slider value. Every other number in a text is a formatted `reasoning[].value` (checked at export; the export stops otherwise) |
+| `weakest_link` | Lowest-graded input whose stated alternative changes this scenario's thresholds on p; ties on grade → larger change. `step`, `id`, `input`, `grade`, `source`, `alternative`, `thresholds_now`, `thresholds_alt`, `candidates[]` (every input tried: `step`, `id`, `input`, `grade`, `source`, `alternative`, `L_alt`, `thresholds_alt`, `changes_verdict`, `effect` = sum of the two threshold moves, "never" counted as `1 + pstep`), `not_tested[]`. All fields but `candidates`/`not_tested` are `null` if nothing changes the verdict |
+
+### Evidence grades
+
+Every `evidence` map is `{field: {grade, source, basis?}}`, one entry per graded field of the object it sits in.
+
+| Grade | Meaning | Examples |
+|---|---|---|
+| A | Measured now from live API / chain data | exit quotes, capacity, LLTV, Morpho LTV, PT price |
+| B | Mechanism verified in contract source **and** back-tested | Morpho health check, LIF (graded D if `validation.all_pass` is false) |
+| C | Analogy from another asset's history | every preset `shock` (USDe for sUSDe; xUSD, deUSD, PT-reUSD for our PT) |
+| D | Assumption or unknown | position size, debt, can_hold, oracle behaviour while unknown, recovery (`permanent`) |
+
+A number computed from others takes the **worst** grade of its inputs, listed in `basis`. For example, a position's liquidation threshold is `{formula: B, debt_usd: D, lltv: A}` → D, while the Morpho market's aggregate threshold is `{formula: B, aggregate_ltv: A, lltv: A}` → B.
+
+### Reasoning steps (`scenarios[].reasoning[]`)
+
+`step` groups entries (several entries can share a number); `id` is stable for lookups. `value` is a number, string, bool, `null`, or `{low, high}` (for `L`). `unit` is `USD`, `USD per PT`, `fraction`, `fraction of equity`, `fraction of value sold`, `probability`, `ratio`, `x` (multiplier) or `null`.
+
+| step | ids | content |
+|---|---|---|
+| 1 position | `position_size`, `pt`, `debt`, `ltv`, `lltv`, `can_hold` | size, PT and its price, debt, LTV vs LLTV, can hold or must sell |
+| 2 shock | `shock`, `permanent` | fall at the worst point and its anchor; part still there at the end |
+| 3 oracle | `oracle`, `oracle_type` | `"unknown, both branches"`, `true`/`false`, or `"not relevant (no debt)"`; the Morpho API oracle type |
+| 4 liquidation | `threshold`, `lif` (only if liquidated), `market_threshold` | position threshold vs shock; LIF; the Morpho market's aggregate threshold vs shock |
+| 5 loss | `L`, `bad_debt` (levered only) | L low/high of equity; lenders' bad debt |
+| 6 exit | `capacity`, `stuck`, `cost_min`, `cost_cap`, `exit_cost_scale` (levered only) | sellable share now, part that cannot be sold, cost at the smallest and the largest quoted size |
+| 7 decision | `start_selling_p`, `sell_to_cap_p` | thresholds on p (`null` = never on the grid) |
 
 ### Two ways to drive the p slider
 
@@ -109,11 +146,14 @@ function decide(p, L, curve, steps = 100) {
 - **Exit curve chart**: `exit_curve` (loss vs size) with the capacity cliff marked at `max_exit_fraction`.
 - **Lending panel**: distance to liquidation = `1 − aggregate_ltv / lltv`, withdrawable liquidity, oracle (flag `Unknown`).
 - **Scenario picker** over `scenarios[]`: show `shock`, `source` (flag `analogy`), L (a range `L_low`–`L_high` when the oracle is unknown), liquidated per branch, `bad_debt_usd`; drive the p slider from that scenario's `decision_grid` / `thresholds`.
+- **Reasoning panel** per scenario: `reasoning[]` as a numbered chain with a grade badge (A–D) per step, `decision_text` for the zone the slider is in, and `weakest_link` highlighted ("the verdict hinges on: …").
 - A visible label that the top-level **L is a placeholder**, and that a scenario's grid uses `L_high` when `L_basis` is not `"exact"`.
 
 ## Known gaps
 
 - Top-level L = 0.5 is a placeholder kept for compatibility; per-scenario L comes from `loss_model.py` presets (shocks are cited anchors, several by analogy).
+- `weakest_link` alternatives are our choices (recovery 0 ↔ 1 or 1 → 0.5, shock ×0.5 / ×1.5, debt 0 ↔ Morpho average LTV, the other oracle branch, can_hold flipped); position size is not tested (needs quotes at another size).
+- Back-test tolerances are ours: ±1 bp on the distances to liquidation, ±50 bps for Pendle drop vs oracle drop. The 19 liquidated borrowers are checked as "every LTV in the reported range is liquidated", not borrower by borrower.
 - For levered positions the scenario grid treats the unsold part as keeping the full position's L; deleveraging by a partial sale is not modelled.
 - $10M position size is an assumption; the real size should come from Belem.
 - Yield given up by selling the PT early (`carry_lost`) is set to 0.

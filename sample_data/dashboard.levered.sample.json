@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T11:41:52+00:00",
+ "generated_at": "2026-10-10T11:57:13+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -9,7 +9,50 @@
   "expiry": "2026-11-26",
   "pool_liquidity_usd": 3819918.6913600755,
   "implied_apy": 0.05011039832525688,
-  "notional_usd": 10000000.0
+  "notional_usd": 10000000.0,
+  "pt_price_usd": 0.9929983120844329,
+  "evidence": {
+   "chain_id": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "name": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "market": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "pt": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "underlying": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "expiry": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "pool_liquidity_usd": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "implied_apy": {
+    "grade": "A",
+    "source": "Pendle GET /v2/markets/all, fetched 2026-10-10T09:13:54Z (data/pendle_markets.json)"
+   },
+   "notional_usd": {
+    "grade": "D",
+    "source": "position size assumed by us (= notional_usd of the quotes), not Belem's"
+   },
+   "pt_price_usd": {
+    "grade": "A",
+    "source": "Pendle GET /v1/prices/assets at quote time (usd / PT amount in exit_curve_0x47ad2cd1_10m.csv)"
+   }
+  }
  },
  "exit_curve": [
   {
@@ -65,7 +108,51 @@
    "liquidity_usd": 764314.0325366299,
    "aggregate_ltv": 0.8820836996944975,
    "oracle_address": "0xF8b29e7E9c00CE531434775f7923CC9fbCa01b08",
-   "oracle_type": "Unknown"
+   "oracle_type": "Unknown",
+   "aggregate_liquidation_drop_threshold": 0.03597409869453827,
+   "evidence": {
+    "lltv": {
+     "grade": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    "collateral_usd": {
+     "grade": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    "borrow_usd": {
+     "grade": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    "liquidity_usd": {
+     "grade": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    "oracle_address": {
+     "grade": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    "oracle_type": {
+     "grade": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    "aggregate_ltv": {
+     "grade": "A",
+     "source": "borrow_usd / collateral_usd",
+     "basis": {
+      "borrow_usd": "A",
+      "collateral_usd": "A"
+     }
+    },
+    "aggregate_liquidation_drop_threshold": {
+     "grade": "B",
+     "source": "1 - aggregate_ltv / lltv (Morpho health check)",
+     "basis": {
+      "formula": "B",
+      "aggregate_ltv": "A",
+      "lltv": "A"
+     }
+    }
+   }
   }
  ],
  "assumptions": {
@@ -1697,6 +1784,57 @@
   "oracle_tracks_underlying": null,
   "oracle_tracks_market": null,
   "exit_cost_scale": 9.523809523809524,
+  "ltv": 0.895,
+  "evidence": {
+   "collateral_usd": {
+    "grade": "D",
+    "source": "position size assumed by us (= notional_usd of the quotes), not Belem's"
+   },
+   "debt_usd": {
+    "grade": "D",
+    "source": "typed in (--debt), not read from chain"
+   },
+   "equity_usd": {
+    "grade": "D",
+    "source": "collateral - debt",
+    "basis": {
+     "collateral_usd": "D",
+     "debt_usd": "D"
+    }
+   },
+   "lltv": {
+    "grade": "A",
+    "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+   },
+   "can_hold": {
+    "grade": "D",
+    "source": "assumption (--can-hold / --must-sell)"
+   },
+   "oracle_tracks_underlying": {
+    "grade": "D",
+    "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+   },
+   "oracle_tracks_market": {
+    "grade": "D",
+    "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+   },
+   "exit_cost_scale": {
+    "grade": "D",
+    "source": "collateral / equity",
+    "basis": {
+     "collateral_usd": "D",
+     "debt_usd": "D"
+    }
+   },
+   "ltv": {
+    "grade": "D",
+    "source": "debt / collateral",
+    "basis": {
+     "collateral_usd": "D",
+     "debt_usd": "D"
+    }
+   }
+  },
   "note": "scenarios[].decision_grid is per unit of equity: exit cost = slippage x exit_cost_scale (collateral / equity), stay cost = p x L_used. The unsold part keeps the full position's L; the deleveraging effect of a sale is not modelled."
  },
  "scenarios": [
@@ -1706,8 +1844,8 @@
    "shock": 0.016185490170549488,
    "permanent": 0.0,
    "hours": 24,
-   "source": "USDe daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after",
-   "analogy": false,
+   "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy",
+   "analogy": true,
    "L_low": 0.0,
    "L_high": 0.0,
    "oracle_known": false,
@@ -3348,7 +3486,472 @@
      "expected_cost": 0.0,
      "stay_cost": 0.0
     }
-   ]
+   ],
+   "evidence": {
+    "shock": {
+     "grade": "C",
+     "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy"
+    },
+    "permanent": {
+     "grade": "D",
+     "source": "assumption: full recovery by the end (anchor: see shock source)"
+    },
+    "hours": {
+     "grade": "C",
+     "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy"
+    },
+    "L_low": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_high": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_used": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "branches": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "liquidated": {
+     "grade": "D",
+     "source": "shock vs liquidation threshold",
+     "basis": {
+      "shock": "C",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A",
+      "oracle": "D"
+     }
+    },
+    "liquidation_drop_threshold": {
+     "grade": "D",
+     "source": "1 - debt / (collateral x LLTV)",
+     "basis": {
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    "bad_debt_usd": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    "thresholds": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    "decision_grid": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   },
+   "reasoning": [
+    {
+     "step": 1,
+     "id": "position_size",
+     "claim": "Position: $10,000,000 of PT-sUSDe (expiry 2026-11-26)",
+     "value": 10000000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "position size assumed by us (= notional_usd of the quotes), not Belem's"
+    },
+    {
+     "step": 1,
+     "id": "pt",
+     "claim": "PT 0xb195b618ea52b77cb2a58846f452f59f8dfa9390 at 0.9930 USD per PT",
+     "value": 0.9929983120844329,
+     "unit": "USD per PT",
+     "evidence": "A",
+     "source": "Pendle GET /v1/prices/assets at quote time (usd / PT amount in exit_curve_0x47ad2cd1_10m.csv)"
+    },
+    {
+     "step": 1,
+     "id": "debt",
+     "claim": "Debt against the PT: $8,950,000",
+     "value": 8950000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "typed in (--debt), not read from chain"
+    },
+    {
+     "step": 1,
+     "id": "ltv",
+     "claim": "Position LTV 89.50% (debt / collateral)",
+     "value": 0.895,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "debt / collateral",
+     "basis": {
+      "debt_usd": "D",
+      "collateral_usd": "D"
+     }
+    },
+    {
+     "step": 1,
+     "id": "lltv",
+     "claim": "Morpho LLTV 91.50%",
+     "value": 0.915,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 1,
+     "id": "can_hold",
+     "claim": "Can hold to recovery / maturity",
+     "value": true,
+     "unit": null,
+     "evidence": "D",
+     "source": "assumption (--can-hold / --must-sell)"
+    },
+    {
+     "step": 2,
+     "id": "shock",
+     "claim": "Shock: PT value falls 1.62% at the worst point (underlying / issuer risk)",
+     "value": 0.016185490170549488,
+     "unit": "fraction",
+     "evidence": "C",
+     "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy"
+    },
+    {
+     "step": 2,
+     "id": "permanent",
+     "claim": "0.00% of the shock is still there at the end",
+     "value": 0.0,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "assumption: full recovery by the end (anchor: see shock source)"
+    },
+    {
+     "step": 3,
+     "id": "oracle",
+     "claim": "Unknown whether the lending oracle falls with the shock: both branches computed",
+     "value": "unknown, both branches",
+     "unit": null,
+     "evidence": "D",
+     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+    },
+    {
+     "step": 3,
+     "id": "oracle_type",
+     "claim": "Morpho API oracle type: Unknown (0xF8b29e7E9c00CE531434775f7923CC9fbCa01b08)",
+     "value": "Unknown",
+     "unit": null,
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 4,
+     "id": "threshold",
+     "claim": "Liquidation if the oracle falls more than 2.19% (1 - LTV / LLTV); shock 1.62% is below it, so no liquidation in either branch",
+     "value": 0.021857923497267784,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "basis": {
+      "formula": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 4,
+     "id": "market_threshold",
+     "claim": "Morpho market as a whole (aggregate LTV 88.21%) is liquidatable after a 3.60% oracle fall; shock is below it",
+     "value": 0.03597409869453827,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "1 - aggregate_ltv / LLTV",
+     "basis": {
+      "formula": "B",
+      "aggregate_ltv": "A",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 5,
+     "id": "L",
+     "claim": "Loss if it happens: 0.00% of equity",
+     "value": {
+      "low": 0.0,
+      "high": 0.0
+     },
+     "unit": "fraction of equity",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 5,
+     "id": "bad_debt",
+     "claim": "Bad debt left to lenders (worst branch): $0",
+     "value": 0.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    {
+     "step": 6,
+     "id": "capacity",
+     "claim": "Pendle can absorb 45.00% of the position ($4,500,000) in one sale now",
+     "value": 0.45,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "stuck",
+     "claim": "55.00% cannot be sold through the pool now",
+     "value": 0.55,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_min",
+     "claim": "Cost of the smallest quoted sale: 0.0153%",
+     "value": 0.00015346219030587527,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_cap",
+     "claim": "Cost of selling up to the limit: 0.491%",
+     "value": 0.004908559181059591,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "exit_cost_scale",
+     "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
+     "value": 9.523809523809524,
+     "unit": "x",
+     "evidence": "D",
+     "source": "collateral / equity",
+     "basis": {
+      "collateral_usd": "D",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "start_selling_p",
+     "claim": "Never sells on the p grid",
+     "value": null,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "sell_to_cap_p",
+     "claim": "Never sells to the limit on the p grid",
+     "value": null,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   ],
+   "decision_text": {
+    "stay": {
+     "p_from": 0,
+     "p_to": null,
+     "text": "At p={p}, stay: in this scenario L = 0.00% of equity, because the 1.62% drop is not permanent (0.00% remains) and the position can hold; selling never pays."
+    },
+    "partial": null,
+    "sell_to_cap": null
+   },
+   "weakest_link": {
+    "step": 2,
+    "id": "permanent",
+    "input": "recovery (permanent part of the shock)",
+    "grade": "D",
+    "source": "assumption: full recovery by the end (anchor: see shock source)",
+    "alternative": "permanent = 1",
+    "thresholds_now": {
+     "start_selling_p": null,
+     "sell_to_cap_p": null
+    },
+    "thresholds_alt": {
+     "start_selling_p": 0.01,
+     "sell_to_cap_p": null
+    },
+    "candidates": [
+     {
+      "step": 3,
+      "id": "oracle",
+      "input": "oracle_tracks_underlying",
+      "grade": "D",
+      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "alternative": "oracle does not fall (L_low branch)",
+      "L_alt": 0.0,
+      "thresholds_alt": {
+       "start_selling_p": null,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "permanent",
+      "input": "recovery (permanent part of the shock)",
+      "grade": "D",
+      "source": "assumption: full recovery by the end (anchor: see shock source)",
+      "alternative": "permanent = 1",
+      "L_alt": 0.15414752543380464,
+      "thresholds_alt": {
+       "start_selling_p": 0.01,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": true,
+      "effect": 0.9949999999999999
+     },
+     {
+      "step": 1,
+      "id": "can_hold",
+      "input": "can_hold",
+      "grade": "D",
+      "source": "assumption (--can-hold / --must-sell)",
+      "alternative": "can_hold = False",
+      "L_alt": 0.15414752543380464,
+      "thresholds_alt": {
+       "start_selling_p": 0.01,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": true,
+      "effect": 0.9949999999999999
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy",
+      "alternative": "shock x 0.5 = 0.0081",
+      "L_alt": 0.0,
+      "thresholds_alt": {
+       "start_selling_p": null,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy",
+      "alternative": "shock x 1.5 = 0.0243",
+      "L_alt": 0.4406869389440974,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.445
+      },
+      "changes_verdict": true,
+      "effect": 1.5599999999999996
+     },
+     {
+      "step": 1,
+      "id": "debt",
+      "input": "debt_usd",
+      "grade": "D",
+      "source": "typed in (--debt), not read from chain",
+      "alternative": "unlevered (debt = 0)",
+      "L_alt": 0.0,
+      "thresholds_alt": {
+       "start_selling_p": null,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     }
+    ],
+    "not_tested": [
+     "position size (needs exit quotes at another size)",
+     "exit curve and LLTV (grade A, measured)"
+    ]
+   }
   },
   {
    "key": "oracle_dip",
@@ -4998,7 +5601,489 @@
      "expected_cost": 0.2907921761444111,
      "stay_cost": 0.49046453443612725
     }
-   ]
+   ],
+   "evidence": {
+    "shock": {
+     "grade": "C",
+     "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h"
+    },
+    "permanent": {
+     "grade": "D",
+     "source": "assumption: full recovery by the end (anchor: see shock source)"
+    },
+    "hours": {
+     "grade": "C",
+     "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h"
+    },
+    "L_low": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_high": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_used": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "branches": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "liquidated": {
+     "grade": "D",
+     "source": "shock vs liquidation threshold",
+     "basis": {
+      "shock": "C",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A",
+      "oracle": "D"
+     }
+    },
+    "liquidation_drop_threshold": {
+     "grade": "D",
+     "source": "1 - debt / (collateral x LLTV)",
+     "basis": {
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    "bad_debt_usd": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    "thresholds": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    "decision_grid": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   },
+   "reasoning": [
+    {
+     "step": 1,
+     "id": "position_size",
+     "claim": "Position: $10,000,000 of PT-sUSDe (expiry 2026-11-26)",
+     "value": 10000000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "position size assumed by us (= notional_usd of the quotes), not Belem's"
+    },
+    {
+     "step": 1,
+     "id": "pt",
+     "claim": "PT 0xb195b618ea52b77cb2a58846f452f59f8dfa9390 at 0.9930 USD per PT",
+     "value": 0.9929983120844329,
+     "unit": "USD per PT",
+     "evidence": "A",
+     "source": "Pendle GET /v1/prices/assets at quote time (usd / PT amount in exit_curve_0x47ad2cd1_10m.csv)"
+    },
+    {
+     "step": 1,
+     "id": "debt",
+     "claim": "Debt against the PT: $8,950,000",
+     "value": 8950000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "typed in (--debt), not read from chain"
+    },
+    {
+     "step": 1,
+     "id": "ltv",
+     "claim": "Position LTV 89.50% (debt / collateral)",
+     "value": 0.895,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "debt / collateral",
+     "basis": {
+      "debt_usd": "D",
+      "collateral_usd": "D"
+     }
+    },
+    {
+     "step": 1,
+     "id": "lltv",
+     "claim": "Morpho LLTV 91.50%",
+     "value": 0.915,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 1,
+     "id": "can_hold",
+     "claim": "Can hold to recovery / maturity",
+     "value": true,
+     "unit": null,
+     "evidence": "D",
+     "source": "assumption (--can-hold / --must-sell)"
+    },
+    {
+     "step": 2,
+     "id": "shock",
+     "claim": "Shock: PT value falls 2.97% at the worst point (oracle / market price risk)",
+     "value": 0.02966625463535233,
+     "unit": "fraction",
+     "evidence": "C",
+     "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h"
+    },
+    {
+     "step": 2,
+     "id": "permanent",
+     "claim": "0.00% of the shock is still there at the end",
+     "value": 0.0,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "assumption: full recovery by the end (anchor: see shock source)"
+    },
+    {
+     "step": 3,
+     "id": "oracle",
+     "claim": "Unknown whether the lending oracle falls with the shock: both branches computed",
+     "value": "unknown, both branches",
+     "unit": null,
+     "evidence": "D",
+     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+    },
+    {
+     "step": 3,
+     "id": "oracle_type",
+     "claim": "Morpho API oracle type: Unknown (0xF8b29e7E9c00CE531434775f7923CC9fbCa01b08)",
+     "value": "Unknown",
+     "unit": null,
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 4,
+     "id": "threshold",
+     "claim": "Liquidation if the oracle falls more than 2.19% (1 - LTV / LLTV); shock 2.97% is above it, so liquidated if the oracle falls",
+     "value": 0.021857923497267784,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "basis": {
+      "formula": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 4,
+     "id": "lif",
+     "claim": "Liquidator seizes collateral worth the repaid debt x LIF 1.0262",
+     "value": 1.026167265264238,
+     "unit": "ratio",
+     "evidence": "B",
+     "source": "github.com/morpho-org/morpho-blue src/Morpho.sol (health check, LIF = min(1.15, 1/(1 - 0.3(1 - LLTV))), no close factor); back-test backtest_reusd.py: 9/9 checks pass"
+    },
+    {
+     "step": 4,
+     "id": "market_threshold",
+     "claim": "Morpho market as a whole (aggregate LTV 88.21%) is liquidatable after a 3.60% oracle fall; shock is below it",
+     "value": 0.03597409869453827,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "1 - aggregate_ltv / LLTV",
+     "basis": {
+      "formula": "B",
+      "aggregate_ltv": "A",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 5,
+     "id": "L",
+     "claim": "Loss if it happens: 0.00% if the oracle does not fall, 49.05% of equity if it falls; decision uses the high end",
+     "value": {
+      "low": 0.0,
+      "high": 0.49046453443612725
+     },
+     "unit": "fraction of equity",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 5,
+     "id": "bad_debt",
+     "claim": "Bad debt left to lenders (worst branch): $0",
+     "value": 0.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    {
+     "step": 6,
+     "id": "capacity",
+     "claim": "Pendle can absorb 45.00% of the position ($4,500,000) in one sale now",
+     "value": 0.45,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "stuck",
+     "claim": "55.00% cannot be sold through the pool now",
+     "value": 0.55,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_min",
+     "claim": "Cost of the smallest quoted sale: 0.0153%",
+     "value": 0.00015346219030587527,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_cap",
+     "claim": "Cost of selling up to the limit: 0.491%",
+     "value": 0.004908559181059591,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "exit_cost_scale",
+     "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
+     "value": 9.523809523809524,
+     "unit": "x",
+     "evidence": "D",
+     "source": "collateral / equity",
+     "basis": {
+      "collateral_usd": "D",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "start_selling_p",
+     "claim": "Start selling at p >= 0.005",
+     "value": 0.005,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "sell_to_cap_p",
+     "claim": "Sell to the limit at p >= 0.4",
+     "value": 0.4,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   ],
+   "decision_text": {
+    "stay": {
+     "p_from": 0,
+     "p_to": 0.005,
+     "text": "At p={p}, the expected loss of staying (L = 49.05% of equity, the high end of 0.00% to 49.05%) is too small to pay for selling even the smallest quoted size (cost 0.0153% of value sold, x9.52 per unit of equity); stay. Selling starts at p >= 0.005."
+    },
+    "partial": {
+     "p_from": 0.005,
+     "p_to": 0.4,
+     "text": "At p={p}, sell part of the position: the expected loss on the sold part (L = 49.05% of equity, the high end of 0.00% to 49.05%) exceeds its exit cost, which rises with size up to 0.491% of value sold at the 45.00% capacity limit, x9.52 per unit of equity. The fraction to sell at this p is in decision_grid. From p >= 0.4 sell up to the limit."
+    },
+    "sell_to_cap": {
+     "p_from": 0.4,
+     "p_to": null,
+     "text": "At p={p}, the expected loss of staying exceeds the marginal exit cost up to the 45.00% capacity limit (cost 0.491% of value sold, x9.52 per unit of equity); the remaining 55.00% stays exposed to oracle / market price risk. If the oracle falls, the unsold part is liquidated (shock 2.97% is above the 2.19% threshold)."
+    }
+   },
+   "weakest_link": {
+    "step": 3,
+    "id": "oracle",
+    "input": "oracle_tracks_market",
+    "grade": "D",
+    "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+    "alternative": "oracle does not fall (L_low branch)",
+    "thresholds_now": {
+     "start_selling_p": 0.005,
+     "sell_to_cap_p": 0.4
+    },
+    "thresholds_alt": {
+     "start_selling_p": null,
+     "sell_to_cap_p": null
+    },
+    "candidates": [
+     {
+      "step": 3,
+      "id": "oracle",
+      "input": "oracle_tracks_market",
+      "grade": "D",
+      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "alternative": "oracle does not fall (L_low branch)",
+      "L_alt": 0.0,
+      "thresholds_alt": {
+       "start_selling_p": null,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": true,
+      "effect": 1.6049999999999998
+     },
+     {
+      "step": 2,
+      "id": "permanent",
+      "input": "recovery (permanent part of the shock)",
+      "grade": "D",
+      "source": "assumption: full recovery by the end (anchor: see shock source)",
+      "alternative": "permanent = 1",
+      "L_alt": 0.5055805433032879,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.39
+      },
+      "changes_verdict": true,
+      "effect": 0.010000000000000009
+     },
+     {
+      "step": 1,
+      "id": "can_hold",
+      "input": "can_hold",
+      "grade": "D",
+      "source": "assumption (--can-hold / --must-sell)",
+      "alternative": "can_hold = False",
+      "L_alt": 0.49046453443612725,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.4
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h",
+      "alternative": "shock x 0.5 = 0.0148",
+      "L_alt": 0.0,
+      "thresholds_alt": {
+       "start_selling_p": null,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": true,
+      "effect": 1.6049999999999998
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h",
+      "alternative": "shock x 1.5 = 0.0445",
+      "L_alt": 0.6304015185227345,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.31
+      },
+      "changes_verdict": true,
+      "effect": 0.09000000000000002
+     },
+     {
+      "step": 1,
+      "id": "debt",
+      "input": "debt_usd",
+      "grade": "D",
+      "source": "typed in (--debt), not read from chain",
+      "alternative": "unlevered (debt = 0)",
+      "L_alt": 0.0,
+      "thresholds_alt": {
+       "start_selling_p": null,
+       "sell_to_cap_p": null
+      },
+      "changes_verdict": true,
+      "effect": 1.6049999999999998
+     }
+    ],
+    "not_tested": [
+     "position size (needs exit quotes at another size)",
+     "exit curve and LLTV (grade A, measured)"
+    ]
+   }
   },
   {
    "key": "issuer_half",
@@ -6648,7 +7733,489 @@
      "expected_cost": 0.5710366822045412,
      "stay_cost": 1.0
     }
-   ]
+   ],
+   "evidence": {
+    "shock": {
+     "grade": "C",
+     "source": "Stream xUSD fell to about $0.50 in Nov 2025 (Decrypt, citing PeckShield); no recovery assumed"
+    },
+    "permanent": {
+     "grade": "D",
+     "source": "assumption: no recovery (anchor: see shock source)"
+    },
+    "hours": {
+     "grade": "D",
+     "source": "unknown"
+    },
+    "L_low": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_high": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_used": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "branches": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "liquidated": {
+     "grade": "D",
+     "source": "shock vs liquidation threshold",
+     "basis": {
+      "shock": "C",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A",
+      "oracle": "D"
+     }
+    },
+    "liquidation_drop_threshold": {
+     "grade": "D",
+     "source": "1 - debt / (collateral x LLTV)",
+     "basis": {
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    "bad_debt_usd": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    "thresholds": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    "decision_grid": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   },
+   "reasoning": [
+    {
+     "step": 1,
+     "id": "position_size",
+     "claim": "Position: $10,000,000 of PT-sUSDe (expiry 2026-11-26)",
+     "value": 10000000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "position size assumed by us (= notional_usd of the quotes), not Belem's"
+    },
+    {
+     "step": 1,
+     "id": "pt",
+     "claim": "PT 0xb195b618ea52b77cb2a58846f452f59f8dfa9390 at 0.9930 USD per PT",
+     "value": 0.9929983120844329,
+     "unit": "USD per PT",
+     "evidence": "A",
+     "source": "Pendle GET /v1/prices/assets at quote time (usd / PT amount in exit_curve_0x47ad2cd1_10m.csv)"
+    },
+    {
+     "step": 1,
+     "id": "debt",
+     "claim": "Debt against the PT: $8,950,000",
+     "value": 8950000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "typed in (--debt), not read from chain"
+    },
+    {
+     "step": 1,
+     "id": "ltv",
+     "claim": "Position LTV 89.50% (debt / collateral)",
+     "value": 0.895,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "debt / collateral",
+     "basis": {
+      "debt_usd": "D",
+      "collateral_usd": "D"
+     }
+    },
+    {
+     "step": 1,
+     "id": "lltv",
+     "claim": "Morpho LLTV 91.50%",
+     "value": 0.915,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 1,
+     "id": "can_hold",
+     "claim": "Can hold to recovery / maturity",
+     "value": true,
+     "unit": null,
+     "evidence": "D",
+     "source": "assumption (--can-hold / --must-sell)"
+    },
+    {
+     "step": 2,
+     "id": "shock",
+     "claim": "Shock: PT value falls 50.00% at the worst point (underlying / issuer risk)",
+     "value": 0.5,
+     "unit": "fraction",
+     "evidence": "C",
+     "source": "Stream xUSD fell to about $0.50 in Nov 2025 (Decrypt, citing PeckShield); no recovery assumed"
+    },
+    {
+     "step": 2,
+     "id": "permanent",
+     "claim": "100.00% of the shock is still there at the end",
+     "value": 1.0,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "assumption: no recovery (anchor: see shock source)"
+    },
+    {
+     "step": 3,
+     "id": "oracle",
+     "claim": "Unknown whether the lending oracle falls with the shock: both branches computed",
+     "value": "unknown, both branches",
+     "unit": null,
+     "evidence": "D",
+     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+    },
+    {
+     "step": 3,
+     "id": "oracle_type",
+     "claim": "Morpho API oracle type: Unknown (0xF8b29e7E9c00CE531434775f7923CC9fbCa01b08)",
+     "value": "Unknown",
+     "unit": null,
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 4,
+     "id": "threshold",
+     "claim": "Liquidation if the oracle falls more than 2.19% (1 - LTV / LLTV); shock 50.00% is above it, so liquidated if the oracle falls",
+     "value": 0.021857923497267784,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "basis": {
+      "formula": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 4,
+     "id": "lif",
+     "claim": "Liquidator seizes collateral worth the repaid debt x LIF 1.0262",
+     "value": 1.026167265264238,
+     "unit": "ratio",
+     "evidence": "B",
+     "source": "github.com/morpho-org/morpho-blue src/Morpho.sol (health check, LIF = min(1.15, 1/(1 - 0.3(1 - LLTV))), no close factor); back-test backtest_reusd.py: 9/9 checks pass"
+    },
+    {
+     "step": 4,
+     "id": "market_threshold",
+     "claim": "Morpho market as a whole (aggregate LTV 88.21%) is liquidatable after a 3.60% oracle fall; shock is above it",
+     "value": 0.03597409869453827,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "1 - aggregate_ltv / LLTV",
+     "basis": {
+      "formula": "B",
+      "aggregate_ltv": "A",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 5,
+     "id": "L",
+     "claim": "Loss if it happens: 100.00% of equity",
+     "value": {
+      "low": 1.0,
+      "high": 1.0
+     },
+     "unit": "fraction of equity",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 5,
+     "id": "bad_debt",
+     "claim": "Bad debt left to lenders (worst branch): $4,077,500",
+     "value": 4077499.999999999,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    {
+     "step": 6,
+     "id": "capacity",
+     "claim": "Pendle can absorb 45.00% of the position ($4,500,000) in one sale now",
+     "value": 0.45,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "stuck",
+     "claim": "55.00% cannot be sold through the pool now",
+     "value": 0.55,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_min",
+     "claim": "Cost of the smallest quoted sale: 0.0153%",
+     "value": 0.00015346219030587527,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_cap",
+     "claim": "Cost of selling up to the limit: 0.491%",
+     "value": 0.004908559181059591,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "exit_cost_scale",
+     "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
+     "value": 9.523809523809524,
+     "unit": "x",
+     "evidence": "D",
+     "source": "collateral / equity",
+     "basis": {
+      "collateral_usd": "D",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "start_selling_p",
+     "claim": "Start selling at p >= 0.005",
+     "value": 0.005,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "sell_to_cap_p",
+     "claim": "Sell to the limit at p >= 0.2",
+     "value": 0.2,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   ],
+   "decision_text": {
+    "stay": {
+     "p_from": 0,
+     "p_to": 0.005,
+     "text": "At p={p}, the expected loss of staying (L = 100.00% of equity) is too small to pay for selling even the smallest quoted size (cost 0.0153% of value sold, x9.52 per unit of equity); stay. Selling starts at p >= 0.005."
+    },
+    "partial": {
+     "p_from": 0.005,
+     "p_to": 0.2,
+     "text": "At p={p}, sell part of the position: the expected loss on the sold part (L = 100.00% of equity) exceeds its exit cost, which rises with size up to 0.491% of value sold at the 45.00% capacity limit, x9.52 per unit of equity. The fraction to sell at this p is in decision_grid. From p >= 0.2 sell up to the limit."
+    },
+    "sell_to_cap": {
+     "p_from": 0.2,
+     "p_to": null,
+     "text": "At p={p}, the expected loss of staying exceeds the marginal exit cost up to the 45.00% capacity limit (cost 0.491% of value sold, x9.52 per unit of equity); the remaining 55.00% stays exposed to underlying / issuer risk. If the oracle falls, the unsold part is liquidated (shock 50.00% is above the 2.19% threshold)."
+    }
+   },
+   "weakest_link": {
+    "step": 1,
+    "id": "debt",
+    "input": "debt_usd",
+    "grade": "D",
+    "source": "typed in (--debt), not read from chain",
+    "alternative": "unlevered (debt = 0)",
+    "thresholds_now": {
+     "start_selling_p": 0.005,
+     "sell_to_cap_p": 0.2
+    },
+    "thresholds_alt": {
+     "start_selling_p": 0.005,
+     "sell_to_cap_p": 0.045
+    },
+    "candidates": [
+     {
+      "step": 3,
+      "id": "oracle",
+      "input": "oracle_tracks_underlying",
+      "grade": "D",
+      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "alternative": "oracle does not fall (L_low branch)",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "permanent",
+      "input": "recovery (permanent part of the shock)",
+      "grade": "D",
+      "source": "assumption: no recovery (anchor: see shock source)",
+      "alternative": "permanent = 0.5",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 1,
+      "id": "can_hold",
+      "input": "can_hold",
+      "grade": "D",
+      "source": "assumption (--can-hold / --must-sell)",
+      "alternative": "can_hold = False",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "Stream xUSD fell to about $0.50 in Nov 2025 (Decrypt, citing PeckShield); no recovery assumed",
+      "alternative": "shock x 0.5 = 0.2500",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "Stream xUSD fell to about $0.50 in Nov 2025 (Decrypt, citing PeckShield); no recovery assumed",
+      "alternative": "shock x 1.5 = 0.7500",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 1,
+      "id": "debt",
+      "input": "debt_usd",
+      "grade": "D",
+      "source": "typed in (--debt), not read from chain",
+      "alternative": "unlevered (debt = 0)",
+      "L_alt": 0.5,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.045
+      },
+      "changes_verdict": true,
+      "effect": 0.15500000000000003
+     }
+    ],
+    "not_tested": [
+     "position size (needs exit quotes at another size)",
+     "exit curve and LLTV (grade A, measured)"
+    ]
+   }
   },
   {
    "key": "issuer_total",
@@ -8298,7 +9865,623 @@
      "expected_cost": 0.5710366822045412,
      "stay_cost": 1.0
     }
-   ]
+   ],
+   "evidence": {
+    "shock": {
+     "grade": "C",
+     "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
+    },
+    "permanent": {
+     "grade": "D",
+     "source": "assumption: no recovery (anchor: see shock source)"
+    },
+    "hours": {
+     "grade": "D",
+     "source": "unknown"
+    },
+    "L_low": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_high": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "L_used": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "branches": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    "liquidated": {
+     "grade": "D",
+     "source": "shock vs liquidation threshold",
+     "basis": {
+      "shock": "C",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A",
+      "oracle": "D"
+     }
+    },
+    "liquidation_drop_threshold": {
+     "grade": "D",
+     "source": "1 - debt / (collateral x LLTV)",
+     "basis": {
+      "mechanism": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    "bad_debt_usd": {
+     "grade": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    "thresholds": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    "decision_grid": {
+     "grade": "D",
+     "source": "decision_core.decide with L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   },
+   "reasoning": [
+    {
+     "step": 1,
+     "id": "position_size",
+     "claim": "Position: $10,000,000 of PT-sUSDe (expiry 2026-11-26)",
+     "value": 10000000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "position size assumed by us (= notional_usd of the quotes), not Belem's"
+    },
+    {
+     "step": 1,
+     "id": "pt",
+     "claim": "PT 0xb195b618ea52b77cb2a58846f452f59f8dfa9390 at 0.9930 USD per PT",
+     "value": 0.9929983120844329,
+     "unit": "USD per PT",
+     "evidence": "A",
+     "source": "Pendle GET /v1/prices/assets at quote time (usd / PT amount in exit_curve_0x47ad2cd1_10m.csv)"
+    },
+    {
+     "step": 1,
+     "id": "debt",
+     "claim": "Debt against the PT: $8,950,000",
+     "value": 8950000.0,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "typed in (--debt), not read from chain"
+    },
+    {
+     "step": 1,
+     "id": "ltv",
+     "claim": "Position LTV 89.50% (debt / collateral)",
+     "value": 0.895,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "debt / collateral",
+     "basis": {
+      "debt_usd": "D",
+      "collateral_usd": "D"
+     }
+    },
+    {
+     "step": 1,
+     "id": "lltv",
+     "claim": "Morpho LLTV 91.50%",
+     "value": 0.915,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 1,
+     "id": "can_hold",
+     "claim": "Can hold to recovery / maturity",
+     "value": true,
+     "unit": null,
+     "evidence": "D",
+     "source": "assumption (--can-hold / --must-sell)"
+    },
+    {
+     "step": 2,
+     "id": "shock",
+     "claim": "Shock: PT value falls 99.87% at the worst point (underlying / issuer risk)",
+     "value": 0.9987447088831541,
+     "unit": "fraction",
+     "evidence": "C",
+     "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
+    },
+    {
+     "step": 2,
+     "id": "permanent",
+     "claim": "100.00% of the shock is still there at the end",
+     "value": 1.0,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "assumption: no recovery (anchor: see shock source)"
+    },
+    {
+     "step": 3,
+     "id": "oracle",
+     "claim": "Unknown whether the lending oracle falls with the shock: both branches computed",
+     "value": "unknown, both branches",
+     "unit": null,
+     "evidence": "D",
+     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+    },
+    {
+     "step": 3,
+     "id": "oracle_type",
+     "claim": "Morpho API oracle type: Unknown (0xF8b29e7E9c00CE531434775f7923CC9fbCa01b08)",
+     "value": "Unknown",
+     "unit": null,
+     "evidence": "A",
+     "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+    },
+    {
+     "step": 4,
+     "id": "threshold",
+     "claim": "Liquidation if the oracle falls more than 2.19% (1 - LTV / LLTV); shock 99.87% is above it, so liquidated if the oracle falls",
+     "value": 0.021857923497267784,
+     "unit": "fraction",
+     "evidence": "D",
+     "source": "1 - debt / (collateral x LLTV), Morpho health check",
+     "basis": {
+      "formula": "B",
+      "debt_usd": "D",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 4,
+     "id": "lif",
+     "claim": "Liquidator seizes collateral worth the repaid debt x LIF 1.0262",
+     "value": 1.026167265264238,
+     "unit": "ratio",
+     "evidence": "B",
+     "source": "github.com/morpho-org/morpho-blue src/Morpho.sol (health check, LIF = min(1.15, 1/(1 - 0.3(1 - LLTV))), no close factor); back-test backtest_reusd.py: 9/9 checks pass"
+    },
+    {
+     "step": 4,
+     "id": "market_threshold",
+     "claim": "Morpho market as a whole (aggregate LTV 88.21%) is liquidatable after a 3.60% oracle fall; shock is above it",
+     "value": 0.03597409869453827,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "1 - aggregate_ltv / LLTV",
+     "basis": {
+      "formula": "B",
+      "aggregate_ltv": "A",
+      "lltv": "A"
+     }
+    },
+    {
+     "step": 5,
+     "id": "L",
+     "claim": "Loss if it happens: 100.00% of equity",
+     "value": {
+      "low": 1.0,
+      "high": 1.0
+     },
+     "unit": "fraction of equity",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "can_hold": "D",
+      "oracle": "D",
+      "mechanism": "B",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 5,
+     "id": "bad_debt",
+     "claim": "Bad debt left to lenders (worst branch): $8,937,767",
+     "value": 8937767.188066337,
+     "unit": "USD",
+     "evidence": "D",
+     "source": "loss_model.position_loss",
+     "basis": {
+      "shock": "C",
+      "permanent": "D",
+      "mechanism": "B",
+      "debt_usd": "D",
+      "oracle": "D"
+     }
+    },
+    {
+     "step": 6,
+     "id": "capacity",
+     "claim": "Pendle can absorb 45.00% of the position ($4,500,000) in one sale now",
+     "value": 0.45,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "stuck",
+     "claim": "55.00% cannot be sold through the pool now",
+     "value": 0.55,
+     "unit": "fraction",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_min",
+     "claim": "Cost of the smallest quoted sale: 0.0153%",
+     "value": 0.00015346219030587527,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "cost_cap",
+     "claim": "Cost of selling up to the limit: 0.491%",
+     "value": 0.004908559181059591,
+     "unit": "fraction of value sold",
+     "evidence": "A",
+     "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+    },
+    {
+     "step": 6,
+     "id": "exit_cost_scale",
+     "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
+     "value": 9.523809523809524,
+     "unit": "x",
+     "evidence": "D",
+     "source": "collateral / equity",
+     "basis": {
+      "collateral_usd": "D",
+      "debt_usd": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "start_selling_p",
+     "claim": "Start selling at p >= 0.005",
+     "value": 0.005,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    },
+    {
+     "step": 7,
+     "id": "sell_to_cap_p",
+     "claim": "Sell to the limit at p >= 0.2",
+     "value": 0.2,
+     "unit": "probability",
+     "evidence": "D",
+     "source": "decision_core.decide over p with this scenario's L_used and the exit curve",
+     "basis": {
+      "exit_curve": "A",
+      "L_used": "D"
+     }
+    }
+   ],
+   "decision_text": {
+    "stay": {
+     "p_from": 0,
+     "p_to": 0.005,
+     "text": "At p={p}, the expected loss of staying (L = 100.00% of equity) is too small to pay for selling even the smallest quoted size (cost 0.0153% of value sold, x9.52 per unit of equity); stay. Selling starts at p >= 0.005."
+    },
+    "partial": {
+     "p_from": 0.005,
+     "p_to": 0.2,
+     "text": "At p={p}, sell part of the position: the expected loss on the sold part (L = 100.00% of equity) exceeds its exit cost, which rises with size up to 0.491% of value sold at the 45.00% capacity limit, x9.52 per unit of equity. The fraction to sell at this p is in decision_grid. From p >= 0.2 sell up to the limit."
+    },
+    "sell_to_cap": {
+     "p_from": 0.2,
+     "p_to": null,
+     "text": "At p={p}, the expected loss of staying exceeds the marginal exit cost up to the 45.00% capacity limit (cost 0.491% of value sold, x9.52 per unit of equity); the remaining 55.00% stays exposed to underlying / issuer risk. If the oracle falls, the unsold part is liquidated (shock 99.87% is above the 2.19% threshold)."
+    }
+   },
+   "weakest_link": {
+    "step": 1,
+    "id": "debt",
+    "input": "debt_usd",
+    "grade": "D",
+    "source": "typed in (--debt), not read from chain",
+    "alternative": "unlevered (debt = 0)",
+    "thresholds_now": {
+     "start_selling_p": 0.005,
+     "sell_to_cap_p": 0.2
+    },
+    "thresholds_alt": {
+     "start_selling_p": 0.005,
+     "sell_to_cap_p": 0.025
+    },
+    "candidates": [
+     {
+      "step": 3,
+      "id": "oracle",
+      "input": "oracle_tracks_underlying",
+      "grade": "D",
+      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "alternative": "oracle does not fall (L_low branch)",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "permanent",
+      "input": "recovery (permanent part of the shock)",
+      "grade": "D",
+      "source": "assumption: no recovery (anchor: see shock source)",
+      "alternative": "permanent = 0.5",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 1,
+      "id": "can_hold",
+      "input": "can_hold",
+      "grade": "D",
+      "source": "assumption (--can-hold / --must-sell)",
+      "alternative": "can_hold = False",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed",
+      "alternative": "shock x 0.5 = 0.4994",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 2,
+      "id": "shock",
+      "input": "shock size",
+      "grade": "C",
+      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed",
+      "alternative": "shock x 1.5 = 1.0000",
+      "L_alt": 1.0,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.2
+      },
+      "changes_verdict": false,
+      "effect": 0.0
+     },
+     {
+      "step": 1,
+      "id": "debt",
+      "input": "debt_usd",
+      "grade": "D",
+      "source": "typed in (--debt), not read from chain",
+      "alternative": "unlevered (debt = 0)",
+      "L_alt": 0.9987447088831543,
+      "thresholds_alt": {
+       "start_selling_p": 0.005,
+       "sell_to_cap_p": 0.025
+      },
+      "changes_verdict": true,
+      "effect": 0.17500000000000002
+     }
+    ],
+    "not_tested": [
+     "position size (needs exit quotes at another size)",
+     "exit curve and LLTV (grade A, measured)"
+    ]
+   }
   }
- ]
+ ],
+ "weakest_link": {
+  "id": "debt",
+  "step": 1,
+  "input": "debt_usd",
+  "grade": "D",
+  "source": "typed in (--debt), not read from chain",
+  "scenarios": [
+   "issuer_half",
+   "issuer_total"
+  ],
+  "total_effect": 0.33000000000000007,
+  "why": "Grade D (debt_usd): changing it to its stated alternative changes the p thresholds in 2 of 4 scenarios; see scenarios[].weakest_link"
+ },
+ "validation": {
+  "name": "backtest_reusd",
+  "event": "PT-reUSD on Morpho, 2026-08-25 (oracle manipulation)",
+  "source": "hackmd.io/@kanveuler/BJe_n1ivGe",
+  "figures": {
+   "lltv": 0.915,
+   "ltv_min": 0.8937,
+   "ltv_max": 0.9101,
+   "oracle_before": 0.970990973,
+   "oracle_after": 0.944085974,
+   "borrowers_liquidated": 19,
+   "debt_repaid_usd": 36144246.114977,
+   "bonus_usd": 945796.075867
+  },
+  "oracle_drop": 0.02770880445661983,
+  "lif": 1.026167265264238,
+  "checks": [
+   {
+    "name": "distance to liquidation at LTV 0.9101 (bps)",
+    "expected": 53,
+    "got": 53.55191256830594,
+    "tolerance": 1,
+    "pass": true
+   },
+   {
+    "name": "distance to liquidation at LTV 0.8937 (bps)",
+    "expected": 233,
+    "got": 232.7868852459014,
+    "tolerance": 1,
+    "pass": true
+   },
+   {
+    "name": "oracle drop (bps)",
+    "expected": 277.09,
+    "got": 277.0880445661983,
+    "tolerance": 0.01,
+    "pass": true
+   },
+   {
+    "name": "model liquidates every LTV in [0.8937, 0.9101] (165 points; 19 borrowers were liquidated)",
+    "expected": 165,
+    "got": 165,
+    "tolerance": 0,
+    "pass": true
+   },
+   {
+    "name": "bonus / repaid = LIF - 1",
+    "expected": 0.02616726526423796,
+    "got": 0.02616726526425164,
+    "tolerance": 1e-06,
+    "pass": true
+   },
+   {
+    "name": "Pendle hourly open 2026-08-25 04:00 UTC",
+    "expected": 0.9708,
+    "got": 0.9708,
+    "tolerance": 5e-05,
+    "pass": true
+   },
+   {
+    "name": "Pendle hourly low 2026-08-25 04:00 UTC",
+    "expected": 0.942,
+    "got": 0.942,
+    "tolerance": 5e-05,
+    "pass": true
+   },
+   {
+    "name": "oracle_dip preset shock = Pendle low / open drop",
+    "expected": 0.02966625463535233,
+    "got": 0.02966625463535233,
+    "tolerance": 1e-09,
+    "pass": true
+   },
+   {
+    "name": "Pendle drop and oracle drop agree within 50 bps",
+    "expected": 0,
+    "got": 19.574501787325005,
+    "tolerance": 50,
+    "pass": true
+   }
+  ],
+  "passed": 9,
+  "total": 9,
+  "all_pass": true
+ },
+ "evidence": {
+  "grades": {
+   "A": "measured now from live API / chain data",
+   "B": "mechanism verified in contract source and back-tested",
+   "C": "analogy from another asset's history",
+   "D": "assumption or unknown"
+  },
+  "exit_curve": {
+   "grade": "A",
+   "source": "Pendle POST /v3/sdk/1/convert sell quotes PT -> underlying, saved 2026-10-10 09:23 UTC (exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv)"
+  },
+  "max_exit_fraction": {
+   "grade": "A",
+   "source": "largest quoted fraction; 0.5 refused (MarketProportionTooHigh, exit_quotes_raw_0x47ad2cd1_10m.json); 1 refused (MarketProportionTooHigh, exit_quotes_raw_0x47ad2cd1_10m.json)"
+  },
+  "lending": {
+   "grade": "A",
+   "source": "Morpho GraphQL marketById, saved 2026-10-10 09:19 UTC (data/morpho_markets_0xb195b618.json)"
+  },
+  "assumptions": {
+   "grade": "D",
+   "source": "placeholder L (--L), not from the loss model"
+  },
+  "thresholds": {
+   "grade": "D",
+   "source": "placeholder L (--L), not from the loss model"
+  },
+  "decision_grid": {
+   "grade": "D",
+   "source": "placeholder L (--L), not from the loss model"
+  },
+  "mechanism": {
+   "grade": "B",
+   "source": "github.com/morpho-org/morpho-blue src/Morpho.sol (health check, LIF = min(1.15, 1/(1 - 0.3(1 - LLTV))), no close factor); back-test backtest_reusd.py: 9/9 checks pass"
+  }
+ }
 }
