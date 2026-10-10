@@ -246,8 +246,9 @@
           k = v < 10 ? 100 : 10;
         return Math.min(f.max, Math.max(f.min, Math.round(v * k) / k));
       };
-      const carry = () =>
-        (Math.max(0, d.position.implied_apy - S.alt / 100) * DAYS) / 365;
+      /* Yield given up until expiry per unit sold, from the annual "cash earns" input (guide section 4). Unscaled:
+   the model scales it per unit of equity for levered presets. */
+      const carry = () => RM.carryOf(d, S.alt / 100);
       const isLev = () => PRE[S.pos].debt_usd > 0;
       const edgeOn = (e) => !e.applies_to || e.applies_to.includes(S.pos);
 
@@ -1182,7 +1183,7 @@
       document.addEventListener("change", (ev) => {
         const t = ev.target,
           num = (lo, hi, dv) => {
-            const v = parseFloat(t.value);
+            const v = parseFloat(String(t.value).trim().replace(",", "."));
             return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dv;
           };
         if (t.id === "pos") {
