@@ -110,7 +110,7 @@ Not started. The guide and its acceptance table (9 decision rows and a 3-row liq
 - **The amount default exceeds the Belem vault.** 10,000,000 is above its total assets (about 4.7M EURCV); the
   guide has a message for that case. Show it; do not silently cap the input.
 
-## Current state (`frontend` at `b40a857`)
+## Current state (`frontend` at `8baf37b`)
 
 What is on the branch:
 
@@ -125,14 +125,18 @@ What is on the branch:
   "selling starts at / pool limit from" from `breakEvenSeverity`. Wide % sliders use a log scale shared with the
   zone bar.
 - Edges come from `ui.edges` only (data id `position` drawn as the page's `pos`).
-- `main` was merged at `4329aae`. At 22:00 on 10 Oct the branch was 3 commits behind `main` (`9fd615e`); the
-  backend pushes often, so run `git log HEAD..origin/main --oneline` before starting and merge first.
+- Carry comes from `RiskModel.carryOf(d, S.alt / 100)`; the "cash earns" field is a text field
+  (`inputmode="decimal"`) that accepts "4,5" as well as "4.5".
+- `main` was merged at `9fd615e` (in `a4d9f9e`). The backend pushes often, so run
+  `git log HEAD..origin/main --oneline` before starting and merge first.
 
-Checked at `b40a857` with `node web/check_demo.mjs` (run by the user on 10 Oct, all gates pass): no console errors,
+Checked at `8baf37b`: `python3 check_js_port.py` passes all 21 gates; `node web/check_demo.mjs` passes: no console errors,
 banner hidden, 18/18 drawers, 48 preset x failure combinations, 15/15 of the guide's 10M acceptance rows (model and
 on-screen verdict), no horizontal scroll at 390px, dark background in dark mode. Not checked: the guide's 1M / 7M /
 50M rows (no size input yet; reported as SKIPPED), layout by eye in dark mode and at phone width, and whether the
-decision card and the exit panel agree (gap 1 below; the script has no check for it yet).
+decision card and the exit panel agree (gap 1 below; the script has no check for it yet). The carry change was
+also compared old vs new on 564 cases (every preset, failure and four severities at cash 0 / 2 / 4%): no verdict
+changed, 9 REDUCE sizes moved by 1-3 points.
 
 Gaps, most visible first:
 
@@ -142,18 +146,14 @@ Gaps, most visible first:
    (100%) … after liquidators sell first": more than "today", and no liquidation happens. Cause: `MAXX`, `CURVE`,
    the "All sale sizes" table, the chart and the layer-4 fact use `d.max_exit_fraction` and `d.exit_curve`, which
    describe the $10M size input; the model returns `sellable_now = 1` for the real borrowers.
-2. Carry is computed by the page, not by `RiskModel.carryOf`. The page already converts the annual input to the
-   time left (it does not pass the annual difference), so there is no 8x error; it differs from `carryOf` by about
-   1.6% because it rounds the days to expiry, and verdicts matched in the cases compared. Replace it so there is
-   one source.
-3. "What would change the answer" is built by the page, not by `sensitivity`. Its numbers come from `decideAt`, and
+2. "What would change the answer" is built by the page, not by `sensitivity`. Its numbers come from `decideAt`, and
    it has no "cash earns 1% less" row, so it cannot carry that bug; what is missing is the content: the duration,
    must-sell and carry alternatives and the weakest assumption.
-4. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
+3. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
    assumed $10M.
-5. The page's wording still describes a detector (UX section above).
+4. The page's wording still describes a detector (UX section above).
 
-Answered by the backend (guide section 0b on `main` at `9fd615e`; not merged into `frontend` yet):
+Answered by the backend (guide section 0b, merged):
 
 - Slider ranges: `min` / `max` in `failure_types.types` are the range the model covers. The page may narrow a
   range (depeg 1–60 is fine) but must not widen it. Cascade is now 1–40 in the data. The starting value is the
@@ -170,12 +170,9 @@ This file loads when a file in `web/` is opened; otherwise read it at the start 
 
 Done: `main` merged (repeat after every backend push, then `python3 check_js_port.py`); page moved to
 `web/demo.html`; position edges from the data; probability removed, verdict from `decideAt`, zones from
-`breakEvenSeverity`; split into `demo.html`, `demo.css`, `demo.js`; `check_demo.mjs` written.
+`breakEvenSeverity`; split into `demo.html`, `demo.css`, `demo.js`; `check_demo.mjs` written; `main` merged at
+`9fd615e` (`a4d9f9e`); carry from `RiskModel.carryOf`, decimal comma accepted (`8baf37b`).
 
-0. Merge `main` (3 commits at 22:00: off-chain dependencies, `decisionText`, cascade range and `sizeCurve`), run
-   `python3 check_js_port.py` and `node web/check_demo.mjs`, read guide sections 0 and 0b.
-1. Carry through `RiskModel.carryOf(d, S.alt / 100)`, passed unscaled (the model scales it for levered presets).
-   Parse a decimal comma in the input too. One small commit.
 2. Fix gap 1. First add a gate to `check_demo.mjs`: for every preset and failure, the "today" amount in the exit
    panel is at least the amount the card says to sell, and "If this plays out" names liquidators only when
    `sellable_later < sellable_now`. It should fail on the current page. Then take the sellable share and amounts
