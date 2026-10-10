@@ -333,6 +333,8 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
              "restricted_gates": restricted,
              "evidence": {"tranches": {"grade": "A", "source": f"idle balance, liquidityAdapter/liquidityData, market "
                                                                f"liquidity and forceDeallocatePenalty @ block {block}"},
+                          "deposit": {"grade": "user input", "source": "amount invested, entered by the manager "
+                                                                       f"(default {cfg['deposit']:,.0f})"},
                           "carry_cost": {"grade": "D", "source": f"(vault APY {row.get('apy')} from the input file - "
                                                                  f"alternative {cur or 'USD'} APY {alt:.2%} assumed) x "
                                                                  f"{cfg['horizon_days']} days / 365"}}}
@@ -860,7 +862,8 @@ def main():
     ap.add_argument("input")
     ap.add_argument("--only", nargs="*", help="vault addresses to analyze (default: all)")
     ap.add_argument("--rpc", default=os.environ.get("RPC_URL", "https://ethereum-rpc.publicnode.com"))
-    ap.add_argument("--deposit", type=float, default=1e6, help="depositor size in the vault's asset")
+    ap.add_argument("--deposit", type=float, default=1e7,
+                    help="amount invested in the vault (vault asset units), entered by the manager; default 10,000,000")
     ap.add_argument("--alt-apy", "--alt-apy-usd", dest="alt_apy", type=float, default=0.04,
                     help="alternative yield for USD vaults (assumed)")
     ap.add_argument("--alt-apy-eur", type=float, default=0.02, help="alternative yield for EUR vaults (assumed)")

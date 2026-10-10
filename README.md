@@ -187,7 +187,9 @@ Second view of the front end (the PT position stays the main view): instructions
 
 Written by `vault_pipeline.py` from an input in the RockawayX dashboard format (`sample_data/rockawayx_vaults.csv`: `vault_name, vault_address, token_name, chain, protocol, category, tvl_usd, apy`; `62.7m$` / `5.59%` style values are parsed).
 
-`vaults_report.json`: `block`, `input`, `assumptions` (`deposit`, `alt_apy`, `alt_apy_by_currency` {USD, EUR, ETH}, `horizon_days`: all D), `coverage_counts`, `vaults[]`:
+Input of the vault view: **vault address + amount invested** (the manager enters the amount; default 10,000,000 in the vault's asset, `--deposit`). The amount only sets the dollar figures and which exit tranche you reach; the vault's loss as a share is the same for every depositor.
+
+`vaults_report.json`: `block`, `input`, `assumptions` (`deposit` = default amount invested (user input), `alt_apy`, `alt_apy_by_currency` {USD, EUR, ETH}, `horizon_days`: D), `coverage_counts`, `vaults[]`:
 
 | Field | Meaning |
 |---|---|

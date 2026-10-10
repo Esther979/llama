@@ -28,8 +28,14 @@ Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The
 ## 3. User path
 
 **1. Input**
-- Vault: dropdown from `VAULTS.report.vaults` (name, chain, protocol, TVL); `full` ones selectable. Default: "Belem RWA EURCV" (`0xd6d4b804014ef27836dbe9f8f6bf6c71251548ec`).
-- Amount: number input, in the vault's asset (`details[a].asset_symbol`, currency `details[a].exit.currency`); default 1,000,000.
+The input is **vault address + amount invested**, as the organisers proposed. The manager knows how much they invested; the vault's risk is read on chain.
+
+- Vault address: a text field (paste an address) plus a dropdown pre-filled from `VAULTS.report.vaults` (name, chain, protocol, TVL). Match the address case-insensitively against `VAULTS.report.vaults[].vault_address`:
+  - found with `coverage: "full"` -> analyse it (`VAULTS.details[address.toLowerCase()]`);
+  - found with another coverage -> show its `note` (e.g. "Solana (Kamino) is outside the prototype"), no numbers;
+  - not found -> "This vault is not in the analysed list. Add it to `sample_data/rockawayx_vaults.csv` and run `vault_pipeline.py`."
+  - Default: "Belem RWA EURCV" (`0xd6d4b804014ef27836dbe9f8f6bf6c71251548ec`).
+- Amount invested: number input in the vault's asset (`details[a].asset_symbol`, currency `details[a].exit.currency`), filled in by the manager (placeholder "e.g. 100,000"), pre-filled with the default **10,000,000** until they type their own. Recompute with `RiskModel.vaultDecideAt(..., amount, ...)` on every change; nothing needs the backend. Alternative entry: "share of my portfolio" (%) x "portfolio size" -> amount; then also show every loss as a share of the portfolio. Label the amount "your input" (it is the manager's fact, not our assumption).
 - Scenario: dropdown of `details[a].incidents` with `analyzed !== false`, grouped:
   - Credit incidents (a collateral or underlying fails): `type` = `issuer_default`, `depeg`, `pt_market_dip`
   - "Vault asset issuer fails": `type` = `asset_issuer` (e.g. EURCV, USDC)
