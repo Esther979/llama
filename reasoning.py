@@ -65,6 +65,10 @@ def scenario_reasoning(ctx, sc, r, thr, mech):
     S.append(step(1, "position_size", f"Position: {fmt(C, 'USD')} of {ctx['name']}", C, "USD", ctx["ev"]["collateral"]))
     S.append(step(1, "pt", f"PT {ctx['pt']} at {ctx['pt_price']:.4f} USD per PT", ctx["pt_price"], "USD per PT",
                   ctx["ev"]["pt_price"]))
+    bor = ctx.get("borrower")
+    if bor:
+        S.append(step(1, "borrower", f"Real Morpho borrower {bor['address']} at block {ctx['borrowers']['block']}: "
+                      f"its LTV is used for this position", bor["address"], None, ctx["ev"]["ltv"]))
     S.append(step(1, "debt", f"Debt against the PT: {fmt(D, 'USD')}", D, "USD", ctx["ev"]["debt"]))
     S.append(step(1, "ltv", f"Position LTV {fmt(D / C, 'fraction')} (debt / collateral)", D / C, "fraction",
                   ctx["ev"]["ltv"]))
@@ -138,6 +142,14 @@ def scenario_reasoning(ctx, sc, r, thr, mech):
     c_cap = slippage_at(max_x, curve)
     S.append(step(6, "cost_cap", f"Cost of selling up to the limit: {fmt(c_cap, 'fraction of value sold')}",
                   c_cap, "fraction of value sold", qev))
+    bb = ctx.get("borrowers")
+    if bb:
+        fd = bb["first_drop_seized_exceeds_capacity"]
+        S.append(step(6, "market_liquidations",
+                      (f"Morpho liquidations would seize more PT than the pool can absorb from a {fmt(fd, 'fraction')} "
+                       f"oracle fall ({bb['distribution']['n_borrowers']} borrowers read on chain)") if fd is not None
+                      else "Morpho liquidations stay below the pool's capacity for oracle falls up to 10%",
+                      fd, "fraction", bb["evidence"]["first_drop_seized_exceeds_capacity"]))
     if levered:
         S.append(step(6, "exit_cost_scale", f"Per unit of equity, exit cost is x{ctx['scale']:.2f} "
                       "(collateral / equity)", ctx["scale"], "x", ctx["ev"]["scale"]))
@@ -260,12 +272,14 @@ def weakest_link(ctx, sc, r, thr, grid_fn):
     for k in (0.5, 1.5):
         cands.append((2, "shock", "shock size", ev_s["shock"], f"shock x {k:g} = {min(1.0, sc.shock * k):.4f}",
                       lambda k=k: thresholds(s=scen(shock=min(1.0, sc.shock * k)))))
+    # the debt alternative changes the LTV: graded by the LTV, explained by the debt's source when grades agree
+    e_debt = ctx["ev"]["debt"] if ctx["ev"]["debt"]["grade"] == ctx["ev"]["ltv"]["grade"] else ctx["ev"]["ltv"]
     if D > 0:
-        cands.append((1, "debt", "debt_usd", ctx["ev"]["debt"], "unlevered (debt = 0)",
+        cands.append((1, "debt", "debt_usd", e_debt, "unlevered (debt = 0)",
                       lambda: thresholds(debt_usd=0.0)))
     elif ctx["lending"] and ctx["lending"].get("aggregate_ltv"):
         a = ctx["lending"]["aggregate_ltv"]
-        cands.append((1, "debt", "debt_usd", ctx["ev"]["debt"],
+        cands.append((1, "debt", "debt_usd", e_debt,
                       f"levered like the Morpho market average (LTV {a:.4f})",
                       lambda: thresholds(debt_usd=a * C)))
 

@@ -5,7 +5,8 @@ Collect everything the dashboard needs into ONE file: data/dashboard.json.
   python3 export_dashboard.py --market 0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e \
       --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv --L 0.5 \
       [--debt 8800000] [--lltv 0.915] [--must-sell] \
-      [--oracle-tracks-underlying true|false|unknown] [--oracle-tracks-market true|false|unknown]
+      [--oracle-tracks-underlying true|false|unknown] [--oracle-tracks-market true|false|unknown] \
+      [--positions data/morpho_positions_0x5613b170.json [--borrower 0xADDRESS]]
 
 --L drives the legacy top-level decision_grid (placeholder). The "scenarios" list uses
 loss_model.py: one L per preset, for the position described by --debt / --lltv / ... .
@@ -23,10 +24,10 @@ import os
 import sys
 
 import backtest_reusd
+import onchain_positions
 from decision_core import Scenario, decide, load_curve
 from loss_model import PRESETS, Position, position_loss
-from reasoning import (check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link,
-                       worst)
+from reasoning import check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -104,7 +105,7 @@ def run_grid(curve, L, pstep):
 
 
 def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=True,
-          oracle_tracks_underlying=None, oracle_tracks_market=None):
+          oracle_tracks_underlying=None, oracle_tracks_market=None, positions=None, borrower=None):
     mk = load_json(os.path.join(data_dir, "pendle_markets.json"))
     if not mk:
         sys.exit(f"missing {data_dir}/pendle_markets.json - run fetch_data.py step1")
@@ -157,11 +158,38 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
 
     grid, thresholds = run_grid(curve, L, pstep)
 
+    # ---- on-chain borrowers (onchain_positions.py) ----
+    onc, bor = None, None
+    if positions:
+        onc = load_json(positions)
+        if not onc:
+            sys.exit(f"missing {positions} - run onchain_positions.py")
+        if not onc.get("all_gates_pass"):
+            sys.exit(f"{positions}: not all gates passed - rerun onchain_positions.py")
+        if borrower:
+            bor = next((b for b in onc["borrowers"] if b["address"] == borrower.lower()), None)
+            if not bor or bor["borrow_usdc"] <= 0:
+                sys.exit(f"{borrower} has no debt in {positions}")
+    elif borrower:
+        sys.exit("--borrower needs --positions")
+    same_size = bool(bor) and abs(bor["collateral_usdc"] / notional - 1) < 0.01
+    if bor:
+        if debt:
+            sys.exit("--borrower fills the debt: do not pass --debt as well")
+        debt = bor["borrow_usdc"] if same_size else bor["ltv"] * notional
+        if lltv_arg is None:
+            lltv_arg = onc["lltv"]
+        if not same_size:
+            print(f"note: borrower collateral ${bor['collateral_usdc']:,.0f} != quoted notional ${notional:,.0f}; "
+                  f"using its LTV {bor['ltv']:.4f} on our size. For its real size: fetch_data.py step3 --notional "
+                  f"{bor['collateral_usdc']:.0f}", file=sys.stderr)
+
     # ---- per-scenario L from loss_model.py ----
     if debt < 0 or debt >= notional:
         sys.exit(f"--debt must be in [0, {notional:,.0f}) (collateral = notional_usd)")
     if lltv_arg is not None:
-        lltv, lltv_source = lltv_arg, "--lltv"
+        lltv, lltv_source = lltv_arg, (f"on chain, block {onc['block']}" if bor and lltv_arg == onc["lltv"]
+                                       else "--lltv")
     else:
         found = sorted({x["lltv"] for x in lending if isinstance(x["lltv"], float)})
         if len(found) == 1:
@@ -195,12 +223,18 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         x["evidence"]["aggregate_liquidation_drop_threshold"] = derived(
             "1 - aggregate_ltv / lltv (Morpho health check)", formula=mech["grade"], aggregate_ltv="A", lltv="A")
     oracle_src = ("unknown: Morpho API oracle type "
-                  f"'{lending[0]['oracle_type'] if lending else 'n/a'}', on-chain crawler not built; both branches computed")
+                  f"'{lending[0]['oracle_type'] if lending else 'n/a'}', oracle contract not read yet; both branches computed")
+    chain = (f"Ethereum eth_call at block {onc['block']} ({os.path.basename(positions)}), borrower "
+             f"{bor['address']}") if bor else None
     e_in = {
-        "collateral": ev("D", "position size assumed by us (= notional_usd of the quotes), not Belem's"),
-        "debt": ev("D", "typed in (--debt), not read from chain" if debt > 0 else "default 0: assumed unlevered"),
-        "lltv": (ev("A", src["morpho"]) if lltv_source.startswith("morpho_markets")
-                 else ev("D", "typed in (--lltv)" if lltv_source == "--lltv" else lltv_source)),
+        "collateral": (ev("A", chain) if same_size else
+                       ev("D", "position size assumed by us (= notional_usd of the quotes), not Belem's")),
+        "debt": (ev("A", chain) if same_size else
+                 derived(f"borrower LTV ({chain}) x our assumed position size", ltv="A", position_size="D") if bor else
+                 ev("D", "typed in (--debt), not read from chain" if debt > 0 else "default 0: assumed unlevered")),
+        "lltv": (ev("A", src["morpho"]) if lltv_source.startswith("morpho_markets") else
+                 ev("A", chain) if lltv_source.startswith("on chain") else
+                 ev("D", "typed in (--lltv)" if lltv_source == "--lltv" else lltv_source)),
         "can_hold": ev("D", "assumption (--can-hold / --must-sell)"),
         "pt_price": ev("A", f"Pendle GET /v1/prices/assets at quote time (usd / PT amount in "
                             f"{os.path.basename(curves[0])})"),
@@ -212,14 +246,14 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
     # unlevered LTV depends on the debt input alone; position size enters only USD amounts and the
     # exit costs per fraction of the position (quotes were taken at this size).
     g_coll, g_debt, g_lltv = e_in["collateral"]["grade"], e_in["debt"]["grade"], e_in["lltv"]["grade"]
-    g_ltv = g_debt if debt == 0 else worst(g_debt, g_coll)
-    e_in["ltv"] = (derived("debt / collateral", debt_usd=g_debt) if debt == 0 else
+    e_in["ltv"] = (ev("A", f"{chain}: borrow / (collateral x oracle price)") if bor else
+                   derived("debt / collateral", debt_usd=g_debt) if debt == 0 else
                    derived("debt / collateral", debt_usd=g_debt, collateral_usd=g_coll))
+    g_ltv = e_in["ltv"]["grade"]
     e_in["scale"] = derived("collateral / equity = 1 / (1 - ltv)", ltv=g_ltv)
     ev_scen = {}
     for sc in PRESETS:
         r = position_loss(sc, pos)
-        flag = oracle_tracks_underlying if sc.layer == 2 else oracle_tracks_market
         g_perm = "C" if sc.recovery_source else "D"
         perm = ev(g_perm, f"observed: {sc.recovery_source}" if sc.recovery_source else
                   "assumption: no recovery" if sc.permanent == 1 else "assumption")
@@ -249,11 +283,38 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "grid": derived("decision_core.decide with L_used and the exit curve (costs per fraction of a "
                             "position of this size)", exit_curve="A", position_size=g_coll, L_used=L_ev["grade"]),
         }
+    borrowers_block = None
+    if onc:
+        cap_pt = max_x * notional / pt_price
+        lc, first = onchain_positions.liquidation_curve(onc["borrowers"], onc["oracle_price"], onc["lltv"], cap_pt)
+        e_chain = {"grade": "A", "source": f"Ethereum eth_call at block {onc['block']} ({os.path.basename(positions)})",
+                   "block": onc["block"]}
+        borrowers_block = {
+            "block": onc["block"], "block_timestamp": onc["block_timestamp"], "market_id": onc["market_id"],
+            "oracle_price": onc["oracle_price"], "lltv": onc["lltv"], "lif": onc["lif"],
+            "total_borrow_usdc": onc["market"]["total_borrow_assets_usdc"],
+            "discovery": onc["discovery"], "gates_passed": sum(g["pass"] for g in onc["gates"]),
+            "gates_total": len(onc["gates"]),
+            "list": onc["borrowers"], "distribution": onc["distribution"],
+            "capacity_pt": cap_pt, "liquidation_curve": lc, "first_drop_seized_exceeds_capacity": first,
+            "selected": bor["address"] if bor else None,
+            "evidence": {"list": e_chain, "distribution": e_chain, "oracle_price": e_chain, "lltv": e_chain,
+                         "capacity_pt": derived("largest quoted sale in USD (max_exit_fraction x notional_usd, an "
+                                                "absolute amount Pendle accepted) / pt_price_usd", exit_curve="A",
+                                                pt_price="A"),
+                         "liquidation_curve": derived("onchain_positions.liquidation_curve: borrowers at block "
+                                                      f"{onc['block']}, full liquidation, LIF", borrowers="A",
+                                                      formula=mech["grade"]),
+                         "first_drop_seized_exceeds_capacity": derived(
+                             "first oracle drop where PT seized > capacity_pt", borrowers="A",
+                             formula=mech["grade"], capacity_pt="A")},
+        }
     ctx = {"collateral": notional, "debt": debt, "lltv": lltv, "can_hold": can_hold,
            "oracle_tracks_underlying": oracle_tracks_underlying, "oracle_tracks_market": oracle_tracks_market,
            "name": m.get("name") and f"PT-{m.get('name')} (expiry {str(m.get('expiry'))[:10]})",
            "pt": pt, "pt_price": pt_price, "curve": curve, "max_x": max_x, "scale": scale, "pstep": pstep,
-           "lending": lending[0] if lending else None, "src": src, "ev": e_in, "ev_scen": ev_scen}
+           "lending": lending[0] if lending else None, "src": src, "ev": e_in, "ev_scen": ev_scen,
+           "borrowers": borrowers_block, "borrower": bor}
     grid_fn = lambda L_, sc_: run_grid([(x, s * sc_) for x, s in curve], L_, pstep)[1]
 
     scenarios = []
@@ -324,6 +385,10 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "oracle_tracks_market": oracle_tracks_market,
             "exit_cost_scale": scale,
             "ltv": debt / notional,
+            "borrower": ({k: bor[k] for k in ("address", "collateral_pt", "collateral_usdc", "borrow_usdc", "ltv",
+                                              "distance_to_liquidation")} | {"block": onc["block"],
+                                                                             "same_size_as_quotes": same_size}
+                         if bor else None),
             "evidence": {"collateral_usd": e_in["collateral"], "debt_usd": e_in["debt"],
                          "equity_usd": derived("collateral - debt", collateral_usd=g_coll, debt_usd=g_debt),
                          "lltv": e_in["lltv"], "can_hold": e_in["can_hold"],
@@ -336,6 +401,7 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                     "position's L; the deleveraging effect of a sale is not modelled.",
         },
         "scenarios": scenarios,
+        **({"borrowers": borrowers_block} if borrowers_block else {}),
         "weakest_link": overall_weakest(scenarios),
         "validation": validation,
         "evidence": {
@@ -368,9 +434,11 @@ def main():
     g.add_argument("--must-sell", dest="can_hold", action="store_false")
     ap.add_argument("--oracle-tracks-underlying", type=tri, default=None, metavar="true|false|unknown")
     ap.add_argument("--oracle-tracks-market", type=tri, default=None, metavar="true|false|unknown")
+    ap.add_argument("--positions", help="data/morpho_positions_<id>.json from onchain_positions.py")
+    ap.add_argument("--borrower", help="a borrower in --positions: its LTV (and debt if same size) replace --debt")
     a = ap.parse_args()
     out = build(a.market, a.curves, a.L, a.pstep, a.data_dir, a.debt, a.lltv, a.can_hold,
-                a.oracle_tracks_underlying, a.oracle_tracks_market)
+                a.oracle_tracks_underlying, a.oracle_tracks_market, a.positions, a.borrower)
     path = a.out or os.path.join(a.data_dir, "dashboard.json")
     with open(path, "w") as f:
         json.dump(out, f, indent=1)
@@ -388,6 +456,11 @@ def main():
         print(f"  {s['key']:13s} L={L:15s} liquidated={s['liquidated']}  "
               f"start p>={t['start_selling_p']}  cap p>={t['sell_to_cap_p']}  "
               f"weakest: {w['input']} ({w['grade']}) -> {w['alternative']}")
+    if "borrowers" in out:
+        b = out["borrowers"]
+        print(f"borrowers at block {b['block']}: {b['distribution']['n_borrowers']} with debt, debt-weighted LTV "
+              f"{b['distribution']['ltv_debt_weighted']:.4f}; seized PT > Pendle capacity from a "
+              f"{b['first_drop_seized_exceeds_capacity']} oracle drop")
     w, v = out["weakest_link"], out["validation"]
     print(f"overall weakest link: {w.get('input')} ({w.get('grade')}) in {w.get('scenarios')}")
     print(f"GATE {'PASS' if v['all_pass'] else 'FAIL'}  back-test {v['passed']}/{v['total']}; "

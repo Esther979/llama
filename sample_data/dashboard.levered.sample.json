@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T12:09:41+00:00",
+ "generated_at": "2026-10-10T12:18:45+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -1785,6 +1785,7 @@
   "oracle_tracks_market": null,
   "exit_cost_scale": 9.523809523809524,
   "ltv": 0.895,
+  "borrower": null,
   "evidence": {
    "collateral_usd": {
     "grade": "D",
@@ -1812,11 +1813,11 @@
    },
    "oracle_tracks_underlying": {
     "grade": "D",
-    "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+    "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed"
    },
    "oracle_tracks_market": {
     "grade": "D",
-    "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+    "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed"
    },
    "exit_cost_scale": {
     "grade": "D",
@@ -3689,7 +3690,7 @@
      "value": "unknown, both branches",
      "unit": null,
      "evidence": "D",
-     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+     "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed"
     },
     {
      "step": 3,
@@ -3806,6 +3807,20 @@
     },
     {
      "step": 6,
+     "id": "market_liquidations",
+     "claim": "Morpho liquidations would seize more PT than the pool can absorb from a 5.50% oracle fall (13 borrowers read on chain)",
+     "value": 0.055,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "first oracle drop where PT seized > capacity_pt",
+     "basis": {
+      "borrowers": "A",
+      "formula": "B",
+      "capacity_pt": "A"
+     }
+    },
+    {
+     "step": 6,
      "id": "exit_cost_scale",
      "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
      "value": 9.523809523809524,
@@ -3875,7 +3890,7 @@
       "id": "oracle",
       "input": "oracle_tracks_underlying",
       "grade": "D",
-      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed",
       "alternative": "oracle does not fall (L_low branch)",
       "L_alt": 0.0,
       "thresholds_alt": {
@@ -5819,7 +5834,7 @@
      "value": "unknown, both branches",
      "unit": null,
      "evidence": "D",
-     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+     "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed"
     },
     {
      "step": 3,
@@ -5945,6 +5960,20 @@
     },
     {
      "step": 6,
+     "id": "market_liquidations",
+     "claim": "Morpho liquidations would seize more PT than the pool can absorb from a 5.50% oracle fall (13 borrowers read on chain)",
+     "value": 0.055,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "first oracle drop where PT seized > capacity_pt",
+     "basis": {
+      "borrowers": "A",
+      "formula": "B",
+      "capacity_pt": "A"
+     }
+    },
+    {
+     "step": 6,
      "id": "exit_cost_scale",
      "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
      "value": 9.523809523809524,
@@ -6006,7 +6035,7 @@
     "id": "oracle",
     "input": "oracle_tracks_market",
     "grade": "D",
-    "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+    "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed",
     "alternative": "oracle does not fall (L_low branch)",
     "thresholds_now": {
      "start_selling_p": 0.005,
@@ -6022,7 +6051,7 @@
       "id": "oracle",
       "input": "oracle_tracks_market",
       "grade": "D",
-      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed",
       "alternative": "oracle does not fall (L_low branch)",
       "L_alt": 0.0,
       "thresholds_alt": {
@@ -7966,7 +7995,7 @@
      "value": "unknown, both branches",
      "unit": null,
      "evidence": "D",
-     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+     "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed"
     },
     {
      "step": 3,
@@ -8092,6 +8121,20 @@
     },
     {
      "step": 6,
+     "id": "market_liquidations",
+     "claim": "Morpho liquidations would seize more PT than the pool can absorb from a 5.50% oracle fall (13 borrowers read on chain)",
+     "value": 0.055,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "first oracle drop where PT seized > capacity_pt",
+     "basis": {
+      "borrowers": "A",
+      "formula": "B",
+      "capacity_pt": "A"
+     }
+    },
+    {
+     "step": 6,
      "id": "exit_cost_scale",
      "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
      "value": 9.523809523809524,
@@ -8169,7 +8212,7 @@
       "id": "oracle",
       "input": "oracle_tracks_underlying",
       "grade": "D",
-      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed",
       "alternative": "oracle does not fall (L_low branch)",
       "L_alt": 1.0,
       "thresholds_alt": {
@@ -10113,7 +10156,7 @@
      "value": "unknown, both branches",
      "unit": null,
      "evidence": "D",
-     "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed"
+     "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed"
     },
     {
      "step": 3,
@@ -10239,6 +10282,20 @@
     },
     {
      "step": 6,
+     "id": "market_liquidations",
+     "claim": "Morpho liquidations would seize more PT than the pool can absorb from a 5.50% oracle fall (13 borrowers read on chain)",
+     "value": 0.055,
+     "unit": "fraction",
+     "evidence": "B",
+     "source": "first oracle drop where PT seized > capacity_pt",
+     "basis": {
+      "borrowers": "A",
+      "formula": "B",
+      "capacity_pt": "A"
+     }
+    },
+    {
+     "step": 6,
      "id": "exit_cost_scale",
      "claim": "Per unit of equity, exit cost is x9.52 (collateral / equity)",
      "value": 9.523809523809524,
@@ -10316,7 +10373,7 @@
       "id": "oracle",
       "input": "oracle_tracks_underlying",
       "grade": "D",
-      "source": "unknown: Morpho API oracle type 'Unknown', on-chain crawler not built; both branches computed",
+      "source": "unknown: Morpho API oracle type 'Unknown', oracle contract not read yet; both branches computed",
       "alternative": "oracle does not fall (L_low branch)",
       "L_alt": 1.0,
       "thresholds_alt": {
@@ -10409,6 +10466,421 @@
    }
   }
  ],
+ "borrowers": {
+  "block": 26161967,
+  "block_timestamp": 1791634499,
+  "market_id": "0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05",
+  "oracle_price": 0.9923578748097411,
+  "lltv": 0.915,
+  "lif": 1.026167265264238,
+  "total_borrow_usdc": 6992654.071526,
+  "discovery": {
+   "mode": "auto",
+   "sources": [
+    "eth_getLogs SupplyCollateral/Borrow, blocks 26151968-26161967 only (0 logs; older blocks need an archive RPC)",
+    "Morpho GraphQL marketPositions: 19 addresses (amounts not used)"
+   ],
+   "logs_cover_from_block": 26151968,
+   "candidates": 19
+  },
+  "gates_passed": 7,
+  "gates_total": 7,
+  "list": [
+   {
+    "address": "0x5c430ff6f374da12218b380d2040299ae5b6d40e",
+    "collateral_pt": 3272383.785063586,
+    "collateral_usdc": 3247375.8185075573,
+    "borrow_usdc": 2941926.701332,
+    "borrow_shares": "2928397225278780003",
+    "ltv": 0.9059397081684445,
+    "distance_to_liquidation": 0.009901958285853052,
+    "healthy": true
+   },
+   {
+    "address": "0x4264ef782fc3385c62e16969618e81e079afd880",
+    "collateral_pt": 15898.138666175497,
+    "collateral_usdc": 15776.643100196488,
+    "borrow_usdc": 14082.580763,
+    "borrow_shares": "14017817102984410",
+    "ltv": 0.892622129661069,
+    "distance_to_liquidation": 0.02445668889500663,
+    "healthy": true
+   },
+   {
+    "address": "0xe3a5bcb68ea2be70c029687bf02d3357417d8d67",
+    "collateral_pt": 114321.47002506429,
+    "collateral_usdc": 113447.81103919832,
+    "borrow_usdc": 101185.977411,
+    "borrow_shares": "100720638400387040",
+    "ltv": 0.8919165251768354,
+    "distance_to_liquidation": 0.0252278413367919,
+    "healthy": true
+   },
+   {
+    "address": "0x03babeb24619902253fdb0d5675a816879115d98",
+    "collateral_pt": 413030.32398526685,
+    "collateral_usdc": 409873.8945419983,
+    "borrow_usdc": 357147.515246,
+    "borrow_shares": "355505047827188788",
+    "ltv": 0.8713595083802158,
+    "distance_to_liquidation": 0.04769452636041993,
+    "healthy": true
+   },
+   {
+    "address": "0xdf81987465681d0515058fe0a47a3bd174012730",
+    "collateral_pt": 3961491.3541291417,
+    "collateral_usdc": 3931217.1412607585,
+    "borrow_usdc": 3414343.109055,
+    "borrow_shares": "3398641061377110652",
+    "ltv": 0.8685206098689336,
+    "distance_to_liquidation": 0.05079714768422561,
+    "healthy": true
+   },
+   {
+    "address": "0x405b07642e7c4e1b9eda4ef21f16b22207d0f2cc",
+    "collateral_pt": 18798.941538810985,
+    "collateral_usdc": 18655.27767412703,
+    "borrow_usdc": 16114.869929,
+    "borrow_shares": "16040760077936299",
+    "ltv": 0.8638236433944739,
+    "distance_to_liquidation": 0.05593044437762418,
+    "healthy": true
+   },
+   {
+    "address": "0xbfcdb32f9e2c6d2a7c5c8c435b3da59ff6049212",
+    "collateral_pt": 19625.387394236488,
+    "collateral_usdc": 19475.407726862406,
+    "borrow_usdc": 16495.364038,
+    "borrow_shares": "16419504352423581",
+    "ltv": 0.8469842721314617,
+    "distance_to_liquidation": 0.07433412881807477,
+    "healthy": true
+   },
+   {
+    "address": "0xde79a400ec22ff42d875e8c12819183a8e12e141",
+    "collateral_pt": 121330.89275927603,
+    "collateral_usdc": 120403.66688736377,
+    "borrow_usdc": 100407.713152,
+    "borrow_shares": "99945953261772889",
+    "ltv": 0.8339257079764044,
+    "distance_to_liquidation": 0.08860578363234495,
+    "healthy": true
+   },
+   {
+    "address": "0x91ab152b06edc600b4a123c2ea1387ebe5b83795",
+    "collateral_pt": 12793.92035958004,
+    "collateral_usdc": 12696.147618517929,
+    "borrow_usdc": 10327.972861,
+    "borrow_shares": "10280476074868801",
+    "ltv": 0.8134729660780067,
+    "distance_to_liquidation": 0.11095850701857202,
+    "healthy": true
+   },
+   {
+    "address": "0x9f72e6cd13c4da05bafb173e9ff83eb6e324315f",
+    "collateral_pt": 15606.547027648327,
+    "collateral_usdc": 15487.279841475376,
+    "borrow_usdc": 12023.401898,
+    "borrow_shares": "11968108090529110",
+    "ltv": 0.7763404562369298,
+    "distance_to_liquidation": 0.15154048498696193,
+    "healthy": true
+   },
+   {
+    "address": "0x7640aecb5a149ee48e79465f9aed3508b1efa164",
+    "collateral_pt": 877.6116059341042,
+    "collateral_usdc": 870.9047881731317,
+    "borrow_usdc": 579.164444,
+    "borrow_shares": "576500954167251",
+    "ltv": 0.6650146512742159,
+    "distance_to_liquidation": 0.2732080313942996,
+    "healthy": true
+   },
+   {
+    "address": "0xa4818ef55ac5b27308808c633dc6e00a8361a810",
+    "collateral_pt": 16199.974258248803,
+    "collateral_usdc": 16076.172026888295,
+    "borrow_usdc": 8019.430055,
+    "borrow_shares": "7982549908190356",
+    "ltv": 0.49883952731950465,
+    "distance_to_liquidation": 0.4548201887218528,
+    "healthy": true
+   },
+   {
+    "address": "0xb91745297802ad852b286809d25199c7467584a8",
+    "collateral_pt": 1.0,
+    "collateral_usdc": 0.9923578748097411,
+    "borrow_usdc": 0.271348,
+    "borrow_shares": "270100000000",
+    "ltv": 0.2734376447126234,
+    "distance_to_liquidation": 0.7011610440299199,
+    "healthy": true
+   }
+  ],
+  "distribution": {
+   "n_borrowers": 13,
+   "ltv_min": 0.2734376447126234,
+   "ltv_median": 0.8469842721314617,
+   "ltv_max": 0.9059397081684445,
+   "ltv_debt_weighted": 0.8835565114390378,
+   "distance_buckets": [
+    {
+     "distance_from": 0,
+     "distance_to": 0.005,
+     "n": 0,
+     "borrow_usdc": 0
+    },
+    {
+     "distance_from": 0.005,
+     "distance_to": 0.01,
+     "n": 1,
+     "borrow_usdc": 2941926.701332
+    },
+    {
+     "distance_from": 0.01,
+     "distance_to": 0.02,
+     "n": 0,
+     "borrow_usdc": 0
+    },
+    {
+     "distance_from": 0.02,
+     "distance_to": 0.03,
+     "n": 2,
+     "borrow_usdc": 115268.558174
+    },
+    {
+     "distance_from": 0.03,
+     "distance_to": 0.05,
+     "n": 1,
+     "borrow_usdc": 357147.515246
+    },
+    {
+     "distance_from": 0.05,
+     "distance_to": 0.1,
+     "n": 4,
+     "borrow_usdc": 3547361.056174
+    },
+    {
+     "distance_from": 0.1,
+     "distance_to": 1.0,
+     "n": 5,
+     "borrow_usdc": 30950.240606
+    }
+   ]
+  },
+  "capacity_pt": 4531729.757479561,
+  "liquidation_curve": [
+   {
+    "oracle_drop": 0.005,
+    "n_liquidatable": 0,
+    "debt_liquidatable_usdc": 0,
+    "pt_seized": 0.0,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.01,
+    "n_liquidatable": 1,
+    "debt_liquidatable_usdc": 2941926.701332,
+    "pt_seized": 3072886.2884936123,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.015,
+    "n_liquidatable": 1,
+    "debt_liquidatable_usdc": 2941926.701332,
+    "pt_seized": 3088484.6960494174,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.02,
+    "n_liquidatable": 1,
+    "debt_liquidatable_usdc": 2941926.701332,
+    "pt_seized": 3104242.2710292614,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.025,
+    "n_liquidatable": 2,
+    "debt_liquidatable_usdc": 2956009.282095,
+    "pt_seized": 3135097.2271376546,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.03,
+    "n_liquidatable": 3,
+    "debt_liquidatable_usdc": 3057195.259506,
+    "pt_seized": 3259126.964340546,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.035,
+    "n_liquidatable": 3,
+    "debt_liquidatable_usdc": 3057195.259506,
+    "pt_seized": 3276013.632549565,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.04,
+    "n_liquidatable": 3,
+    "debt_liquidatable_usdc": 3057195.259506,
+    "pt_seized": 3293076.2035524272,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.045,
+    "n_liquidatable": 3,
+    "debt_liquidatable_usdc": 3057195.259506,
+    "pt_seized": 3310317.440220241,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.05,
+    "n_liquidatable": 4,
+    "debt_liquidatable_usdc": 3414342.774752,
+    "pt_seized": 3716493.262403165,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": false
+   },
+   {
+    "oracle_drop": 0.055,
+    "n_liquidatable": 5,
+    "debt_liquidatable_usdc": 6828685.883807,
+    "pt_seized": 7472314.861649349,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.06,
+    "n_liquidatable": 6,
+    "debt_liquidatable_usdc": 6844800.753736,
+    "pt_seized": 7529788.7700752765,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.065,
+    "n_liquidatable": 6,
+    "debt_liquidatable_usdc": 6844800.753736,
+    "pt_seized": 7570055.02018263,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.07,
+    "n_liquidatable": 6,
+    "debt_liquidatable_usdc": 6844800.753736,
+    "pt_seized": 7610754.240721246,
+    "bad_debt_usdc": 0.0,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.075,
+    "n_liquidatable": 7,
+    "debt_liquidatable_usdc": 6861296.117774,
+    "pt_seized": 7653898.785414485,
+    "bad_debt_usdc": 14701.546331556514,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.08,
+    "n_liquidatable": 7,
+    "debt_liquidatable_usdc": 6861296.117774,
+    "pt_seized": 7677711.366938132,
+    "bad_debt_usdc": 30524.385007234756,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.085,
+    "n_liquidatable": 7,
+    "debt_liquidatable_usdc": 6861296.117774,
+    "pt_seized": 7701735.246785348,
+    "bad_debt_usdc": 46390.535895573215,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.09,
+    "n_liquidatable": 8,
+    "debt_liquidatable_usdc": 6961703.830926,
+    "pt_seized": 7839454.190394164,
+    "bad_debt_usdc": 62843.02072404613,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.095,
+    "n_liquidatable": 8,
+    "debt_liquidatable_usdc": 6961703.830926,
+    "pt_seized": 7863967.178220902,
+    "bad_debt_usdc": 79295.50555251856,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.1,
+    "n_liquidatable": 8,
+    "debt_liquidatable_usdc": 6961703.830926,
+    "pt_seized": 7888752.532579046,
+    "bad_debt_usdc": 95747.9903809901,
+    "seized_exceeds_capacity": true
+   }
+  ],
+  "first_drop_seized_exceeds_capacity": 0.055,
+  "selected": null,
+  "evidence": {
+   "list": {
+    "grade": "A",
+    "source": "Ethereum eth_call at block 26161967 (morpho_positions_0x5613b170.json)",
+    "block": 26161967
+   },
+   "distribution": {
+    "grade": "A",
+    "source": "Ethereum eth_call at block 26161967 (morpho_positions_0x5613b170.json)",
+    "block": 26161967
+   },
+   "oracle_price": {
+    "grade": "A",
+    "source": "Ethereum eth_call at block 26161967 (morpho_positions_0x5613b170.json)",
+    "block": 26161967
+   },
+   "lltv": {
+    "grade": "A",
+    "source": "Ethereum eth_call at block 26161967 (morpho_positions_0x5613b170.json)",
+    "block": 26161967
+   },
+   "capacity_pt": {
+    "grade": "A",
+    "source": "largest quoted sale in USD (max_exit_fraction x notional_usd, an absolute amount Pendle accepted) / pt_price_usd",
+    "basis": {
+     "exit_curve": "A",
+     "pt_price": "A"
+    }
+   },
+   "liquidation_curve": {
+    "grade": "B",
+    "source": "onchain_positions.liquidation_curve: borrowers at block 26161967, full liquidation, LIF",
+    "basis": {
+     "borrowers": "A",
+     "formula": "B"
+    }
+   },
+   "first_drop_seized_exceeds_capacity": {
+    "grade": "B",
+    "source": "first oracle drop where PT seized > capacity_pt",
+    "basis": {
+     "borrowers": "A",
+     "formula": "B",
+     "capacity_pt": "A"
+    }
+   }
+  }
+ },
  "weakest_link": {
   "id": "debt",
   "step": 1,

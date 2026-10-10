@@ -28,6 +28,7 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `loss_model.py` | L = shock × transmission (Morpho liquidation rules) per preset scenario |
 | `reasoning.py` | Evidence grades A–D, per-scenario reasoning steps, decision texts, weakest link |
 | `backtest_reusd.py` | Back-test of the Morpho rules on PT-reUSD 25 Aug 2026; grade B depends on it passing |
+| `onchain_positions.py` | Morpho borrowers on chain over JSON-RPC (stdlib): positions, LTVs, liquidation curve vs capacity; 7 gates |
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |
 
@@ -59,13 +60,16 @@ Done
 
 - `export_dashboard.py` uses `loss_model.py`: `scenarios[]` with per-scenario L, grid per unit of equity,
   evidence grade + source on every number, reasoning chain, decision texts, weakest link, `validation`
-  (PT-reUSD back-test 9/9).
+  (PT-reUSD back-test 9/9). Grades follow actual dependencies; observed recoveries are C.
+- `onchain_positions.py` (block 26,161,967): 13 borrowers, all gates pass (borrowShares sum exact). One borrower
+  holds $2.94M of the $6.99M debt at LTV 0.906, 0.99% from liquidation. Seized PT exceeds what one Pendle sale can
+  absorb (4.53M PT) from a 5.5% oracle drop. `export_dashboard.py --positions/--borrower` uses it.
 
 Not done (in priority order)
 1. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`
    (evidence = which API/contract call and block). Today the data sits in separate JSON files.
-2. On-chain crawler over RPC: start from the position, read referenced contracts layer by layer, resolve the
-   Unknown Morpho oracle. Verify function signatures from the Pendle and Morpho GitHub sources before coding.
+2. On-chain crawler, next layer: read the Unknown Morpho oracle's contract to resolve its behaviour (the last D
+   input that changes the verdict for levered positions); then the PT / SY / sUSDe contracts. Verify function signatures from the Pendle and Morpho GitHub sources before coding.
    Needs an RPC URL (asked from Belem); historical replay needs an archive node.
 3. Off-chain dependencies for L2 (Ethena: exchanges, custodians) via GraphRAG + LLM agent, each edge with a source URL.
    The LLM never produces the loss numbers; numbers come from code.
@@ -86,4 +90,11 @@ the Pendle swap route (no limit orders, OTC, or holding to maturity); p is set b
 - sUSDe is not in Pendle `/v1/assets/all`; decimals come from DeFiLlama `coins.llama.fi/prices/current`.
 - Morpho: REST `GET /v1/blue/markets?chain_id=&collateral_token=` returns `market_id`, `oracle_address`, `lltv_wad`;
   GraphQL `marketById` gives state and oracle. Oracle details only for ChainlinkOracle / ChainlinkOracleV2 types.
+- RPC: `https://ethereum-rpc.publicnode.com` works without a key for eth_call and recent eth_getLogs (about the last
+  10–50k blocks); older logs return 403 "Archive requests require a personal token".
+- Morpho GraphQL `marketPositions(where: {marketUniqueKey_in, chainId_in})` lists a market's positions
+  (`items { user { address } state { borrowShares collateral } }`, `pageInfo { count countTotal }`), checked by
+  schema introspection.
+- keccak256: not in hashlib (`sha3_256` is different). pycryptodome 3.24.0 is in .venv; onchain_positions.py hard-codes
+  the selectors and only re-checks them with it.
 - DeFiLlama Pro-only (avoid): `getTokenProtocols`, `getOracles`, `getHacks`, all `yields.*`.
