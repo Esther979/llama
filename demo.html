@@ -327,6 +327,17 @@
         align-items: center;
         gap: 12px;
       }
+      /* The zone bar sits under the slider track only, inset by half a thumb so its scale matches the thumb. */
+      .slide .tcol {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #zoneBox {
+        margin-inline: 8px;
+      }
       .slide output {
         font: 600 20px/1 var(--cond);
         min-width: 62px;
@@ -344,13 +355,13 @@
         height: 100%;
       }
       .zs {
-        background: var(--good-tint);
+        background: var(--good);
       }
       .zp {
-        background: var(--warn-tint);
+        background: var(--warn);
       }
       .zc {
-        background: var(--crit-tint);
+        background: var(--crit);
       }
       @media (max-width: 860px) {
         .steps {
@@ -1145,13 +1156,12 @@
           <label class="q" for="fail"><i>2</i>What happens, and how bad?</label>
           <select id="fail"></select>
           <div class="slide">
-            <input
-              type="range"
-              id="sev"
-              aria-label="Severity"
-            /><output id="sevOut" for="sev"></output>
+            <div class="tcol">
+              <input type="range" id="sev" aria-label="Severity" />
+              <div id="zoneBox"></div>
+            </div>
+            <output id="sevOut" for="sev"></output>
           </div>
-          <div id="zoneBox"></div>
           <span class="note" id="sevNote"></span>
         </div>
       </section>
@@ -1372,7 +1382,7 @@
           lab = t.label || k;
         FAIL[k] = {
           label: lab,
-          sev: t.unit === "h" ? "Hours" : "Severity",
+          sev: t.unit === "h" ? "Hours" : lab,
           unit: t.unit || "%",
           min: t.min ?? 1,
           max: t.max ?? 100,
@@ -1464,7 +1474,19 @@
         more: {},
       };
       const isPct = () => FAIL[S.fail].unit === "%";
-      const sevText = (v = S.sev) => trim(v) + (isPct() ? "%" : " h");
+      const sevText = (v = S.sev) =>
+        (v < 0.1 ? String(+(+v).toFixed(3)) : trim(v)) + (isPct() ? "%" : " h");
+      /* Wide % ranges (max at least 20x min, e.g. 0.5-100%) use a log scale on the slider and on the zone bar, so
+   small severities such as a 2% break-even get room. Positions run 0..LOGR. */
+      const LOGR = 1000;
+      const isLog = (f) => f.unit === "%" && f.max / f.min >= 20;
+      const sevPos = (f, v) =>
+        (Math.log(v / f.min) / Math.log(f.max / f.min)) * LOGR;
+      const posSev = (f, p) => {
+        const v = f.min * Math.pow(f.max / f.min, p / LOGR),
+          k = v < 10 ? 100 : 10;
+        return Math.min(f.max, Math.max(f.min, Math.round(v * k) / k));
+      };
       const carry = () =>
         (Math.max(0, d.position.implied_apy - S.alt / 100) * DAYS) / 365;
       const isLev = () => PRE[S.pos].debt_usd > 0;
@@ -1495,6 +1517,16 @@
         };
         if (light) return m;
         m.be = RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, f.min, f.max);
+        /* be is floored at the slider's minimum; below it, search [0, min] for the real values to print. */
+        const low =
+          m.be.start !== null && m.be.start <= f.min + 1e-9
+            ? RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, 0, f.min)
+            : null;
+        m.start = low && low.start !== null ? low.start : m.be.start;
+        m.cap =
+          low && m.be.cap !== null && m.be.cap <= f.min + 1e-9 && low.cap !== null
+            ? low.cap
+            : m.be.cap;
         m.others = Object.keys(PRE)
           .filter((k) => k !== posKey)
           .map((k) => ({ k, m: model(k, true) }));
@@ -1879,11 +1911,9 @@
         const rule = `<p class="note">${cap1(s.note)}.${facts}</p>`;
         const ifTxt = `If ${where} ${lc(f.label)} by ${sevText()}`;
         const beTxt =
-          be.start === null
+          m.start === null
             ? "Selling does not pay at any severity on this slider."
-            : be.start <= f.min + 1e-9
-              ? "Selling pays at every severity on this slider."
-              : `Selling starts to pay once the severity exceeds <b>${sevText(be.start)}</b>.`;
+            : `Selling starts to pay once the severity exceeds <b>${sevText(m.start)}</b>${m.cap !== null && m.cap > m.start + 1e-9 ? ` and reaches the pool limit from <b>${sevText(m.cap)}</b>` : ""}.`;
         let why,
           body = "";
         if (!hasLoss) {
@@ -1925,14 +1955,12 @@
           body += rule;
           body += `<p class="note">Losses and the decision come from the backend model (RiskModel.decideAt). ${src(d.evidence.mechanism)}</p>`;
           const sevFlip =
-            be.start === null
+            m.start === null
               ? `Stay at every severity up to ${sevText(f.max)}.`
-              : (be.start <= f.min + 1e-9
-                  ? "Selling pays from the smallest severity on the slider. "
-                  : `Stay below ${sevText(be.start)}. `) +
-                (be.cap === null
+              : `Stay below ${sevText(m.start)}${m.start < f.min - 1e-9 ? " (below this slider)" : ""}. ` +
+                (m.cap === null
                   ? "The pool limit is not reached on this slider."
-                  : `Sell up to the ${pc(MAXX, 0)} pool limit from ${sevText(be.cap)}.`);
+                  : `Sell up to the ${pc(MAXX, 0)} pool limit from ${sevText(m.cap)}.`);
           body += det(
             "d-flip",
             "What would change the answer",
@@ -2053,31 +2081,34 @@
       function renderSteps(m) {
         const be = m.be,
           f = m.f,
-          S0 = be.start === null ? null : sevText(be.start),
-          K0 = be.cap === null ? null : sevText(be.cap);
+          S0 = m.start === null ? null : sevText(m.start),
+          K0 = m.cap === null ? null : sevText(m.cap);
         $("#sevOut").textContent = sevText();
         const zt =
-          be.start === null
+          m.start === null
             ? m.hasLoss
               ? " Stay at every severity on this slider."
               : ""
-            : " " +
-              cap1(
-                (be.start > f.min + 1e-9 ? `stay below ${S0}, ` : "") +
-                  (be.cap === null
-                    ? `sell part from ${S0}.`
-                    : be.cap > be.start + 1e-9
-                      ? `sell part from ${S0}, to the pool limit from ${K0}.`
-                      : `sell to the pool limit from ${S0}.`),
-              );
+            : m.start < f.min - 1e-9
+              ? ` Selling starts at ${S0}, below this slider; ${m.cap === null ? "the pool limit is not reached on it" : `sell to the pool limit from ${K0}`}.`
+              : ` Stay below ${S0}; ` +
+                (m.cap === null
+                  ? "sell part above it."
+                  : m.cap > m.start + 1e-9
+                    ? `sell part from ${S0}, to the pool limit from ${K0}.`
+                    : `sell to the pool limit from ${S0}.`);
         $("#sevNote").textContent =
           (S.det !== null
             ? `Observed now: ${sevText(dets()[S.det].sev)}. Move right to test it getting worse.`
-            : f.sev + ".") + zt;
+            : `${f.sev}: ${sevText()}.`) + zt;
         let h = "";
         if (be.start !== null || m.hasLoss) {
           const w = (v) =>
-              v === null ? 100 : ((v - f.min) / (f.max - f.min)) * 100,
+              v === null
+                ? 100
+                : isLog(f)
+                  ? (sevPos(f, v) / LOGR) * 100
+                  : ((v - f.min) / (f.max - f.min)) * 100,
             a = w(be.start),
             b = w(be.cap);
           h = `<div class="zones" role="img" aria-label="Severity ranges for stay, partial sale and selling to the pool limit"><i class="zs" style="width:${a}%"></i><i class="zp" style="width:${b - a}%"></i><i class="zc" style="width:${100 - b}%"></i></div>`;
@@ -2113,10 +2144,17 @@
         $("#fail").value = S.fail;
         const f = FAIL[S.fail],
           sv = $("#sev");
-        sv.step = f.unit === "%" ? 0.1 : 1;
-        sv.min = f.min;
-        sv.max = f.max;
-        sv.value = S.sev;
+        if (isLog(f)) {
+          sv.step = 1;
+          sv.min = 0;
+          sv.max = LOGR;
+          sv.value = sevPos(f, S.sev);
+        } else {
+          sv.step = f.unit === "%" ? 0.1 : 1;
+          sv.min = f.min;
+          sv.max = f.max;
+          sv.value = S.sev;
+        }
       }
       function render() {
         const m = model();
@@ -2377,7 +2415,8 @@
       document.addEventListener("input", (ev) => {
         const t = ev.target;
         if (t.id === "sev") {
-          S.sev = +t.value;
+          const f = FAIL[S.fail];
+          S.sev = isLog(f) ? posSev(f, +t.value) : +t.value;
           render();
         }
       });
