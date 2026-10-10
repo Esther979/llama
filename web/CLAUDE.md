@@ -16,7 +16,7 @@ Always ask for permission before commit and push.
 | ------------------------------------ | -------------------------------------------------- | ------------------------------------------------- |
 | `demo.html`                          | Markup and element ids                             | Inline styles, numbers, sentences built in script |
 | `demo.css`                           | Design tokens in `:root`, then component styles    | Anything read from data                           |
-| `demo.copy.js` (not created yet)     | User-facing strings, as one `COPY` object          | Logic                                             |
+| `demo.copy.js`                       | User-facing strings, as one `COPY` object          | Logic                                             |
 | `demo.js`                            | State, calls to `RiskModel`, rendering, events     | Colours, sizes, literal sentences                 |
 | `vault.js` (not created yet)         | The vault view: state, calls to `RiskModel.vault*` | Anything of the PT view                           |
 | `risk_model.js`                      | Backend's model, both views. Read-only here        | —                                                 |
@@ -71,8 +71,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   Everything else opens on demand (folds, evidence drawer).
 - Inputs run in thinking order, left to right: where, what and how bad. Sliders update live; no Run button.
 - One mode: any dependency can be failed by hand. Preview was removed on 10 Oct.
-- There is no incident detector (team decision). The two sample incidents are invented quick picks and must always
-  be labelled as invented. The page still calls them "detected" and has a "Detector feed" control; see to-do 3.
+- There is no incident detector (team decision). The two example incidents are invented quick picks, always
+  labelled as invented ("Example" tag, "invented example"). No page text may describe a detector (gate 2b).
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults.
 - In the PT view, two dependency views: Layers (default) and Graph. Same incident and numbers in both.
 - Plain words. One number per sentence. Amounts in USD, shares as % of the position.
@@ -111,15 +111,22 @@ Not started. The guide and its acceptance table (9 decision rows and a 3-row liq
 - **The amount default exceeds the Belem vault.** 10,000,000 is above its total assets (about 4.7M EURCV); the
   guide has a message for that case. Show it; do not silently cap the input.
 
-## Current state (`frontend` at `5cda215`; page code last changed in `098d44c`)
+## Current state (`frontend` at `7aa2500`)
 
 What is on the branch:
 
 - `web/demo.html` (markup), `web/demo.css` (both former `<style>` blocks, in order) and `web/demo.js` (the former
   inline script), moved line for line: rebuilding the old single file from the three gives it byte for byte.
   The page loads `../sample_data/dashboard.sample.js` and `risk_model.js` in place, as shown above.
-- No `demo.copy.js` yet: user-facing strings are still in `demo.js` (118 sentences, 30 of them inside HTML
-  templates). They move step by step (see "Separation rules").
+- `web/demo.copy.js` holds the `COPY` object: so far the example-incident wording and the off-chain row. The other
+  user-facing strings are still in `demo.js` and move step by step (see "Separation rules").
+- No detector wording: the two invented incidents are "examples" set by hand (prototype bar, tag, band, dropdown
+  group, drawer row, step-2 note). The examples themselves are kept.
+- Off-chain dependencies (guide section 8): the `ethena` and `susde` drawers have an "Off-chain (issuer documents)"
+  row from `d.offchain.USDe` (31 relations) and `d.offchain.sUSDe` (4): issuer, summary and count per kind,
+  relations grouped by kind on demand, each with a source link, grade D and the quote ("re-checked"; the one USDe
+  quote not found on its page is not shown as a quote). The `usde` drawer shows the summary and a link to Ethena's
+  relations. Off-chain ids are no longer in "Contracts behind it"; the Ethena card reads its count from the data.
 - Still against the separation rules: three SVG legend swatches in `demo.js` (`renderExit`) carry inline colour
   styles that are not geometry.
 - Step 3 and every probability input are gone: the verdict comes from `RiskModel.decideAt`, the step-2 zones and
@@ -136,13 +143,17 @@ What is on the branch:
   run
   `git log HEAD..origin/main --oneline` before starting and merge first.
 
-Checked at `098d44c`: `node web/check_demo.mjs` passes: no console errors, banner hidden, 18/18 drawers, 48 preset x
-failure combinations, 15/15 of the guide's 10M acceptance rows (model and on-screen verdict), gate 4b (exit panel
-agrees with the decision card) 192/192, no horizontal scroll at 390px, dark background in dark mode.
+Checked at `7aa2500`: `node web/check_demo.mjs` passes: no console errors, banner hidden, 18/18 drawers, gate 2b (no
+detector wording), gates 2c (off-chain links ethena 31/31, susde 4/4, usde links to Ethena, on-chain members only),
+48 preset x failure combinations, 15/15 of the guide's 10M acceptance rows (model and on-screen verdict), gate 4b
+(exit panel agrees with the decision card) 192/192, no horizontal scroll at 390px, dark background in dark mode.
+Gates 2b / 2c failed on the page before (4 failures). Screenshots checked: the prototype bar, the ethena drawer
+collapsed and expanded, the usde drawer, the graph view.
 `python3 check_js_port.py` passes all 21 gates at the `9fd615e` merge (`556828c` changed docs only). Gate 4b failed
 on the page before the fix (114/192, every failure with a real-borrower preset). Screenshots checked: the closest
 borrower at a 2% and a 0.5% USDe depeg, and the $10M position. Not checked: the guide's 1M / 7M / 50M rows (no size
-input yet; reported as SKIPPED), layout by eye in dark mode and at phone width. Earlier: the carry change was
+input yet; reported as SKIPPED), layout by eye in dark mode and at phone width (the expanded off-chain row
+included). Earlier: the carry change was
 compared old vs new on 564 cases: no verdict changed, 9 REDUCE sizes moved by 1-3 points.
 
 Gaps, most visible first:
@@ -152,10 +163,6 @@ Gaps, most visible first:
    must-sell and carry alternatives and the weakest assumption.
 2. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
    assumed $10M; the header's "position size $10.00M" stays even when a real-borrower preset is selected.
-3. The page's wording still describes a detector (UX section above).
-4. Off-chain dependencies are in the data but not on the page. The layer-2 Ethena card still says "Off-chain part
-   not verified", which the data now contradicts, and "Contracts behind it" in the `ethena` and `susde` drawers
-   lists the off-chain entities as bare names with no source (29 of 30 members for `ethena`, 5 of 7 for `susde`).
 
 Answered by the backend (guide section 0b, merged):
 
@@ -177,37 +184,9 @@ Done: `main` merged (repeat after every backend push, then `python3 check_js_por
 `breakEvenSeverity`; split into `demo.html`, `demo.css`, `demo.js`; `check_demo.mjs` written; `main` merged at
 `9fd615e` (`a4d9f9e`); carry from `RiskModel.carryOf`, decimal comma accepted (`8baf37b`); exit panel from each
 position's own curve, with gate 4b in `check_demo.mjs` (`8291329`, `098d44c`); `main` merged at `556828c`
-(`5cda215`).
+(`5cda215`); no detector wording and off-chain row in the evidence drawer, with gates 2b / 2c (`a726d90`,
+`7aa2500`).
 
-3. Wording: no detector. Rename the sample feed to example incidents (invented), remove "Detector feed",
-   "detected now", "the detector is not connected yet" and the "Detected" tag. Ask the user before removing the two
-   samples themselves.
-   3b. Off-chain dependencies in the PT evidence drawer (from the backend; guide section 8; data in `d.offchain`).
-   In `nodeEvidence`, three drawers get one more row, "Off-chain (issuer documents)", right after "Contracts
-   behind it":
-   - `ethena`: `d.offchain.USDe` (31 relations): custodians, hedging exchanges, reserve assets, the Reserve Fund,
-     attestations and others.
-   - `usde`: the same `d.offchain.USDe`, or only its `summary` with a link that opens the `ethena` drawer. Prefer
-     the short form: showing the same 31 relations in two drawers is noise.
-   - `susde`: `d.offchain.sUSDe` (4 relations).
-     Content of the row: the issuer and its one-line `summary`, then `relations` grouped by `kind`, each with the
-     entity, the relation, a link to `evidence.url` and `evidence.quote` in quotation marks. Take the grade from
-     `evidence.grade` (D today: stated by the issuer, not verifiable on chain), drawn dashed like every other D.
-     Mark a relation "third-party" when `evidence.official` is false (none today). Show a quote as verbatim only when
-     `evidence.quote_found` is true: one of the 31 USDe quotes was not found on its page.
-     Keep to the first-screen rule: the row opens collapsed, showing the summary and the count per kind; the 31
-     relations expand on demand.
-     Also in this step:
-   - Drop the `offchain:*` ids from "Contracts behind it": the new row shows the same entities, grouped and
-     sourced.
-   - Replace the page-made "Off-chain part not verified" on the layer-2 Ethena card (`GSUB.ethena`) with text from
-     the data: `ui.nodes.ethena.note` or a short line from `d.offchain.USDe.counts`.
-   - Do it in the same pass over `nodeEvidence` as to-do 3, which removes the detector wording from that drawer.
-   - New strings (row title, kind names, "third-party", "source") go into `COPY`; the quote and group styles into
-     `demo.css`.
-   - `check_demo.mjs`: a gate that the `ethena` and `susde` drawers show as many source links as
-     `d.offchain.USDe.counts.relations` and `d.offchain.sUSDe.counts.relations`, and that no `offchain:*` id is
-     left in "Contracts behind it".
 4. Vault view, first cut: header switch, address and amount inputs, scenario and severity, verdict badge, the
    sentence, loss if staying versus cost of exiting, and the dependency chain. Add the vault acceptance rows and a
    "PT view unchanged after switching back" gate to `check_demo.mjs`. The backend's demo script opens on this view
