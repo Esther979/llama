@@ -283,20 +283,50 @@ def exit_later_at(d, value_usd, drop):
     return out
 
 
+def wallet_presets(d, address):
+    """Presets for a wallet address, read on chain at the borrowers' block: "wallet" = PT held in the wallet
+    (unlevered), "wallet_morpho" = its position in this Morpho market. Looked up in borrowers.wallets (read with
+    onchain_positions.py --wallet: both parts) and else in borrowers.list (Morpho part only). Returns (read, presets):
+    read = the address was read on chain. Mirrored by RiskModel.walletPresets."""
+    b = d.get("borrowers") or {}
+    a = address.lower()
+    w = next((x for x in b.get("wallets") or [] if x["address"] == a), None)
+    out = {}
+    if w is None:
+        m = borrower_preset(d, a)
+        return (m is not None), ({"wallet_morpho": m} if m else {})
+    px, opx = d["position"]["pt_price_usd"], b["oracle_price"]
+    src = f"eth_call @ block {b['block']} (onchain_positions.py --wallet)"
+    if w["pt_in_wallet"] > 0:
+        out["wallet"] = {"label": f"Wallet {a[:10]}...: PT held (real position)", "can_hold": True, "sized": False,
+                         "address": a, "pt_units": w["pt_in_wallet"], "collateral_usd": w["pt_in_wallet"] * px,
+                         "collateral_oracle_usd": w["pt_in_wallet"] * opx, "debt_usd": 0.0, "ltv": 0.0,
+                         "lltv": b["lltv"], "evidence": {"grade": "A", "source": f"PT balanceOf: {src}; value = PT units "
+                                                                                 f"x Pendle PT price {px:.5f}"}}
+    if w["collateral_pt"] > 0 or w["borrow_usdc"] > 0:
+        out["wallet_morpho"] = dict(borrower_preset(d, a) or {
+            "can_hold": True, "sized": False, "address": a, "pt_units": w["collateral_pt"],
+            "collateral_usd": w["collateral_pt"] * px, "collateral_oracle_usd": w["collateral_usdc"],
+            "debt_usd": w["borrow_usdc"], "ltv": w["ltv"], "lltv": b["lltv"],
+            "evidence": {"grade": "A", "source": f"Morpho position: {src}; value = PT units x Pendle PT price {px:.5f}"}},
+            label=f"Wallet {a[:10]}...: PT on Morpho (real position)")
+    return True, out
+
+
 def at_size(d, size_usd, wallet=None):
     """The dashboard for a position worth size_usd today (the manager's input): `sized` presets resized,
-    exit_curve / max_exit_fraction / position.notional_usd for that size, borrowers.exit_later recomputed. wallet = a
-    borrower address of this Morpho market: adds preset "wallet" at its real size (wallet_found says if it was found).
+    exit_curve / max_exit_fraction / position.notional_usd for that size, borrowers.exit_later recomputed. wallet = an
+    address read on chain (wallet_presets): adds presets "wallet" (PT held) and / or "wallet_morpho" (Morpho position)
+    at their real size; wallet_read = the address was read on chain, wallet_found = it holds something.
     Legacy fields (scenarios, incidents, decision_grid...) stay at the export size. Mirrored by RiskModel.atSize."""
     si = d["size_input"]
     out = dict(d)
     out["position_presets"] = {k: sized_preset(p, size_usd, si) if p.get("sized") else p
                                for k, p in d["position_presets"].items()}
     if wallet:
-        w = borrower_preset(d, wallet)
-        out["wallet_found"] = w is not None
-        if w:
-            out["position_presets"]["wallet"] = w
+        read, ws = wallet_presets(d, wallet)
+        out["wallet_read"], out["wallet_found"] = read, bool(ws)
+        out["position_presets"].update(ws)
     curve, cap = size_curve(d, size_usd)
     out["exit_curve"] = [{"fraction": x, "usd": x * size_usd, "loss": s, "gas_usd": _gas_at(d, x * size_usd)}
                          for x, s in curve]

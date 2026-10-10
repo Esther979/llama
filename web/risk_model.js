@@ -6,7 +6,7 @@
      oracleFalls                oracle_types.py (oracle_falls; meta-oracle threshold + timelock)
      slippageAt, decide         decision_core.py
      breakEven                  incidents.py (exact break-even from the exit curve, no p grid)
-     sizeCurve, exitLaterAt, borrowerPreset, atSize   frontend_contract.py (position size: the manager's input)
+     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize   frontend_contract.py (position size: the manager's input)
 
    Shapes (same field names as the Python dataclasses):
      scenario = {layer: 2|3, shock: 0..1, permanent: 0..1, hours: number|null}
@@ -166,6 +166,27 @@
             collateral_oracle_usd: b.collateral_usdc, debt_usd: b.borrow_usdc, ltv: b.ltv, lltv: d.borrowers.lltv,
             evidence: {grade: 'A', source: `eth_call @ block ${d.borrowers.block}: collateral (PT) and debt; value = PT units x Pendle PT price ${px.toFixed(5)}`}};
   }
+  /* Presets of a wallet read on chain: "wallet" = PT held in the wallet, "wallet_morpho" = its position in this Morpho
+     market; from d.borrowers.wallets (onchain_positions.py --wallet), else d.borrowers.list. Returns [read, presets]. */
+  function walletPresets(d, address) {
+    const b = d.borrowers || {}, a = String(address).toLowerCase();
+    const w = (b.wallets || []).find(x => x.address === a), out = {};
+    if (!w) { const m = borrowerPreset(d, a); return [m !== null, m ? {wallet_morpho: m} : {}]; }
+    const px = d.position.pt_price_usd, opx = b.oracle_price;
+    const src = `eth_call @ block ${b.block} (onchain_positions.py --wallet)`;
+    if (w.pt_in_wallet > 0)
+      out.wallet = {label: `Wallet ${a.slice(0, 10)}...: PT held (real position)`, can_hold: true, sized: false,
+                    address: a, pt_units: w.pt_in_wallet, collateral_usd: w.pt_in_wallet * px,
+                    collateral_oracle_usd: w.pt_in_wallet * opx, debt_usd: 0, ltv: 0, lltv: b.lltv,
+                    evidence: {grade: 'A', source: `PT balanceOf: ${src}; value = PT units x Pendle PT price ${px.toFixed(5)}`}};
+    if (w.collateral_pt > 0 || w.borrow_usdc > 0)
+      out.wallet_morpho = Object.assign({}, borrowerPreset(d, a) || {
+        can_hold: true, sized: false, address: a, pt_units: w.collateral_pt, collateral_usd: w.collateral_pt * px,
+        collateral_oracle_usd: w.collateral_usdc, debt_usd: w.borrow_usdc, ltv: w.ltv, lltv: b.lltv,
+        evidence: {grade: 'A', source: `Morpho position: ${src}; value = PT units x Pendle PT price ${px.toFixed(5)}`}},
+        {label: `Wallet ${a.slice(0, 10)}...: PT on Morpho (real position)`});
+    return [true, out];
+  }
   /* The dashboard for a position worth sizeUsd today: call once when the size (or wallet) input changes,
      then pass the result as d to every other function. */
   function atSize(d, sizeUsd, wallet = null) {
@@ -173,9 +194,9 @@
     for (const [k, p] of Object.entries(d.position_presets)) presets[k] = p.sized ? sizedPreset(p, sizeUsd, si) : p;
     out.position_presets = presets;
     if (wallet) {
-      const w = borrowerPreset(d, wallet);
-      out.wallet_found = w !== null;
-      if (w) presets.wallet = w;
+      const [read, ws] = walletPresets(d, wallet);
+      out.wallet_read = read; out.wallet_found = Object.keys(ws).length > 0;
+      Object.assign(presets, ws);
     }
     const [curve, cap] = sizeCurve(d, sizeUsd);
     out.exit_curve = curve.map(([x, s]) => ({fraction: x, usd: x * sizeUsd, loss: s, gas_usd: gasAt(d, x * sizeUsd)}));
@@ -500,7 +521,7 @@
     return {verdict: base.verdict, candidates: rows, weakest: pickWeakest(rows)};
   }
 
-  const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, atSize,
+  const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
                inject, decideAt, breakEvenSeverity,
                sensitivity, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};

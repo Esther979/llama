@@ -10472,6 +10472,7 @@
     "healthy": true
    }
   ],
+  "wallets": [],
   "distribution": {
    "n_borrowers": 13,
    "ltv_min": 0.2734297938389463,

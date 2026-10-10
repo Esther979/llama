@@ -4,6 +4,7 @@ Every borrower of our Morpho Blue market, read from Ethereum over JSON-RPC (stan
 
   RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py
   python3 onchain_positions.py --discover logs      # logs only (needs an RPC that serves old logs)
+  python3 onchain_positions.py --wallet 0xA 0xB     # also read these wallets at the same block (PT held + Morpho)
 
 Reads data/morpho_rest_markets_<pt[:10]>.json (market id, creation block, oracle, lltv; fetch_data.py step4),
 data/morpho_markets_<pt[:10]>.json (API collateral in USD) and the exit-curve CSVs (capacity).
@@ -366,6 +367,37 @@ def read_market(rpc, block, mid, recent_window=20000, chunk=5000, log=print):
             "all_gates_pass": all(x["pass"] for x in gates)}
 
 
+def read_wallets(rpc, block, mid, addrs, params, tba, tbs, price_raw, dec_loan, dec_col, borrowers):
+    """Wallets typed on the command line, read at `block`: PT held in the wallet (collateral token balanceOf) and the
+    position in this market (read_positions, same code as the borrowers). Holdings elsewhere (Pendle LP, other
+    lending markets) are not read. Gate: a wallet that is also a borrower gets the same numbers as the borrower list."""
+    out = []
+    addrs = list(dict.fromkeys(x.lower() for x in addrs))
+    for u in addrs:
+        if not (u.startswith("0x") and len(u) == 42 and all(c in "0123456789abcdef" for c in u[2:])):
+            sys.exit(f"--wallet {u}: not an address (0x + 40 hex characters)")
+    if not addrs:
+        return out
+    bal = rpc.batch_calls([(params["collateral_token"], "0x" + SIG["balanceOf(address)"] + addr_word(u))
+                           for u in addrs], block)
+    code = [rpc.call("eth_getCode", [u, hex(block)]) for u in addrs]
+    pos = {b["address"]: b for b in read_positions(rpc, block, mid, addrs, tba, tbs, price_raw, params["lltv_wad"],
+                                                   dec_loan, dec_col)}
+    listed = {b["address"]: b for b in borrowers}
+    price = price_raw * 10 ** dec_col / 10 ** dec_loan / 1e36
+    for u, b, c in zip(addrs, bal, code):
+        m = pos.get(u, {})
+        out.append({"address": u, "pt_in_wallet": words(b)[0] / 10 ** dec_col,
+                    "collateral_pt": m.get("collateral_pt", 0.0), "collateral_usdc": m.get("collateral_usdc", 0.0),
+                    "borrow_usdc": m.get("borrow_usdc", 0.0), "borrow_shares": m.get("borrow_shares", "0"),
+                    "ltv": m.get("ltv", 0.0), "healthy": m.get("healthy", True),
+                    "is_contract": len(c) > 2, "in_borrower_list": u in listed, "oracle_price": price, "block": block})
+        if u in listed:
+            same = all(m.get(k) == listed[u][k] for k in ("collateral_pt", "borrow_usdc", "borrow_shares"))
+            gate(same, f"wallet {u[:10]} read with --wallet = its entry in the borrower list")
+    return out
+
+
 # ------------------------------------------------------------------ main
 def run(a):
     rest_files = glob.glob(os.path.join(a.data_dir, "morpho_rest_markets_*.json"))
@@ -492,6 +524,12 @@ def run(a):
          f"collateral ${api_c:,.0f} (API reports USD)")
     print(f"INFO  PT held by Morpho (balanceOf) {pt_in_morpho:,.2f}; sum of collateral {sum_c:,.2f}")
 
+    # 5b. wallets given with --wallet, at the same block: PT in the wallet (balanceOf) + position in this market
+    wallets = read_wallets(rpc, head, mid, a.wallet or [], params, tba, tbs, price_raw, dec_loan, dec_col, borrowers)
+    for w in wallets:
+        print(f"wallet {w['address']}: {w['pt_in_wallet']:,.2f} PT in the wallet, {w['collateral_pt']:,.2f} PT as "
+              f"collateral, {w['borrow_usdc']:,.2f} USDC borrowed")
+
     # 6. liquidation curve vs Pendle exit capacity
     curves = a.curves or sorted(glob.glob(os.path.join(a.data_dir, "exit_curve_*_10m.csv")) +
                                 glob.glob(os.path.join(a.data_dir, "exit_curve_*_cap.csv")))
@@ -535,6 +573,7 @@ def run(a):
                 "source": f"baseFeePerGas of block {head} and eth_maxPriorityFeePerGas ({a.rpc.split('?')[0]}); "
                           f"ETH = WETH price from {LLAMA_COINS}/prices/current"},
         "borrowers": borrowers,
+        "wallets": wallets,
         "distribution": distribution(borrowers),
         "capacity": cap,
         "liquidation_curve": rows,
@@ -543,7 +582,7 @@ def run(a):
                   "included (Morpho accrues it on the next interaction)",
                   "liquidation curve assumes every liquidatable borrower is liquidated in full at the dropped "
                   "oracle price; seized PT is compared with what one Pendle sale can absorb now"],
-        "evidence": {**{k: ev for k in ("market_params", "lltv", "oracle_price", "market", "borrowers",
+        "evidence": {**{k: ev for k in ("market_params", "lltv", "oracle_price", "market", "borrowers", "wallets",
                                         "distribution", "liquidation_curve")},
                      "gas": {"grade": "A", "source": "block base fee + RPC priority fee; ETH price DeFiLlama coins API",
                              "block": head}},
@@ -558,6 +597,9 @@ def main():
     ap.add_argument("--chunk", type=int, default=5000, help="eth_getLogs block range per request")
     ap.add_argument("--curves", nargs="*", help="exit-curve CSVs for the capacity (default: *_10m + *_cap)")
     ap.add_argument("--data-dir", default=DATA)
+    ap.add_argument("--wallet", nargs="*", default=[],
+                    help="wallet addresses to read at the same block (PT in the wallet + position in this market); "
+                         "the PT view's wallet input finds them")
     a = ap.parse_args()
     if not a.rpc:
         sys.exit("set RPC_URL or pass --rpc")

@@ -352,7 +352,7 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "total_borrow_usdc": onc["market"]["total_borrow_assets_usdc"],
             "discovery": onc["discovery"], "gates_passed": sum(g["pass"] for g in onc["gates"]),
             "gates_total": len(onc["gates"]),
-            "list": onc["borrowers"], "distribution": onc["distribution"],
+            "list": onc["borrowers"], "wallets": onc.get("wallets") or [], "distribution": onc["distribution"],
             "capacity_pt": cap_pt, "liquidation_curve": lc, "first_drop_seized_exceeds_capacity": first,
             "exit_later": [inc_mod.exit_later(curve, gas_pts, notional, pt_price, row["pt_seized"], row["oracle_drop"])
                            for row in lc],

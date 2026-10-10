@@ -105,6 +105,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--dashboard", default=os.path.join(HERE, "sample_data", "dashboard.sample.json"),
+                    help="dashboard for the PT-view checks (e.g. one exported with onchain_positions.py --wallet)")
     a = ap.parse_args()
     cs = cases(a.n, random.Random(a.seed))
     with tempfile.TemporaryDirectory() as d:
@@ -124,7 +126,7 @@ def main():
         print(f"GATE {'PASS' if not n_bad else 'FAIL'}  {k}: {len(cs) - n_bad}/{len(cs)} equal"
               + (f"  first mismatch {fails[k][0]}" if n_bad else ""))
     # fault injection on the Risk Desk's nodes, on the real sample dashboard
-    dpath = os.path.join(HERE, "sample_data", "dashboard.sample.json")
+    dpath = a.dashboard
     d = json.load(open(dpath))
     from frontend_contract import inject
     combos = [(pk, k.split(":")[0], k.split(":")[1], sev) for pk in d["position_presets"] for k in d["ui"]["injections"]
@@ -222,7 +224,8 @@ def main():
     # position size (the manager's input) and wallets: atSize, then the PT-view functions on the resized dashboard
     from frontend_contract import at_size, decide_at_duration
     sizes = [5e3, 1e5, 1e6, 3.25e6, 4.5e6, 7e6, 1e7, 5e7]
-    wallets = [None] + [b["address"] for b in d["borrowers"]["list"][:3]] + ["0x0000000000000000000000000000000000000001"]
+    wallets = [None] + [b["address"] for b in d["borrowers"]["list"][:3]] + \
+              [w["address"] for w in d["borrowers"].get("wallets") or []] + ["0x0000000000000000000000000000000000000001"]
     zcombos = [(sz, w) for sz in sizes for w in (wallets if sz == 1e7 else [None, wallets[1]])]
     inj = ["usde:depeg", "susde:navLoss", "oracle:oracleLow", "lending:cascade", "market:drain", "pt:depeg"]
     with tempfile.TemporaryDirectory() as tmp:
@@ -239,13 +242,15 @@ def main():
                             "const tl=pk.map(p=>M.timeline(d,p,'usde','depeg',2,false,0.04));"
                             "const sv=pk.map(p=>M.sensitivity(d,p,'susde','navLoss',2,0));"
                             "return {presets:d.position_presets,wallet_found:d.wallet_found===undefined?null:d.wallet_found,"
+                            "wallet_read:d.wallet_read===undefined?null:d.wallet_read,"
                             "exit_curve:d.exit_curve,max:d.max_exit_fraction,later:d.borrowers.exit_later,dec,be,tl,sv};})));")
         jz = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
     zbad = []
     pkeys = ("collateral_usd", "collateral_oracle_usd", "pt_units", "debt_usd", "ltv", "lltv", "sized", "label")
     for (sz, w), j in zip(zcombos, jz):
         dz = at_size(d, sz, w)
-        if dz.get("wallet_found") != j["wallet_found"] or list(dz["position_presets"]) != list(j["presets"]):
+        if dz.get("wallet_found") != j["wallet_found"] or dz.get("wallet_read") != j["wallet_read"] or \
+                list(dz["position_presets"]) != list(j["presets"]):
             zbad.append((sz, w, "presets / wallet_found"))
             continue
         for pk, p in dz["position_presets"].items():

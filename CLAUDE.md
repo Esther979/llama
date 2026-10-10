@@ -33,8 +33,8 @@ field names or meanings without updating README.md, the two front-end guides and
 Two views in one page:
 
 1. **Position view (PT, main entry)**: PT-sUSDe-26NOV2026, held outright or as collateral on Morpho. Header inputs:
-   position size in USD (default $10M, `RiskModel.atSize`) and an optional wallet (a borrower of this Morpho market →
-   preset at its real size); real-borrower presets use their real positions. Step 1 picks one
+   position size in USD (default $10M, `RiskModel.atSize`) and an optional wallet (read on chain at the borrowers' block with
+   `onchain_positions.py --wallet`: PT held + Morpho position, or any borrower of this market → presets at real size); real-borrower presets use their real positions. Step 1 picks one
    of 9 nodes (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`) plus detected incidents;
    step 2 picks the failure and drags the severity (manual), plus the incident duration and "recovers / stays";
    the verdict (STAY / REDUCE / SELL_TO_CAP / EXIT) and the break-even severity follow. Details: five-layer chain with
@@ -82,9 +82,9 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 | `etherscan.py` | Etherscan V2 verified source / ABI / contract name (key `ETHERSCAN_API_KEY` in `.env`, git-ignored, never saved) |
 | `crawl.py` | ABI-driven dependency crawler: calls every address-returning view, enumerates `f(uint256)` + `fLength`, turns Morpho market ids into nodes; edge kinds data / role / operator / infra |
 | `oracle_types.py` | Oracle classification: linear discount, MorphoChainlinkOracleV2 (base side only), MetaOracleDeviationTimelock (threshold + timelock), Chainlink market vs reported-rate feeds, constant; `underlying_assets`; `oracle_falls(cls, layer, shock, hours, token)`; unknown → D |
-| `onchain_positions.py` | Morpho borrowers over JSON-RPC (stdlib, batched): `read_market` (any market), liquidation curve 0.5–40%, gas price, borrow rate (IRM `borrowRateView`), oracle tree; 7 gates |
+| `onchain_positions.py` | Morpho borrowers over JSON-RPC (stdlib, batched): `read_market` (any market), liquidation curve 0.5–40%, `--wallet` (PT balanceOf + Morpho position of given addresses, same block), gas price, borrow rate (IRM `borrowRateView`), oracle tree; 7 gates |
 | `export_dashboard.py` | Builds `data/dashboard.json` for the PT view (`--positions`, `--borrower`, `--js-out`) |
-| `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `at_size`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary` |
+| `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `wallet_presets`, `at_size`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary` |
 | `vault_pipeline.py` | Vault view: RockawayX-format input → routing, per-vault crawl, markets / allocations, borrowers, oracle types, incidents (collateral, underlying, asset issuer, liquidity run) with severity and duration grids, `vault_decide_at`, `vault_sensitivity`, `vault_timeline(_summary)`, `--js-out` |
 | `web/risk_model.js` | JS port of every model function above (`RiskModel.*`) for the front end |
 | `check_js_port.py` | JS vs Python on thousands of cases (17 gates) |
@@ -96,7 +96,7 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 ## Refresh everything
 
 ```bash
-RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py
+RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py   # [--wallet 0xBelem...] when known
 python3 crawl.py --morpho-market 0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05 --depth 5 --tag pt_susde_market
 python3 export_dashboard.py --market 0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e \
   --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv \
@@ -146,9 +146,10 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
 ## Not done (priority order)
 
 1. Done: PT view position size (`at_size`, `exit_curve_usd` $10k–$4.5M, `size_input`, real-borrower presets at real
-   size, wallet = Morpho borrower of this market, PT units from the quoted price, loss at market value / oracle value
+   size, wallet input = wallets read with `onchain_positions.py --wallet` or borrowers of this market (never typed-in numbers), PT units from the quoted price, loss at market value / oracle value
    only for liquidation, sale costed at today's value, `decide` also tries the cap when it is off the 1% grid).
-   Left: wallets holding the PT outright (needs a `balanceOf` read), sizes above ~$450M (cap < 1% of the position).
+   Left: Belem's address (ask the organisers; the Belem RWA EURCV vault's owner / curator 0xbbacdcfb… holds no PT),
+   combined decision for a wallet with PT both held and on Morpho, PT in Pendle LP / other markets, sizes above ~$450M.
 2. **Detection** (`detect.py`): turn the signals we already read into `detected[]` (meta-oracle deviation vs 0.75% and
    challenge state, Chainlink staleness, utilization, debt within 1% of liquidation, PT price jumps) with the observed
    severity; replay PT-reUSD 25 Aug 2026 (our hourly candles) to show it fires at 04:00 UTC.

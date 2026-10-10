@@ -47,7 +47,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 | `LAY` | `d.ui.layers` (`n`, `name`, `nodes`); facts per layer: see section 6 |
 | `EDGES` | `d.ui.edges` (`from`, `to`, `type`, `grade`, `evidence`), including the two edges to the position: `pt -> position` "holding" (D: the size is assumed) and `lending -> position` "liquidation" (B: Morpho rule, back-tested; `applies_to` = the levered presets). Draw only those, do not add page-made edges |
 | `FBN` | `d.ui.nodes[k].failures` (sUSDe now has `navLoss` and `discount` instead of `depeg`) |
-| `POS` | `d.position_presets`: `spot`, `lev_market_avg` (follow the size input), `lev_largest_borrower`, `lev_closest_to_liquidation` (real positions: $3.93M and $3.25M), plus `wallet` when a wallet was found (`label`, `collateral_usd` = market value, `collateral_oracle_usd`, `pt_units`, `debt_usd`, `lltv`, `ltv`, `sized`, `evidence`). Fill the header position `<select>` from it; show the size next to each label (real borrowers: "real position") |
+| `POS` | `d.position_presets`: `spot`, `lev_market_avg` (follow the size input), `lev_largest_borrower`, `lev_closest_to_liquidation` (real positions: $3.93M and $3.25M), plus `wallet` (PT held in the wallet) and / or `wallet_morpho` (its Morpho position) when a wallet was found (`label`, `collateral_usd` = market value, `collateral_oracle_usd`, `pt_units`, `debt_usd`, `lltv`, `ltv`, `sized`, `evidence`). Fill the header position `<select>` from it; show the size next to each label (real borrowers: "real position") |
 | `FAIL[k].loss` | delete; `RiskModel.inject` |
 | `FAIL[k].prob` | delete (no probability) |
 | `stress()` | the `sellable_later` / `avg_cost_later` returned by `inject` (drain keeps its own curve, section 7) |
@@ -59,7 +59,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 Add two inputs to the header, next to the position `<select>`:
 
 - "Position size (USD)": a number, default `window.DASHBOARD.size_input.default_usd` (10,000,000), marked as an assumption (D) until the manager types a size. It sets the size of `spot` (PT held outright) and `lev_market_avg` (PT as collateral at the market's average LTV).
-- "Wallet (optional)": an address. If it is a borrower of this Morpho market, preset `wallet` appears at its real size (grade A); otherwise show "not a borrower of this market; holdings outside Morpho are not read yet" (`d.wallet_found === false`).
+- "Wallet (optional)": an address, typed or picked from a list of the addresses in `d.borrowers.wallets` and `d.borrowers.list`. Presets appear at the wallet's real size, read on chain (grade A): `wallet` = PT held in the wallet, `wallet_morpho` = its position in this Morpho market. Messages: `d.wallet_read === false` -> "not read on chain: rerun onchain_positions.py --wallet <address>"; `wallet_read` true and `wallet_found` false -> "holds no PT-sUSDe in the wallet or in this Morpho market at block {d.borrowers.block}". Nothing is typed in by hand: the numbers come only from the chain.
 
 ```js
 let d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet || null);   // on load and on every size / wallet change
@@ -212,7 +212,7 @@ For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan l
 | 7M | `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 64% | $22,089 | $700,000 | $250,000 | True | 0.0000 | 1.000% / 2.080% |
 | 50M | `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 9% | $22,089 | $5,000,000 | $4,550,000 | True | 0.0000 | 1.000% / 1.910% |
 
-The real-borrower rows do not depend on the size input. With a wallet: `RiskModel.atSize(window.DASHBOARD, 1e7, '0x5c430ff6f374da12218b380d2040299ae5b6d40e').position_presets.wallet` equals `lev_closest_to_liquidation` (collateral $3,249,472, debt $2,941,927); an unknown address gives `wallet_found === false`.
+The real-borrower rows do not depend on the size input. With a wallet: `RiskModel.atSize(window.DASHBOARD, 1e7, '0x5c430ff6f374da12218b380d2040299ae5b6d40e').position_presets.wallet_morpho` equals `lev_closest_to_liquidation` (collateral $3,249,472, debt $2,941,927); an address that was not read gives `wallet_read === false`.
 
 What it shows: a 10% sUSDe NAV loss makes an unlevered $10M holder sell up to the pool limit (45%), while a 10% PT market fall needs no action (the PT redeems at expiry and the oracle ignores the market price). The pool takes at most $4.5M, so the size decides the answer: $1M exits in full for $330, $7M can sell 64%, $50M only 9%. The real borrower closest to liquidation ($3.25M) can sell its whole position: at a 0.5% USDe depeg (below the meta-oracle's 0.75% threshold, nobody is liquidated) the levered value loss already makes it sell 92%; at 2% the oracle switches, the position would be liquidated, and exiting now costs $5,683 against $143,833. A cascade at 20% leaves nothing sellable; at 1% a $1M holder can still sell everything.
 
@@ -227,7 +227,7 @@ What it shows: a 10% sUSDe NAV loss makes an unlevered $10M holder sell up to th
 ## 11. Refreshing the data (backend side)
 
 ```bash
-RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py
+RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py   # [--wallet 0xA 0xB ...]: also read these wallets
 python3 crawl.py --morpho-market 0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05 --depth 5 --tag pt_susde_market
 python3 export_dashboard.py --market 0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e \
   --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv \
