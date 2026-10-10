@@ -45,16 +45,20 @@ python3 fetch_data.py step1 --filter sUSDe
 python3 fetch_data.py step2 --chain 1 --market $M
 python3 fetch_data.py step3 --chain 1 --market $M --notional 10000000 --tag 10m
 python3 fetch_data.py step3 --chain 1 --market $M --notional 10000000 --fractions 0.25,0.3,0.35,0.4,0.45 --tag cap
+python3 fetch_data.py step3 --chain 1 --market $M --notional 1000000 --tag 1m     # small sales ($10k..$1M), for exit_curve_usd
 python3 fetch_data.py step4 --chain 1 --market $M
 python3 backtest_reusd.py           # 9 GATE lines; export_dashboard.py runs it too
 python3 calibrate_depeg.py          # 3 GATE lines (USDC 2023 resolved, UST and deUSD severe)
 RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py   # 7 GATE lines
 python3 vault_pipeline.py sample_data/rockawayx_vaults.csv   # all 33 RockawayX vaults (or --only 0xVAULT)
 python3 export_dashboard.py --market $M --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv --L 0.5 \
+    --extra-curves data/exit_curve_0x47ad2cd1_1m.csv \
     --positions data/morpho_positions_0x5613b170.json [--borrower 0x5c430ff6f374da12218b380d2040299ae5b6d40e]
 # levered example: $8.8M USDC borrowed against the $10M PT, oracle behaviour unknown
 #   ... --debt 8800000 [--lltv 0.915] [--must-sell] [--oracle-tracks-underlying true|false|unknown] [--oracle-tracks-market true|false|unknown]
 ```
+
+`--extra-curves`: quotes run with another `--notional` (the `1m` file), merged with `--curves` by USD sale size into `exit_curve_usd`, so any position size has an exit curve (main curves win on duplicate sizes). The export checks that `at_size` at the export size, on the main quotes only, gives back `exit_curve` and `borrowers.exit_later` (`GATE ... position size`).
 
 Position inputs of `export_dashboard.py` (they only affect `position_inputs` and `scenarios`):
 `--debt` USD borrowed against the PT (default 0); `--lltv` (default: the LLTV of the Morpho market in `data/`; the script stops if there are several); `--can-hold` (default) / `--must-sell` (forced to sell at the worst point); `--oracle-tracks-underlying`, `--oracle-tracks-market` = `true|false|unknown` (default `unknown`); `--positions` (output of `onchain_positions.py`; adds `borrowers`; refused if its gates did not all pass); `--calibration` (default `data/depeg_calibration.json`); `--lender-supply` (USDC supplied, for the `lender` block, default 1,000,000); `--borrower <address>` (needs `--positions`, replaces `--debt`): the borrower's on-chain LTV and the on-chain LLTV are used (grade A). If the borrower's collateral is within 1% of the quoted notional, its real debt is used (A); otherwise debt = its LTV × our assumed size (D, and the script prints the `fetch_data.py step3 --notional` command for its real size).
@@ -72,6 +76,8 @@ All fractions are 0–1 (multiply by 100 for %). All money in USD.
 | `position` | `chain_id`, `name`, `market`, `pt`, `underlying` (sUSDe), `expiry`, `pool_liquidity_usd`, `implied_apy`, `notional_usd` (position size used for quotes), `pt_price_usd` (USD per PT used to size the quotes), `evidence` |
 | `exit_curve[]` | Real Pendle quotes: `fraction` of the position sold, `usd`, `loss` = cost of selling it as a fraction of value (slippage and fees, no gas), `gas_usd` (gas of that sale: Pendle's `gasUsed` × gas price × ETH price at the `--positions` block; `null` without `--positions`) |
 | `max_exit_fraction` | Largest fraction that got a quote. Above it Pendle refused (`MarketProportionTooHigh`): that part cannot be sold through the AMM now |
+| `exit_curve_usd[]` | Every quote by USD sale size (all `--curves` and `--extra-curves` merged, $10k..$4.5M): `usd`, `loss` (as in `exit_curve`), `gas_usd`. The cost of a sale depends on the amount sold, not on the position, so this gives the exit curve of any position size (`frontend_contract.size_curve` / `RiskModel.sizeCurve`) |
+| `size_input` | The PT view's position size (manager's input): `default_usd` (= `notional_usd`, our assumption, D), `pt_price_usd` (Pendle price at quote time: PT units = size / this), `oracle_price_usd` (lending oracle `price()` at the `--positions` block: Morpho values the PT at this, liquidation check only), `capacity_usd` (largest accepted quote: above it the rest is stuck), `smallest_quote_usd`, `note`, `evidence` |
 | `lending[]` | Morpho markets holding the PT as collateral: `lltv`, `collateral_usd`, `borrow_usd`, `liquidity_usd` (what lenders can withdraw now), `aggregate_ltv`, `oracle_address`, `oracle_type`, `aggregate_liquidation_drop_threshold` (= `1 − aggregate_ltv / lltv`: oracle fall at which the market as a whole becomes liquidatable), `evidence` |
 | `assumptions.L` | Loss used by the top-level `decision_grid`. **Placeholder (0.5)**, kept for compatibility; per-scenario L is in `scenarios[]` |
 | `thresholds` | `start_selling_p`: smallest grid p where the tool starts selling; `sell_to_cap_p`: smallest grid p where it sells up to `max_exit_fraction` (`null` = never on the grid) |
@@ -124,7 +130,19 @@ All fractions are 0–1 (multiply by 100 for %). All money in USD.
 
 `lender` fields: `supply_usdc` (assumed), `total_supply_usdc`, `total_borrow_usdc`, `utilization`, `liquidity_usdc` (= supply − borrow: what can be withdrawn now), `share_of_supply`, `withdrawable_now_usdc`, `withdrawable_fraction`, `locked_fraction`, `block`, `scenarios[]` (`key`, `bad_debt_usdc_per_branch` summed over the real borrowers with loss_model, `L_low`, `L_high` = bad debt / total supply: Morpho takes bad debt from all suppliers pro rata), `incidents[]` (`key`, `outcomes[]`, `expected_loss`, `expected_loss_usdc`, `tail_loss_95`, `tail_loss_95_usdc`, `loss_on_locked_part_usdc`), `decision_text`, `evidence`.
 
-`borrowers.exit_later[]`: the `exit_later` fields for every oracle drop of `liquidation_curve` ("exit now vs later" table).
+`borrowers.exit_later[]`: the `exit_later` fields for every oracle drop of `liquidation_curve` ("exit now vs later" table), at `notional_usd`; `at_size` recomputes them for the chosen size (`frontend_contract.exit_later_at` / `RiskModel.exitLaterAt`, USD version, adds `seized_usd`).
+
+## Position size (PT view)
+
+The manager enters the position's size (USD value today, default 10,000,000) or a wallet address. `frontend_contract.at_size(d, size_usd, wallet=None)` / `RiskModel.atSize(d, sizeUsd, wallet)` returns the dashboard for that size; every other PT-view function then takes the result as `d`:
+
+- `sized` presets get `collateral_usd` = size, `pt_units` = size / `pt_price_usd` (the quoted PT price, 0.99300), `collateral_oracle_usd` = units x oracle price (0.99239), `debt_usd` = `ltv` x `collateral_oracle_usd`. Real-borrower presets keep their real size.
+- `exit_curve`, `max_exit_fraction`, `position.notional_usd` for that size from `exit_curve_usd`: up to $4.5M the whole position can be sold (`max_exit_fraction` = 1); above, `max_exit_fraction` = $4.5M / size and the rest is stuck.
+- `borrowers.exit_later` for that size (liquidators' PT sold first, then ours on the same quotes).
+- `wallet`: a borrower address of this Morpho market (`borrowers.list`) adds preset `wallet` at its real size (`borrower_preset` / `RiskModel.borrowerPreset`); `wallet_found` = false otherwise. A wallet holding the PT outright is not read (no balance lookup yet).
+- Legacy fields (`scenarios`, `incidents`, `decision_grid`, `position_inputs`...) stay at the export size.
+
+PT prices in the model: losses and sales use the market value (PT units x Pendle price); the lending oracle's value is used only for the liquidation check (`loss_model.Position.collateral_oracle_usd`: threshold, seized share, bad debt). A sale happens now, so `decide_at` sizes and costs it on today's value even when the incident lasts (`opts.sale_value_usd`); in the timeline the loss is on the value at the end of the incident (units x market price from the implied APY) and the liquidation check on units x oracle price.
 
 ## Decision method (no probability)
 
@@ -149,7 +167,7 @@ The front end should load `dashboard.json` (or `sample_data/dashboard.sample.jso
 <script src="risk_model.js"></script>   <!-- global RiskModel: positionLoss, oracleFalls, decide, breakEven, slippageAt, lif -->
 ```
 
-New top-level fields (additions only; nothing existing changed):
+New top-level fields (`position_presets` changed meaning with the position size: see "Position size"):
 
 | Field | Meaning |
 |---|---|
@@ -158,14 +176,15 @@ New top-level fields (additions only; nothing existing changed):
 | `ui` | The Risk Desk's 9 nodes (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`: `label`, `kind`, `layer`, `address`, `contract_name`, `members` = ids in `dependency_graph.nodes`, `evidence`, `note`, `failures`), `layers`, `edges` (`from`, `to`, `type`, `grade`, `evidence`), `injections` (`"node:fail"` -> `type` = loss_model / exit_later / exit_only / not_modelled, `scenario_layer`, `permanent`, `hours`, `oracle` = "rule" (oracleFalls) / true / false, `note`) |
 | `dependency_graph` | Crawl of the Morpho market (`crawl.py --tag pt_susde_market`) in the brief's five layers: `block`, `layers[]` (`n`, `name`, `nodes` = ids), `nodes{id: {label, contract_name, address, kind, layer, verified, evidence}}`, `edges[]` (`from`, `to`, `type` = function that returned it, `kind` = data / role / operator / infra, `evidence`), `counts`. Adds the chain, the Pendle market (Pendle API) and the off-chain issuer (grade D, not verified) |
 | `failure_types` | `types{key}` with the front end's FAIL keys (`shortfall`, `depeg` (USDe against USD, PT market price), `navLoss` (sUSDe NAV in USDe falls: permanent PT loss, no feed sees it), `discount` (sUSDe below its NAV: recovered at expiry), `oracleLow`, `stale`, `cascade`, `drain`, `halt`): `label`, `layer`, `unit`, `min`, `max`, `default_severity`, `anchors[]` (historical values with source), `model` (`type`: `loss_model`, `exit_later`, `exit_only` or `not_modelled`; `scenario_layer`, `permanent`, `hours`, `oracle` rule), `probabilities` (`outcomes` {resolved, partial, severe}, `p_severe`, `partial_to_severe_prob`, `partial_severity_share`, `evidence`). `by_node{node id: [failure keys]}` |
-| `position_presets` | `spot`, `lev_market_avg`, `lev_largest_borrower`, `lev_closest_to_liquidation`: `label`, `collateral_usd`, `debt_usd`, `lltv`, `can_hold`, `ltv`, `evidence`, `oracle_rule` |
+| `position_presets` | `spot`, `lev_market_avg`, `lev_largest_borrower`, `lev_closest_to_liquidation`: `label`, `collateral_usd` (market value today = PT units x `size_input.pt_price_usd`: what the PT sells for; losses are on it), `collateral_oracle_usd` (PT units x the lending oracle's price: liquidation check only), `pt_units`, `debt_usd`, `lltv`, `can_hold`, `ltv` (debt / `collateral_oracle_usd`, as Morpho computes it), `sized` (true: follows the size input; `spot` and `lev_market_avg` (on-chain total borrow / total collateral, grade A)), `address` (real borrowers), `evidence`, `oracle_rule`. The two real-borrower presets are those borrowers' **real positions** read on chain (grade A; $3.93M and $3.25M), not their LTV at our size |
+| `size_usd`, `wallet_found` | Only in the result of `at_size` / `RiskModel.atSize`: the size used, and whether the wallet address was found |
 | `detected` | Detector feed: `[]` until the detector exists. Entry schema in `detector.schema`: `node`, `fail`, `sev`, `signal`, `block`, `evidence` (same shape as the front end's `DETECTED`) |
 
 UI element -> data:
 
 | Risk Desk element | Read / compute |
 |---|---|
-| Position select | `position_presets` (replaces the hard-coded `POS`; the levered presets use real LTVs) |
+| Position select | `position_presets` of `RiskModel.atSize(d, size, wallet)` (replaces the hard-coded `POS`; real borrowers at their real size) |
 | Snapshot stamp | `generated_at`; on-chain block in `borrowers.block` |
 | Step 1 "Which incident / test a failure at" | `dependency_graph.layers[].nodes` grouped by layer; allowed failures per node from `failure_types.by_node` |
 | Step 2 failure + severity slider | `failure_types.types[key]`: `label`, `min`, `max`, `unit`, start at `default_severity`, show `anchors` as tick marks |

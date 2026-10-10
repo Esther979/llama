@@ -4,8 +4,10 @@ Check that web/risk_model.js gives the same numbers as the Python backend (needs
 
   python3 check_js_port.py [--n 500]
 
-Random cases (unlevered / levered, oracle true / false / unknown, shocks up to 100%, meta-oracle rules) for
-positionLoss, oracleFalls, decide and breakEven, compared field by field. Prints GATE PASS / GATE FAIL.
+Random cases (unlevered / levered, oracle true / false / unknown, shocks up to 100%, meta-oracle rules, collateral at
+the oracle price apart from the market value, exit caps off the 1% grid) for positionLoss, oracleFalls, decide and
+breakEven, compared field by field; then the sample dashboard at several position sizes and wallets (atSize, inject,
+decideAt, breakEvenSeverity, sensitivity, timeline) and the vault files. Prints GATE PASS / GATE FAIL.
 """
 import argparse
 import json
@@ -50,8 +52,11 @@ def cases(n, rnd):
              "permanent": rnd.choice([0.0, 0.5, 1.0, rnd.random()]), "hours": rnd.choice([None, 1, 24, rnd.uniform(0, 48)])}
         p = {"collateral_usd": C, "debt_usd": D, "lltv": lltv, "can_hold": rnd.random() < 0.5,
              "oracle_tracks_underlying": flag if s["layer"] == 2 else rnd.choice([True, False, None]),
-             "oracle_tracks_market": flag if s["layer"] == 3 else rnd.choice([True, False, None])}
-        out.append({"s": s, "p": p, "oracle": rnd.choice(ORACLES), "token": rnd.choice([None, "USDe", "sUSDe"]),
+             "oracle_tracks_market": flag if s["layer"] == 3 else rnd.choice([True, False, None]),
+             "collateral_oracle_usd": None if rnd.random() < 0.5 else C * rnd.uniform(0.98, 1.02)}
+        k = 1.0 if rnd.random() < 0.5 else rnd.uniform(0.1, 2.2)       # cap = 0.45 k: mostly off the 1% grid
+        curve = [[min(1.0, x * k), y] for x, y in CURVE if x * k <= 1.0] or [[1.0, CURVE[0][1]]]
+        out.append({"s": s, "p": p, "curve": curve, "oracle": rnd.choice(ORACLES), "token": rnd.choice([None, "USDe", "sUSDe"]),
                     "prob": rnd.random() ** 3,
                     "L": rnd.random(), "carry": rnd.choice([0.0, 0.001, rnd.uniform(0, 0.01)]),
                     "scale": rnd.choice([1.0, rnd.uniform(1, 12)])})
@@ -62,8 +67,8 @@ def python_side(c):
     s, p = c["s"], c["p"]
     r = position_loss(Scenario("t", s["layer"], s["shock"], s["permanent"], s["hours"], "", False),
                       Position("t", p["collateral_usd"], p["debt_usd"], p["lltv"], p["can_hold"],
-                               p["oracle_tracks_underlying"], p["oracle_tracks_market"]))
-    d = decide([DScenario("e", c["prob"], c["L"])], CURVE, carry_lost=c["carry"])
+                               p["oracle_tracks_underlying"], p["oracle_tracks_market"], p["collateral_oracle_usd"]))
+    d = decide([DScenario("e", c["prob"], c["L"])], [tuple(x) for x in c["curve"]], carry_lost=c["carry"])
     ec = exit_costs(CURVE, None, 1.0)
     f = lambda x: (x + c["carry"]) * c["scale"] / c["L"] if c["L"] > 0 else None
     return {"L_low": r["L_low"], "L_high": r["L_high"], "oracle_known": r["oracle_known"],
@@ -78,7 +83,7 @@ NODE = r"""
 const M = require(process.argv[2]); const cs = JSON.parse(require('fs').readFileSync(process.argv[3]));
 const curve = JSON.parse(process.argv[4]);
 console.log(JSON.stringify(cs.map(c => {
-  const r = M.positionLoss(c.s, c.p), d = M.decide(c.prob, c.L, curve, c.carry), b = M.breakEven(curve, c.L, c.scale, c.carry);
+  const r = M.positionLoss(c.s, c.p), d = M.decide(c.prob, c.L, c.curve, c.carry), b = M.breakEven(curve, c.L, c.scale, c.carry);
   return {L_low: r.L_low, L_high: r.L_high, oracle_known: r.oracle_known,
           branches: r.branches.map(x => [x.oracle_falls, x.liquidated, x.bad_debt_usd, x.loss_of_equity]),
           oracle_falls: M.oracleFalls(c.oracle, c.s.layer, c.s.shock, c.s.hours, c.token),
@@ -213,6 +218,81 @@ def main():
     print(f"GATE {'PASS' if not tbad else 'FAIL'}  timeline: {len(tcombos)} timelines equal at every duration"
           + (f"  first mismatch {tbad[0]}" if tbad else ""))
     bad = bad + tbad
+
+    # position size (the manager's input) and wallets: atSize, then the PT-view functions on the resized dashboard
+    from frontend_contract import at_size, decide_at_duration
+    sizes = [5e3, 1e5, 1e6, 3.25e6, 4.5e6, 7e6, 1e7, 5e7]
+    wallets = [None] + [b["address"] for b in d["borrowers"]["list"][:3]] + ["0x0000000000000000000000000000000000000001"]
+    zcombos = [(sz, w) for sz in sizes for w in (wallets if sz == 1e7 else [None, wallets[1]])]
+    inj = ["usde:depeg", "susde:navLoss", "oracle:oracleLow", "lending:cascade", "market:drain", "pt:depeg"]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "z.json"), os.path.join(tmp, "z.js")
+        json.dump([zcombos, inj], open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d0=require(process.argv[3]);"
+                            "const [zs,inj]=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(zs.map(([sz,w])=>{const d=M.atSize(d0,sz,w);"
+                            "const dec=[];for(const pk of Object.keys(d.position_presets))for(const k of inj)for(const sev of [0.5,2,10,40])"
+                            "for(const c of [0,0.002])dec.push(M.decideAt(d,pk,k.split(':')[0],k.split(':')[1],sev,c));"
+                            "const be=[];for(const pk of Object.keys(d.position_presets))for(const k of inj)"
+                            "be.push(M.breakEvenSeverity(d,pk,k.split(':')[0],k.split(':')[1],0));"
+                            "const pk=Object.keys(d.position_presets);"
+                            "const tl=pk.map(p=>M.timeline(d,p,'usde','depeg',2,false,0.04));"
+                            "const sv=pk.map(p=>M.sensitivity(d,p,'susde','navLoss',2,0));"
+                            "return {presets:d.position_presets,wallet_found:d.wallet_found===undefined?null:d.wallet_found,"
+                            "exit_curve:d.exit_curve,max:d.max_exit_fraction,later:d.borrowers.exit_later,dec,be,tl,sv};})));")
+        jz = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    zbad = []
+    pkeys = ("collateral_usd", "collateral_oracle_usd", "pt_units", "debt_usd", "ltv", "lltv", "sized", "label")
+    for (sz, w), j in zip(zcombos, jz):
+        dz = at_size(d, sz, w)
+        if dz.get("wallet_found") != j["wallet_found"] or list(dz["position_presets"]) != list(j["presets"]):
+            zbad.append((sz, w, "presets / wallet_found"))
+            continue
+        for pk, p in dz["position_presets"].items():
+            for k in pkeys:
+                if not (p.get(k) == j["presets"][pk].get(k) if isinstance(p.get(k), (str, bool)) or p.get(k) is None
+                        else same(p[k], j["presets"][pk][k])):
+                    zbad.append((sz, w, pk, k))
+        if not same([[x["fraction"], x["usd"], x["loss"], x["gas_usd"]] for x in dz["exit_curve"]],
+                     [[x["fraction"], x["usd"], x["loss"], x["gas_usd"]] for x in j["exit_curve"]]) or \
+                not same(dz["max_exit_fraction"], j["max"]):
+            zbad.append((sz, w, "exit_curve"))
+        lk = ("oracle_drop", "seized_usd", "sellable_now", "avg_cost_now", "sellable_later", "avg_cost_later",
+              "market_impact_of_liquidations")
+        if not same([[r[k] for k in lk] for r in dz["borrowers"]["exit_later"]], [[r[k] for k in lk] for r in j["later"]]):
+            zbad.append((sz, w, "exit_later"))
+        i = 0
+        for pk in dz["position_presets"]:
+            for k in inj:
+                for sev in (0.5, 2, 10, 40):
+                    for c in (0.0, 0.002):
+                        py, jj = decide_at(dz, pk, *k.split(":"), sev, c), j["dec"][i]
+                        i += 1
+                        for f in dk + ("sell_usd", "sellable_now", "sellable_later", "avg_cost_later", "liquidated"):
+                            if not (py[f] == jj[f] if isinstance(py[f], str) else same(py[f], jj[f])):
+                                zbad.append((sz, w, pk, k, sev, c, f, py[f], jj[f]))
+        i = 0
+        for pk in dz["position_presets"]:
+            for k in inj:
+                py, jj = break_even_severity(dz, pk, *k.split(":"), 0.0), j["be"][i]
+                i += 1
+                if not (same(py["start"], jj["start"], 1e-7) and same(py["cap"], jj["cap"], 1e-7)):
+                    zbad.append((sz, w, pk, k, "breakEvenSeverity"))
+        for pk, jt, js in zip(dz["position_presets"], j["tl"], j["sv"]):
+            pt = timeline_pt(dz, pk, "usde", "depeg", 2, False, 0.04)
+            tk2 = tk + ("collateral_usd", "sale_cost_usd")
+            if len(pt) != len(jt) or not all((a[k] == b[k]) if isinstance(a[k], (str, bool)) or a[k] is None
+                                             else same(a[k], b[k]) for a, b in zip(pt, jt) for k in tk2):
+                zbad.append((sz, w, pk, "timeline"))
+            ps = sensitivity(dz, pk, "susde", "navLoss", 2, 0.0)
+            if ps["verdict"] != js["verdict"] or [x["verdict"] for x in ps["candidates"]] != \
+                    [x["verdict"] for x in js["candidates"]]:
+                zbad.append((sz, w, pk, "sensitivity"))
+    n_dec = sum(len(at_size(d, sz, w)["position_presets"]) for sz, w in zcombos) * len(inj) * 8
+    print(f"GATE {'PASS' if not zbad else 'FAIL'}  position size: {len(zcombos)} (size, wallet) cases equal on atSize "
+          f"(presets, exit curve, exit later), {n_dec} decideAt, breakEvenSeverity, timelines and sensitivity"
+          + (f"  first mismatch {zbad[0]}" if zbad else ""))
+    bad = bad + zbad
 
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob

@@ -27,7 +27,7 @@ import backtest_reusd
 import frontend_contract
 import incidents as inc_mod
 import onchain_positions
-from decision_core import Scenario, decide, load_curve
+from decision_core import Scenario, decide, load_curve, load_usd_curve
 from loss_model import PRESETS, Position, position_loss
 from reasoning import (check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link,
                        worst)
@@ -95,6 +95,21 @@ def gas_used_of(curves):
     return out
 
 
+def gas_used_by_usd(curves):
+    """{usd: gasUsed} like gas_used_of, keyed by the USD size of the quote (later files win)."""
+    out = {}
+    for c in curves:
+        raw = c.replace("exit_curve_", "exit_quotes_raw_").replace(".csv", ".json")
+        for q in load_json(raw) or []:
+            try:
+                g = (q["response"]["routes"][0]["data"] or {}).get("gasUsed")
+            except (KeyError, IndexError, TypeError):
+                continue
+            if g is not None and q.get("status") in (200, 201):
+                out[float(q["usd"])] = int(g)
+    return out
+
+
 def tri(v):
     v = v.lower()
     if v not in ("true", "false", "unknown"):
@@ -124,7 +139,7 @@ def run_grid(curve, L, pstep):
 
 def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=True,
           oracle_tracks_underlying=None, oracle_tracks_market=None, positions=None, borrower=None,
-          calibration=None, lender_supply=1e6, graph_tag="pt_susde_market"):
+          calibration=None, lender_supply=1e6, graph_tag="pt_susde_market", extra_curves=()):
     mk = load_json(os.path.join(data_dir, "pendle_markets.json"))
     if not mk:
         sys.exit(f"missing {data_dir}/pendle_markets.json - run fetch_data.py step1")
@@ -314,6 +329,12 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
     gas_ok = bool(gas_used) and gas.get("eth_usd") is not None and bool(gas)
     gas_pts = sorted((f, g * gwei * 1e-9 * gas["eth_usd"]) for f, g in gas_used.items()) if gas_ok else None
     costs = inc_mod.exit_costs(curve, gas_pts, notional)
+    # ---- quotes by USD size (all notionals merged): exit curve of any position size (frontend_contract.at_size) ----
+    all_curves = list(dict.fromkeys(list(extra_curves) + list(curves)))      # main curves last: they win on duplicates
+    usd_curve = load_usd_curve(*all_curves)
+    gas_usd_by = gas_used_by_usd(all_curves)
+    exit_curve_usd = [{"usd": u, "loss": s_, "gas_usd": gas_usd_by[u] * gwei * 1e-9 * gas["eth_usd"]
+                       if gas_ok and u in gas_usd_by else None} for u, s_ in usd_curve]
     e_gas = (ev("A", f"Pendle routes[0].data.gasUsed per quote x ({gas['base_fee_gwei']:.4g} + "
                      f"{gas.get('priority_fee_gwei') or 0:.4g}) gwei at block {onc['block']} x ETH "
                      f"${gas['eth_usd']:,.0f} ({gas['source']})") if gas_ok
@@ -477,6 +498,10 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         },
         "exit_curve": [{"fraction": x, "usd": round(x * notional, 2), "loss": s,
                         "gas_usd": dict(gas_pts).get(x) if gas_pts else None} for x, s in curve],
+        "exit_curve_usd": exit_curve_usd,
+        "size_input": frontend_contract.size_input(notional, pt_price, onc, usd_curve,
+                                                   f"largest accepted Pendle quote in "
+                                                   f"{', '.join(os.path.basename(c) for c in all_curves)}"),
         "max_exit_fraction": max_x,
         "lending": lending,
         "assumptions": {"L": L, "L_is_placeholder": True,
@@ -520,7 +545,7 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                                         lending[0] if lending else None, onc),
         "failure_types": frontend_contract.failure_types(cal, graph),
         "position_presets": frontend_contract.position_presets(notional, lending[0] if lending else None, onc,
-                                                               (onc or {}).get("oracle")),
+                                                               (onc or {}).get("oracle"), pt_price),
         "detected": [],
         "detector": {"connected": False, "schema": {"node": "dependency_graph node id", "fail": "failure_types key",
                                                      "sev": "observed severity in the failure's unit",
@@ -547,6 +572,28 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
     }
 
 
+def size_gate(out, curves):
+    """at_size at the export size, with the main quotes only, must give back the export's exit curve and
+    borrowers.exit_later (fractions of one notional) from the USD-size formulas."""
+    main = {float(u) for u, _ in load_usd_curve(*curves)}
+    d = dict(out, exit_curve_usd=[x for x in out["exit_curve_usd"] if x["usd"] in main])
+    n = out["position"]["notional_usd"]
+    s = frontend_contract.at_size(d, n)
+    close = lambda a, b: (a is None and b is None) or (a is not None and b is not None
+                                                       and abs(a - b) <= 1e-9 * max(1.0, abs(a), abs(b)))
+    bad = [("exit_curve", x["fraction"]) for x, y in zip(out["exit_curve"], s["exit_curve"])
+           if not (close(x["fraction"], y["fraction"]) and close(x["loss"], y["loss"]))]
+    bad += [("max_exit_fraction",)] if not close(out["max_exit_fraction"], s["max_exit_fraction"]) else []
+    if "borrowers" in out:
+        for x, y in zip(out["borrowers"]["exit_later"], s["borrowers"]["exit_later"]):
+            for k in ("sellable_now", "avg_cost_now", "sellable_later", "avg_cost_later", "market_impact_of_liquidations"):
+                if not close(x[k], y[k]):
+                    bad.append(("exit_later", x["oracle_drop"], k, x[k], y[k]))
+    n_rows = len(out.get("borrowers", {}).get("exit_later", []))
+    return not bad, (f"at_size({n:,.0f}) on the main quotes reproduces exit_curve ({len(out['exit_curve'])} points) and "
+                     f"borrowers.exit_later ({n_rows} rows)" if not bad else f"mismatch {bad[:3]}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--market", required=True)
@@ -567,12 +614,16 @@ def main():
     ap.add_argument("--calibration", default=os.path.join(HERE, "data", "depeg_calibration.json"),
                     help="calibrate_depeg.py output (default probabilities of the depeg incident)")
     ap.add_argument("--lender-supply", type=float, default=1e6, help="USDC supplied, for the lender block")
+    ap.add_argument("--extra-curves", nargs="*", default=[],
+                    help="quotes run with other --notional (e.g. data/exit_curve_<m>_1m.csv), merged with --curves by "
+                         "USD size into exit_curve_usd (any position size)")
     ap.add_argument("--js-out", help="also write the same data as 'window.DASHBOARD = {...};' (for pages opened "
                                      "from disk, where fetch() of a local JSON file is blocked)")
     a = ap.parse_args()
     out = build(a.market, a.curves, a.L, a.pstep, a.data_dir, a.debt, a.lltv, a.can_hold,
                 a.oracle_tracks_underlying, a.oracle_tracks_market, a.positions, a.borrower,
-                a.calibration if os.path.exists(a.calibration) else None, a.lender_supply)
+                a.calibration if os.path.exists(a.calibration) else None, a.lender_supply,
+                extra_curves=a.extra_curves)
     path = a.out or os.path.join(a.data_dir, "dashboard.json")
     with open(path, "w") as f:
         json.dump(out, f, indent=1)
@@ -609,6 +660,10 @@ def main():
     if "lender" in out:
         print(f"lender: {out['lender']['decision_text']}")
     print("GATE PASS  break-even formulas agree with decide() on both sides of each threshold")
+    ok, msg = size_gate(out, a.curves)
+    print(f"GATE {'PASS' if ok else 'FAIL'}  position size: {msg}")
+    if not ok:
+        sys.exit(1)
     w, v = out["weakest_link"], out["validation"]
     print(f"overall weakest link: {w.get('input')} ({w.get('grade')}) in {w.get('scenarios')}")
     print(f"GATE {'PASS' if v['all_pass'] else 'FAIL'}  back-test {v['passed']}/{v['total']}; "

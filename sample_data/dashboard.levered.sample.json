@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T16:40:01+00:00",
+ "generated_at": "2026-10-10T18:21:05+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -104,6 +104,89 @@
    "gas_usd": 0.2244845563481379
   }
  ],
+ "exit_curve_usd": [
+  {
+   "usd": 10000.0,
+   "loss": 0.0001471774496616396,
+   "gas_usd": 0.1005045630190654
+  },
+  {
+   "usd": 50000.0,
+   "loss": 0.00015275180093710095,
+   "gas_usd": 0.1005045630190654
+  },
+  {
+   "usd": 100000.0,
+   "loss": 0.00015346219030587527,
+   "gas_usd": 0.1005045630190654
+  },
+  {
+   "usd": 250000.0,
+   "loss": 0.0001630414555483517,
+   "gas_usd": 0.11958350459882662
+  },
+  {
+   "usd": 500000.0,
+   "loss": 0.00019884813232873277,
+   "gas_usd": 0.13630479695891798
+  },
+  {
+   "usd": 1000000.0,
+   "loss": 0.0003297370541375244,
+   "gas_usd": 0.19096009370018543
+  },
+  {
+   "usd": 2500000.0,
+   "loss": 0.0008204485568178432,
+   "gas_usd": 0.22448356748427598
+  },
+  {
+   "usd": 3000000.0,
+   "loss": 0.0013752540226035226,
+   "gas_usd": 0.22442423565255873
+  },
+  {
+   "usd": 3500000.0,
+   "loss": 0.0021244049666646614,
+   "gas_usd": 0.22446042806990626
+  },
+  {
+   "usd": 4000000.0,
+   "loss": 0.003134602082053295,
+   "gas_usd": 0.22446537238921604
+  },
+  {
+   "usd": 4500000.0,
+   "loss": 0.004908559181059591,
+   "gas_usd": 0.2244845563481379
+  }
+ ],
+ "size_input": {
+  "default_usd": 10000000.0,
+  "pt_price_usd": 0.9929983120844329,
+  "oracle_price_usd": 0.9923863679604261,
+  "capacity_usd": 4500000.0,
+  "smallest_quote_usd": 10000.0,
+  "note": "sizes above capacity_usd cannot be sold through the pool now (larger quotes refused); below smallest_quote_usd the smallest quote's cost is used",
+  "evidence": {
+   "default_usd": {
+    "grade": "D",
+    "source": "our assumption until the manager enters a size"
+   },
+   "pt_price_usd": {
+    "grade": "A",
+    "source": "Pendle GET /v1/prices/assets at quote time"
+   },
+   "oracle_price_usd": {
+    "grade": "A",
+    "source": "lending oracle price() at block 26163209"
+   },
+   "capacity_usd": {
+    "grade": "A",
+    "source": "largest accepted Pendle quote in exit_curve_0x47ad2cd1_1m.csv, exit_curve_0x47ad2cd1_10m.csv, exit_curve_0x47ad2cd1_cap.csv"
+   }
+  }
+ },
  "max_exit_fraction": 0.45,
  "lending": [
   {
@@ -13441,9 +13524,9 @@
   }
  },
  "time_model": {
-  "generated_at": "2026-10-10T16:40:01+00:00",
+  "generated_at": "2026-10-10T18:21:05+00:00",
   "expiry": "2026-11-26",
-  "days_to_expiry": 46.305543981481485,
+  "days_to_expiry": 46.235358796296296,
   "implied_apy": 0.05011039832525688,
   "oracle_discount_per_year": 0.06,
   "borrow_apr": 0.03676861568808,
@@ -13738,7 +13821,7 @@
     "to": "position",
     "type": "holding",
     "grade": "D",
-    "evidence": "the position holds the PT; its size is assumed (position_presets)"
+    "evidence": "the position holds the PT; its size is the manager's input (size_input, at_size) or a real borrower's on-chain position (position_presets)"
    },
    {
     "from": "lending",
@@ -14136,52 +14219,68 @@
  },
  "position_presets": {
   "spot": {
-   "collateral_usd": 10000000.0,
    "lltv": 0.915,
    "can_hold": true,
+   "sized": true,
    "label": "PT held outright",
-   "debt_usd": 0.0,
+   "ltv": 0.0,
    "evidence": {
     "grade": "D",
-    "source": "position size assumed"
+    "source": "position size: the manager's input"
    },
+   "collateral_usd": 10000000.0,
+   "pt_units": 10070510.572176801,
+   "collateral_oracle_usd": 9993837.410229608,
+   "debt_usd": 0.0,
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   },
   "lev_market_avg": {
-   "collateral_usd": 10000000.0,
    "lltv": 0.915,
    "can_hold": true,
+   "sized": true,
    "label": "PT as collateral, LTV of the Morpho market average",
-   "debt_usd": 8820836.996944975,
+   "ltv": 0.8827342538999239,
    "evidence": {
     "grade": "A",
-    "source": "Morpho API aggregate LTV x assumed size"
+    "source": "eth_call @ block 26163209: total borrow / total collateral at the oracle price x the size input"
    },
+   "collateral_usd": 10000000.0,
+   "pt_units": 10070510.572176801,
+   "collateral_oracle_usd": 9993837.410229608,
+   "debt_usd": 8821902.60991618,
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   },
   "lev_largest_borrower": {
-   "collateral_usd": 10000000.0,
-   "lltv": 0.915,
+   "label": "Largest real borrower (0xdf819874..., real position)",
    "can_hold": true,
-   "label": "PT as collateral, LTV of the largest real borrower (0xdf819874...)",
-   "debt_usd": 8684956.731211014,
+   "sized": false,
+   "address": "0xdf81987465681d0515058fe0a47a3bd174012730",
+   "pt_units": 3961491.3541291417,
+   "collateral_usd": 3933754.2279873122,
+   "collateral_oracle_usd": 3931330.0166308493,
+   "debt_usd": 3414343.109055,
    "ltv": 0.8684956731211013,
+   "lltv": 0.915,
    "evidence": {
     "grade": "A",
-    "source": "eth_call @ block 26163209 x assumed size"
+    "source": "eth_call @ block 26163209: collateral (PT) and debt; value = PT units x Pendle PT price 0.99300"
    },
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   },
   "lev_closest_to_liquidation": {
-   "collateral_usd": 10000000.0,
-   "lltv": 0.915,
+   "label": "Real borrower closest to liquidation (0x5c430ff6..., real position)",
    "can_hold": true,
-   "label": "PT as collateral, LTV of the real borrower closest to liquidation (0x5c430ff6...)",
-   "debt_usd": 9059136.970527645,
+   "sized": false,
+   "address": "0x5c430ff6f374da12218b380d2040299ae5b6d40e",
+   "pt_units": 3272383.785063586,
+   "collateral_usd": 3249471.575060609,
+   "collateral_oracle_usd": 3247469.059031844,
+   "debt_usd": 2941926.701332,
    "ltv": 0.9059136970527645,
+   "lltv": 0.915,
    "evidence": {
     "grade": "A",
-    "source": "eth_call @ block 26163209 x assumed size"
+    "source": "eth_call @ block 26163209: collateral (PT) and debt; value = PT units x Pendle PT price 0.99300"
    },
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   }

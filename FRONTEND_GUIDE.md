@@ -4,6 +4,7 @@
 > 布局保持不变，但**去掉第 3 步（概率）**：主办方认为突发事件的概率 p 无法预测，核心算法改为"假设事故已经发生，按严重程度决定"。
 > 第 1 步选节点（固定 9 个节点 + 检测到的事故），第 2 步手动拖严重程度，结论直接由严重程度给出，并显示"跌幅超过多少就该走"（盈亏平衡严重程度）。
 > 改的是：数据从后端文件读取，损失和结论从后端的模型计算，并删掉已经过时的文字。
+> 新增：头寸规模由经理输入（默认 $10M），也可输入钱包地址（本 Morpho 市场的借款人，按真实规模）；两个真实借款人预设按真实规模计算。
 
 Instructions for Claude. Edit `Dependency_Risk_Desk_v2.html` so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls. Remove step 3 (the probability slider) and everything that uses a probability: the decision is made given the incident, at the severity chosen in step 2.
 
@@ -27,7 +28,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 
 ## 2. Rules
 
-1. Do not hard-code numbers from the old snapshot. Read everything from `const d = window.DASHBOARD;`.
+1. Do not hard-code numbers from the old snapshot. Read everything from `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` (section 3b), recomputed whenever the size or the wallet input changes.
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
 3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), plus the detected incidents (`d.detected`, empty today; keep the prototype sample feed, still labelled as invented).
 4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
@@ -39,19 +40,32 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 
 | Page constant | Replace with |
 |---|---|
-| `D` (snapshot) | `d = window.DASHBOARD` |
-| `N`, `CURVE`, `MAXX` | `d.position.notional_usd`, `d.exit_curve.map(x => [x.fraction, x.loss])`, `d.max_exit_fraction` |
+| `D` (snapshot) | `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` (section 3b) |
+| `N`, `CURVE`, `MAXX` | `d.position.notional_usd` (= the size input), `d.exit_curve.map(x => [x.fraction, x.loss])`, `d.max_exit_fraction` (all for the size input; 1 up to $4.5M) |
 | `LD` | `d.lending[0]` (`lltv`, `collateral_usd`, `borrow_usd`, `liquidity_usd`, `aggregate_ltv`, `oracle_address`; `market_id` is now the full id) |
 | `NODES` | `d.ui.nodes`: same 9 keys (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`) with `label`, `kind`, `layer`, `address`, `contract_name`, `members` (ids in `d.dependency_graph.nodes`), `evidence {grade, source}`, `note`, `failures` |
 | `LAY` | `d.ui.layers` (`n`, `name`, `nodes`); facts per layer: see section 6 |
 | `EDGES` | `d.ui.edges` (`from`, `to`, `type`, `grade`, `evidence`), including the two edges to the position: `pt -> position` "holding" (D: the size is assumed) and `lending -> position` "liquidation" (B: Morpho rule, back-tested; `applies_to` = the levered presets). Draw only those, do not add page-made edges |
 | `FBN` | `d.ui.nodes[k].failures` (sUSDe now has `navLoss` and `discount` instead of `depeg`) |
-| `POS` | `d.position_presets`: `spot`, `lev_market_avg`, `lev_largest_borrower`, `lev_closest_to_liquidation` (`label`, `collateral_usd`, `debt_usd`, `lltv`, `ltv`, `evidence`). Fill the header position `<select>` from it |
+| `POS` | `d.position_presets`: `spot`, `lev_market_avg` (follow the size input), `lev_largest_borrower`, `lev_closest_to_liquidation` (real positions: $3.93M and $3.25M), plus `wallet` when a wallet was found (`label`, `collateral_usd` = market value, `collateral_oracle_usd`, `pt_units`, `debt_usd`, `lltv`, `ltv`, `sized`, `evidence`). Fill the header position `<select>` from it; show the size next to each label (real borrowers: "real position") |
 | `FAIL[k].loss` | delete; `RiskModel.inject` |
 | `FAIL[k].prob` | delete (no probability) |
 | `stress()` | the `sellable_later` / `avg_cost_later` returned by `inject` (drain keeps its own curve, section 7) |
 | `DETECTED` | `d.detected` when it is not empty; otherwise the prototype sample list (keep it labelled as invented) |
 | `REPLAYS` | oracle: node `oracle`, failure `oracleLow`, severity 2.77 (`d.failure_types.types.oracleLow.anchors[0]`), and show `d.validation` ("back-test of the liquidation rules on PT-reUSD: 9/9 checks pass"); issuer: node `ethena`, failure `shortfall`, severity 50 (Stream xUSD) or 99.87 (Elixir deUSD) from `anchors` |
+
+## 3b. Position size and wallet (header inputs)
+
+Add two inputs to the header, next to the position `<select>`:
+
+- "Position size (USD)": a number, default `window.DASHBOARD.size_input.default_usd` (10,000,000), marked as an assumption (D) until the manager types a size. It sets the size of `spot` (PT held outright) and `lev_market_avg` (PT as collateral at the market's average LTV).
+- "Wallet (optional)": an address. If it is a borrower of this Morpho market, preset `wallet` appears at its real size (grade A); otherwise show "not a borrower of this market; holdings outside Morpho are not read yet" (`d.wallet_found === false`).
+
+```js
+let d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet || null);   // on load and on every size / wallet change
+```
+
+Every other call takes this `d`. What changes with the size: PT units = size / `size_input.pt_price_usd`; Morpho values them at `size_input.oracle_price_usd` (liquidation only); the exit curve: up to `size_input.capacity_usd` ($4.5M) the whole position can be sold (`d.max_exit_fraction` = 1), above it the rest is stuck; "exit later" after liquidations. Show under the inputs: "{pt_units} PT at {pt_price_usd}; sellable now: {max_exit_fraction} ({capacity_usd} pool limit)".
 
 ## 4. The model
 
@@ -82,7 +96,7 @@ How each node and failure is modelled (`d.ui.injections`):
 Rewrite `model()` around the two decision functions (no probability):
 
 ```js
-const d = window.DASHBOARD;
+// d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet), section 3b
 function model() {
   const P = d.position_presets[S.pos], equity = P.collateral_usd - P.debt_usd;
   const f = FAIL[S.fail];                                   // page's own slider range (step 2)
@@ -131,7 +145,7 @@ Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours,
 |---|---|
 | Meta-oracle switch | below 16 h the oracle does not switch, so a USDe depeg liquidates nobody; from 16 h it does (`oracle_falls`) |
 | Recovery | `recovers`: the shock disappears after the incident, so a holder who can wait loses nothing, but liquidations that happened during it stay |
-| PT valued at its price | position value = PT units x PT price at the end of the incident: market price from the implied APY, oracle price from the linear discount (6% a year), both 1 at expiry (`position_value_usd`, `pt_price_*`) |
+| PT valued at its price | position value = PT units x PT price at the end of the incident: market price from the implied APY, oracle price from the linear discount (6% a year), both 1 at expiry (`position_value_usd`, `pt_price_*`). The loss is on the market value; the oracle value (`collateral_usd` in the result) is used only for the liquidation check; a sale now is costed on today's value |
 | Debt over time | levered presets: debt grows at the market's borrow APR (`d.time_model.borrow_apr`, read on chain); the oracle price rises with the linear discount; after expiry it stays at 1 while the debt keeps growing (`ltv`) |
 | Yield given up | exiting gives up (implied APY - alt) over the incident, at most until expiry (`carry`) |
 
@@ -174,26 +188,33 @@ For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan l
 
 ## 9. Acceptance tests
 
-`RiskModel.decideAt(window.DASHBOARD, preset, node, fail, sev, 0)` (carry 0) and `RiskModel.breakEvenSeverity(..., 0, min, max)` with the failure_types range; check in the console and on screen:
+`d = RiskModel.atSize(window.DASHBOARD, size)`, then `RiskModel.decideAt(d, preset, node, fail, sev, 0)` (carry 0) and `RiskModel.breakEvenSeverity(d, ..., 0, min, max)` with the failure_types range; check in the console and on screen:
 
-| Preset | Node · failure | Severity | Verdict | Sell | Sale cost | Loss if stay | Loss kept | Oracle falls | Sellable later | Break-even severity (start / cap) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `spot` | `susde:navLoss` | 10% | SELL_TO_CAP | 45% | $22,089 | $1,000,000 | $550,000 | False | 0.4500 | 0.500% / 2.052% |
-| `spot` | `susde:discount` | 3% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
-| `spot` | `pt:depeg` | 10% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
-| `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 45% | $22,089 | $1,000,000 | $550,000 | True | 0.0000 | 1.000% / 2.052% |
-| `lev_closest_to_liquidation` | `usde:depeg` | 0.5% | REDUCE | 30% | $4,126 | $50,000 | $35,000 | False | 0.4500 | 1.000% / 1.000% |
-| `lev_closest_to_liquidation` | `usde:depeg` | 2% | SELL_TO_CAP | 45% | $22,089 | $437,054 | $240,380 | True | 0.1418 | 1.000% / 1.000% |
-| `lev_closest_to_liquidation` | `susde:navLoss` | 2% | REDUCE | 44% | $20,037 | $200,000 | $112,000 | False | 0.4500 | 0.500% / 2.052% |
-| `lev_closest_to_liquidation` | `pt:depeg` | 10% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
-| `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | SELL_TO_CAP | 45% | $22,089 | $501,897 | $276,043 | True | 0.1264 | 1.000% / 1.000% |
-| `lev_market_avg` | `ethena:shortfall` | 50% | SELL_TO_CAP | 45% | $22,089 | $1,179,163 | $648,540 | True | 0.0000 | 1.000% / 2.052% |
-| `spot` | `lending:cascade` | 1% | STAY | 0% | $0 | $0 | $0 | None | 0.1449 | - / - |
-| `spot` | `lending:cascade` | 20% | STAY | 0% | $0 | $0 | $0 | None | 0.0000 | - / - |
-| `spot` | `market:drain` | 60% | STAY | 0% | $0 | $0 | $0 | None | 0.1800 | - / - |
-| `lev_market_avg` | `eth:halt` | 6h | STAY | 0% | $0 | $0 | $0 | None | 0.4500 | - / - |
+| Size | Preset | Node · failure | Severity | Verdict | Sell | Sale cost | Loss if stay | Loss kept | Oracle falls | Sellable later | Break-even severity (start / cap) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 10M | `spot` | `susde:navLoss` | 10% | SELL_TO_CAP | 45% | $22,089 | $1,000,000 | $550,000 | False | 0.4500 | 0.500% / 2.052% |
+| 10M | `spot` | `susde:discount` | 3% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
+| 10M | `spot` | `pt:depeg` | 10% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
+| 10M | `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 45% | $22,089 | $1,000,000 | $550,000 | True | 0.0000 | 1.000% / 2.052% |
+| 10M | `lev_closest_to_liquidation` | `usde:depeg` | 0.5% | REDUCE | 92% | $4,077 | $16,247 | $1,300 | False | 1.0000 | 1.000% / 1.000% |
+| 10M | `lev_closest_to_liquidation` | `usde:depeg` | 2% | EXIT | 100% | $5,683 | $143,833 | $0 | True | 0.4362 | 1.000% / 1.000% |
+| 10M | `lev_closest_to_liquidation` | `susde:navLoss` | 2% | EXIT | 100% | $5,683 | $64,989 | $0 | False | 1.0000 | 0.500% / 0.657% |
+| 10M | `lev_closest_to_liquidation` | `pt:depeg` | 10% | STAY | 0% | $0 | $0 | $0 | False | 1.0000 | - / - |
+| 10M | `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | EXIT | 100% | $5,683 | $164,903 | $0 | True | 0.3889 | 1.000% / 1.000% |
+| 10M | `lev_largest_borrower` | `usde:depeg` | 2% | EXIT | 100% | $11,804 | $78,675 | $0 | True | 0.3604 | 1.000% / 1.087% |
+| 10M | `lev_market_avg` | `ethena:shortfall` | 50% | SELL_TO_CAP | 45% | $22,089 | $1,178,097 | $647,954 | True | 0.0000 | 1.000% / 2.052% |
+| 10M | `spot` | `lending:cascade` | 1% | STAY | 0% | $0 | $0 | $0 | None | 0.1449 | - / - |
+| 10M | `spot` | `lending:cascade` | 20% | STAY | 0% | $0 | $0 | $0 | None | 0.0000 | - / - |
+| 10M | `spot` | `market:drain` | 60% | STAY | 0% | $0 | $0 | $0 | None | 0.1800 | - / - |
+| 10M | `lev_market_avg` | `eth:halt` | 6h | STAY | 0% | $0 | $0 | $0 | None | 0.4500 | - / - |
+| 1M | `spot` | `usde:depeg` | 10% | EXIT | 100% | $330 | $100,000 | $0 | True | 0.0000 | 1.000% / 1.000% |
+| 1M | `spot` | `lending:cascade` | 1% | STAY | 0% | $0 | $0 | $0 | None | 1.0000 | - / - |
+| 7M | `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 64% | $22,089 | $700,000 | $250,000 | True | 0.0000 | 1.000% / 2.080% |
+| 50M | `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 9% | $22,089 | $5,000,000 | $4,550,000 | True | 0.0000 | 1.000% / 1.910% |
 
-What it shows: a 10% sUSDe NAV loss makes an unlevered holder sell up to the pool limit (45%), while a 10% PT market fall needs no action (the PT redeems at expiry and the oracle ignores the market price); for the closest-to-liquidation borrower a 0.5% USDe depeg is below the meta-oracle's 0.75% threshold, so nobody is liquidated, but the value loss on a levered position (5.3% of equity) already makes it sell 30%, while at 2% the oracle switches, the position is liquidated and it sells to the pool limit; a cascade at 20% leaves nothing sellable.
+The real-borrower rows do not depend on the size input. With a wallet: `RiskModel.atSize(window.DASHBOARD, 1e7, '0x5c430ff6f374da12218b380d2040299ae5b6d40e').position_presets.wallet` equals `lev_closest_to_liquidation` (collateral $3,249,472, debt $2,941,927); an unknown address gives `wallet_found === false`.
+
+What it shows: a 10% sUSDe NAV loss makes an unlevered $10M holder sell up to the pool limit (45%), while a 10% PT market fall needs no action (the PT redeems at expiry and the oracle ignores the market price). The pool takes at most $4.5M, so the size decides the answer: $1M exits in full for $330, $7M can sell 64%, $50M only 9%. The real borrower closest to liquidation ($3.25M) can sell its whole position: at a 0.5% USDe depeg (below the meta-oracle's 0.75% threshold, nobody is liquidated) the levered value loss already makes it sell 92%; at 2% the oracle switches, the position would be liquidated, and exiting now costs $5,683 against $143,833. A cascade at 20% leaves nothing sellable; at 1% a $1M holder can still sell everything.
 
 ## 10. Do not
 
@@ -210,6 +231,7 @@ RPC_URL=https://ethereum-rpc.publicnode.com python3 onchain_positions.py
 python3 crawl.py --morpho-market 0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05 --depth 5 --tag pt_susde_market
 python3 export_dashboard.py --market 0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e \
   --curves data/exit_curve_0x47ad2cd1_10m.csv data/exit_curve_0x47ad2cd1_cap.csv \
+  --extra-curves data/exit_curve_0x47ad2cd1_1m.csv \
   --positions data/morpho_positions_0x5613b170.json --js-out sample_data/dashboard.sample.js
 python3 check_js_port.py
 ```
