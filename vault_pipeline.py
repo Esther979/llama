@@ -339,6 +339,7 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
     for inc in incidents:
         if inc.get("analyzed", True):
             inc["decision"] = vault_decide_at(inc, exit_, dep)
+            inc["sensitivity"] = vault_sensitivity(inc, exit_, dep)
             sentence(inc, exit_)
     credit = [i for i in incidents if i.get("analyzed", True) and i["type"] != "asset_issuer"]
     worst_L = max([i["decision"]["L"] for i in credit] + [0.0])
@@ -498,7 +499,7 @@ def severity_crossing(grid, c):
     return None
 
 
-def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None):
+def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None, low_branch=False):
     """Stay / exit for a depositor of `amount` given the incident at severity `sev` (no probability): withdraw
     each tranche whose unit cost (yield given up; + force-deallocation penalty) is below L(sev). Mirrored by
     RiskModel.vaultDecideAt."""
@@ -507,14 +508,16 @@ def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None):
     h = ex["horizon_days"] if horizon_days is None else horizon_days
     carry = max(0.0, (ex["vault_apy"] or 0.0) - alt) * h / 365
     pen = ex["force_deallocate_penalty"]
-    L = L_at(inc["severity_grid"], sev)
+    grid = [{"severity": g["severity"], "L_high": g["L_low"]} for g in inc["severity_grid"]] if low_branch \
+        else inc["severity_grid"]
+    L = L_at(grid, sev)
     free_amt = min(amount, ex["free_usd"])
     forced_amt = min(amount - free_amt, ex["forced_usd"])
     locked = amount - free_amt - forced_amt
     out = {"amount": amount, "severity": sev, "L": L, "loss_if_stay_usd": L * amount, "carry_cost": carry,
            "penalty": pen, "free_usd": free_amt, "forced_usd": forced_amt, "locked_usd": locked,
-           "severity_break_even_free": severity_crossing(inc["severity_grid"], carry),
-           "severity_break_even_forced": severity_crossing(inc["severity_grid"], carry + pen)}
+           "severity_break_even_free": severity_crossing(grid, carry),
+           "severity_break_even_forced": severity_crossing(grid, carry + pen)}
     if inc["type"] == "asset_issuer":
         out.update(verdict="REVIEW", exit_usd=0.0, exit_cost_usd=0.0, loss_kept_usd=L * amount,
                    total_if_act_usd=L * amount, avoided_usd=0.0)
@@ -527,6 +530,36 @@ def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None):
                exit_usd=exit_amt, exit_cost_usd=cost, loss_kept_usd=kept, total_if_act_usd=cost + kept,
                avoided_usd=L * amount - cost - kept)
     return out
+
+
+def vault_sensitivity(inc, ex, amount, sev=None):
+    """Which assumption flips the vault verdict at severity sev (no probability); weakest = lowest-graded flip
+    (ties: larger change). The larger deposit is a comparison (the user's choice), never chosen as weakest.
+    Mirrored by RiskModel.vaultSensitivity."""
+    base = vault_decide_at(inc, ex, amount, sev)
+    g_or = ((inc.get("evidence") or {}).get("L") or {}).get("basis", {}).get("oracle", "D")
+    cands = [("oracle", "the lending oracles do not follow the shock (lower loss branch)", g_or,
+              dict(low_branch=True)),
+             ("alt_yield", "cash earns nothing after withdrawing (alternative yield 0%)", "D", dict(alt_apy=0.0)),
+             ("alt_yield", "cash earns as much as the vault (no yield given up)", "D", dict(alt_apy=ex["vault_apy"] or 0.0)),
+             ("horizon", "horizon 7 days", "D", dict(horizon_days=7)),
+             ("horizon", "horizon 90 days", "D", dict(horizon_days=90)),
+             ("amount", "a deposit 10 times larger", "D", dict(amount=amount * 10))]
+    rows = []
+    for key, alt, grade, kw in cands:
+        amt = kw.pop("amount", amount)
+        r = vault_decide_at(inc, ex, amt, base["severity"], **kw)
+        rows.append({"key": key, "alternative": alt, "grade": grade, "verdict": r["verdict"], "comparison": key == "amount",
+                     "exit_share": r["exit_usd"] / amt if amt else 0.0, "L": r["L"],
+                     "flips": r["verdict"] != base["verdict"],
+                     "effect": abs((r["exit_usd"] / amt if amt else 0) - (base["exit_usd"] / amount if amount else 0))
+                     + abs(r["L"] - base["L"])})
+    flips = [x for x in rows if x["flips"] and not x["comparison"]]
+    weakest = None
+    if flips:
+        g = max(x["grade"] for x in flips)
+        weakest = max((x for x in flips if x["grade"] == g), key=lambda x: x["effect"])
+    return {"verdict": base["verdict"], "candidates": rows, "weakest": weakest}
 
 
 def asset_incident(asset, sym, presets, types, vault, name_of, cfg=None):

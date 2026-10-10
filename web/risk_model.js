@@ -118,9 +118,11 @@
   /* Fault injection on one of the Risk Desk's 9 nodes (port of frontend_contract.inject).
      d = dashboard.json, presetKey in d.position_presets, node/fail = key of d.ui.injections ("usde:depeg"),
      sev in the failure's unit (% or h). Returns the loss (fraction of equity, USD) and the exit effect. */
-  function inject(d, presetKey, node, fail, sev) {
+  function inject(d, presetKey, node, fail, sev, opts = null) {
+    opts = opts || {};
     const m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey];
     const C = p.collateral_usd, D = p.debt_usd, equity = C - D;
+    const canHold = 'can_hold' in opts ? opts.can_hold : p.can_hold;
     const curve = d.exit_curve.map(x => [x.fraction, x.loss]), cap = d.max_exit_fraction;
     const out = {type: m.type, note: m.note, L_low: 0, L_high: 0, loss_usd: 0, oracle_falls: null, liquidated: null,
                  sellable_now: cap, sellable_later: cap, avg_cost_later: slippageAt(cap, curve)};
@@ -132,10 +134,11 @@
       Object.assign(out, {sellable_later: r.sellable_later, avg_cost_later: r.avg_cost_later, exit_row_drop: r.oracle_drop});
     };
     if (m.type === 'loss_model') {
-      const shock = sev / 100, L2 = m.scenario_layer === 2;
-      const flag = m.oracle === 'rule' ? oracleFalls(d.oracle, m.scenario_layer, shock, m.hours, m.token || null) : m.oracle;
-      const r = positionLoss({layer: m.scenario_layer, shock, permanent: m.permanent, hours: m.hours},
-        {collateral_usd: C, debt_usd: D, lltv: p.lltv || 0.915, can_hold: p.can_hold,
+      const shock = sev / 100, L2 = m.scenario_layer === 2, hours = 'hours' in opts ? opts.hours : m.hours;
+      let flag = m.oracle === 'rule' ? oracleFalls(d.oracle, m.scenario_layer, shock, hours, m.token || null) : m.oracle;
+      if ('oracle_falls' in opts) flag = opts.oracle_falls;
+      const r = positionLoss({layer: m.scenario_layer, shock, permanent: m.permanent, hours},
+        {collateral_usd: C, debt_usd: D, lltv: p.lltv || 0.915, can_hold: canHold,
          oracle_tracks_underlying: L2 ? flag : null, oracle_tracks_market: L2 ? null : flag});
       Object.assign(out, {L_low: r.L_low, L_high: r.L_high, loss_usd: r.L_high * equity, oracle_falls: flag,
                           liquidated: r.branches.map(b => b.liquidated)});
@@ -147,8 +150,8 @@
 
   /* Decision without a probability (port of frontend_contract.decide_at): given the incident at severity sev,
      sell x minimising x*(slippage+carry) + (1-x)*L(sev); costs per unit of equity (x collateral / equity). */
-  function decideAt(d, presetKey, node, fail, sev, carry = 0) {
-    const r = inject(d, presetKey, node, fail, sev), p = d.position_presets[presetKey];
+  function decideAt(d, presetKey, node, fail, sev, carry = 0, opts = null) {
+    const r = inject(d, presetKey, node, fail, sev, opts), p = d.position_presets[presetKey];
     const C = p.collateral_usd, E = C - p.debt_usd, scale = C / E, L = r.L_high;
     const raw = d.exit_curve.map(x => [x.fraction, x.loss]);
     const dec = decide(1, L, raw.map(([x, s]) => [x, s * scale]), carry * scale), x = dec.exitFraction;
@@ -237,17 +240,18 @@
     }
     return null;
   }
-  function vaultDecideAt(inc, ex, amount, sev = null, altApy = null, horizonDays = null) {
+  function vaultDecideAt(inc, ex, amount, sev = null, altApy = null, horizonDays = null, lowBranch = false) {
     sev = sev === null ? inc.default_severity : sev;
+    const grid = lowBranch ? inc.severity_grid.map(g => ({severity: g.severity, L_high: g.L_low})) : inc.severity_grid;
     const alt = altApy === null ? ex.alt_apy : altApy, h = horizonDays === null ? ex.horizon_days : horizonDays;
     const carry = Math.max(0, (ex.vault_apy || 0) - alt) * h / 365, pen = ex.force_deallocate_penalty;
-    const L = vaultLossAt(inc.severity_grid, sev);
+    const L = vaultLossAt(grid, sev);
     const freeAmt = Math.min(amount, ex.free_usd), forcedAmt = Math.min(amount - freeAmt, ex.forced_usd);
     const locked = amount - freeAmt - forcedAmt;
     const out = {amount, severity: sev, L, loss_if_stay_usd: L * amount, carry_cost: carry, penalty: pen,
                  free_usd: freeAmt, forced_usd: forcedAmt, locked_usd: locked,
-                 severity_break_even_free: severityCrossing(inc.severity_grid, carry),
-                 severity_break_even_forced: severityCrossing(inc.severity_grid, carry + pen)};
+                 severity_break_even_free: severityCrossing(grid, carry),
+                 severity_break_even_forced: severityCrossing(grid, carry + pen)};
     if (inc.type === 'asset_issuer')
       return Object.assign(out, {verdict: 'REVIEW', exit_usd: 0, exit_cost_usd: 0, loss_kept_usd: L * amount,
                                  total_if_act_usd: L * amount, avoided_usd: 0});
@@ -259,8 +263,70 @@
       avoided_usd: L * amount - cost - kept});
   }
 
+  const RANK = 'ABCD';
+  const pickWeakest = rows => {
+    const flips = rows.filter(x => x.flips && !x.comparison);
+    if (!flips.length) return null;
+    const g = flips.reduce((a, x) => RANK.indexOf(x.grade) > RANK.indexOf(a) ? x.grade : a, 'A');
+    let best = null;
+    for (const x of flips) if (x.grade === g && (best === null || x.effect > best.effect)) best = x;
+    return best;
+  };
+
+  /* Which assumption flips the verdict (port of frontend_contract.sensitivity). */
+  function sensitivity(d, presetKey, node, fail, sev, carry = 0) {
+    const base = decideAt(d, presetKey, node, fail, sev, carry), m = d.ui.injections[node + ':' + fail];
+    const p = d.position_presets[presetKey], E = p.collateral_usd - p.debt_usd, o = d.oracle || {};
+    const cands = [];
+    if (m.type === 'loss_model') {
+      if (m.oracle === 'rule' && o.kind === 'meta_oracle_timelock' && o.challenge_timelock_s) {
+        const h = o.challenge_timelock_s / 3600 / 2;
+        cands.push(['duration', `the incident lasts ${+h.toFixed(6)} h, less than the oracle's ${+(2 * h).toFixed(6)} h challenge timelock`,
+                    'D', presetKey, carry, {hours: h}]);
+      }
+      if (p.debt_usd > 0)
+        cands.push(['oracle', 'the lending oracle ' + (base.oracle_falls ? 'does not follow' : 'follows') + ' the shock',
+                    (o.evidence || {}).grade || 'D', presetKey, carry, {oracle_falls: !base.oracle_falls}]);
+      cands.push(['can_hold', p.can_hold ? 'the position must sell at the worst point' : 'the position can hold to expiry',
+                  'D', presetKey, carry, {can_hold: !p.can_hold}]);
+    }
+    for (const [k, q] of Object.entries(d.position_presets))
+      if (k !== presetKey) cands.push(['position', q.label, q.evidence.grade, k, carry, null]);
+    cands.push(['carry', `cash after selling earns 1% less a year than the PT (carry ${((carry + 0.01) * 100).toFixed(2)}%)`,
+                'D', presetKey, carry + 0.01, null]);
+    const rows = cands.map(([key, alternative, grade, pk, c, op]) => {
+      const r = decideAt(d, pk, node, fail, sev, c, op), q = d.position_presets[pk], Ek = q.collateral_usd - q.debt_usd;
+      return {key, alternative, grade, verdict: r.verdict, comparison: key === 'position',
+              sell_fraction: r.sell_fraction, loss_if_stay_usd: r.loss_if_stay_usd,
+              flips: r.verdict !== base.verdict,
+              effect: Math.abs(r.sell_fraction - base.sell_fraction) + Math.abs(r.loss_if_stay_usd / Ek - base.loss_if_stay_usd / E)};
+    });
+    return {verdict: base.verdict, candidates: rows, weakest: pickWeakest(rows)};
+  }
+
+  /* Which assumption flips the vault verdict (port of vault_pipeline.vault_sensitivity). */
+  function vaultSensitivity(inc, ex, amount, sev = null) {
+    const base = vaultDecideAt(inc, ex, amount, sev);
+    const gOr = (((inc.evidence || {}).L || {}).basis || {}).oracle || 'D';
+    const cands = [['oracle', 'the lending oracles do not follow the shock (lower loss branch)', gOr, {low: true}],
+                   ['alt_yield', 'cash earns nothing after withdrawing (alternative yield 0%)', 'D', {alt: 0}],
+                   ['alt_yield', 'cash earns as much as the vault (no yield given up)', 'D', {alt: ex.vault_apy || 0}],
+                   ['horizon', 'horizon 7 days', 'D', {h: 7}], ['horizon', 'horizon 90 days', 'D', {h: 90}],
+                   ['amount', 'a deposit 10 times larger', 'D', {amount: amount * 10}]];
+    const rows = cands.map(([key, alternative, grade, kw]) => {
+      const amt = kw.amount !== undefined ? kw.amount : amount;
+      const r = vaultDecideAt(inc, ex, amt, base.severity, kw.alt !== undefined ? kw.alt : null,
+                              kw.h !== undefined ? kw.h : null, !!kw.low);
+      const share = amt ? r.exit_usd / amt : 0, baseShare = amount ? base.exit_usd / amount : 0;
+      return {key, alternative, grade, verdict: r.verdict, comparison: key === 'amount', exit_share: share, L: r.L,
+              flips: r.verdict !== base.verdict,
+              effect: Math.abs(share - baseShare) + Math.abs(r.L - base.L)};
+    });
+    return {verdict: base.verdict, candidates: rows, weakest: pickWeakest(rows)};
+  }
+
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, inject, decideAt, breakEvenSeverity,
-               vaultDecide, vaultRun, vaultLossAt, vaultDecideAt};
+               sensitivity, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt, vaultSensitivity};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;
 })(typeof window !== 'undefined' ? window : this);

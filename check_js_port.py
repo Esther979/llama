@@ -161,6 +161,31 @@ def main():
           + (f"  first mismatch {bbad[0]}" if bbad else ""))
     bad = bad + dbad + bbad
 
+    # sensitivity (no probability): same candidates, flips, effects and weakest link
+    from frontend_contract import sensitivity
+    scombos = [(pk, k.split(":")[0], k.split(":")[1], sev, 0.0) for pk in d["position_presets"]
+               for k in d["ui"]["injections"] for sev in (0.5, 2, 10)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "s.json"), os.path.join(tmp, "s.js")
+        json.dump(scombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(a.map(c=>M.sensitivity(d,c[0],c[1],c[2],c[3],c[4]))));")
+        js_sens = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    sbad = []
+    for c, j in zip(scombos, js_sens):
+        py = sensitivity(d, *c)
+        okk = py["verdict"] == j["verdict"] and len(py["candidates"]) == len(j["candidates"]) and all(
+            a["key"] == b["key"] and a["verdict"] == b["verdict"] and a["flips"] == b["flips"] and same(a["effect"], b["effect"])
+            for a, b in zip(py["candidates"], j["candidates"])) and \
+            ((py["weakest"] is None and j["weakest"] is None) or
+             (py["weakest"] and j["weakest"] and py["weakest"]["alternative"] == j["weakest"]["alternative"]))
+        if not okk:
+            sbad.append(c)
+    print(f"GATE {'PASS' if not sbad else 'FAIL'}  sensitivity: {len(scombos)} combinations equal (candidates, flips, "
+          f"effects, weakest)" + (f"  first mismatch {sbad[0]}" if sbad else ""))
+    bad = bad + sbad
+
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob
     from vault_pipeline import liquidity_run, vault_decide, vault_decide_at
@@ -217,6 +242,28 @@ def main():
             sbad += not all(pd[k] == j[k] if isinstance(pd[k], str) else same(pd[k], j[k]) for k in sk)
         print(f"GATE {'PASS' if not sbad else 'FAIL'}  vaultDecideAt: {len(scases) - sbad}/{len(scases)} cases equal")
         vbad += sbad
+        from vault_pipeline import vault_sensitivity
+        vs = [(vf, inc["key"], amount, sev) for vf in vfiles for inc in json.load(open(vf))["incidents"]
+              if inc.get("severity_grid") for amount in (1e5, 1e7) for sev in (None, 0.05, 0.3)]
+        with tempfile.TemporaryDirectory() as tmp:
+            cf, sf = os.path.join(tmp, "vs.json"), os.path.join(tmp, "vs.js")
+            json.dump(vs, open(cf, "w"))
+            open(sf, "w").write("const M=require(process.argv[2]);const fs=require('fs');"
+                                "const cs=JSON.parse(fs.readFileSync(process.argv[3]));const cache={};"
+                                "console.log(JSON.stringify(cs.map(c=>{const v=cache[c[0]]||(cache[c[0]]=JSON.parse(fs.readFileSync(c[0])));"
+                                "return M.vaultSensitivity(v.incidents.find(i=>i.key===c[1]),v.exit,c[2],c[3]);})));")
+            jvs = json.loads(subprocess.run(["node", sf, JS, cf], check=True, capture_output=True, text=True).stdout)
+        vsbad = 0
+        for c, j in zip(vs, jvs):
+            v = cache.setdefault(c[0], json.load(open(c[0])))
+            py = vault_sensitivity(next(i for i in v["incidents"] if i["key"] == c[1]), v["exit"], c[2], c[3])
+            vsbad += not (py["verdict"] == j["verdict"] and all(
+                a["verdict"] == b["verdict"] and a["flips"] == b["flips"] and same(a["effect"], b["effect"])
+                for a, b in zip(py["candidates"], j["candidates"])) and
+                ((py["weakest"] is None and j["weakest"] is None) or
+                 (py["weakest"] and j["weakest"] and py["weakest"]["alternative"] == j["weakest"]["alternative"])))
+        print(f"GATE {'PASS' if not vsbad else 'FAIL'}  vaultSensitivity: {len(vs) - vsbad}/{len(vs)} cases equal")
+        vbad += vsbad
     sys.exit(1 if fails or bad or vbad else 0)
 
 

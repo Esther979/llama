@@ -116,7 +116,7 @@ function model() {
 - Sentence (numbers from `r` and `be` only): "If {node label} {failure label lowercased} by {sev}, doing nothing loses {loss_if_stay_usd}. Selling {sell_usd} now costs {sale_cost_usd} and leaves {loss_kept_usd} at risk on the rest." For `STAY`: "If ..., doing nothing loses {loss_if_stay_usd}; selling would cost more than it saves." Then: "Selling starts to pay once the severity exceeds {be.start}" (or "Selling does not pay at any severity on this slider").
 - Bars: "Do nothing" = `loss_if_stay_usd`; "Act" = `sale_cost_usd` + `loss_kept_usd`.
 - Under the verdict, one line from `r.note`, and: oracle follows = `r.oracle_falls`, liquidated = `r.liquidated`. If `r.L_low !== r.L_high`: "loss between L_low and L_high depending on the oracle; the decision uses the high end".
-- "What would change the answer": severity (`be.start`, `be.cap`), the position preset (the closest-to-liquidation borrower flips most answers), and the "cash earns" assumption.
+- "What would change the answer": `const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())`. It replaces one assumption at a time by its stated alternative and reruns the decision. Show `sv.candidates` as a table (`alternative`, `grade`, `verdict`, a mark when `flips`), the other position presets (`comparison: true`) in a separate "other positions" group, and highlight `sv.weakest`: the lowest-graded assumption that flips the verdict ("The answer hinges on: {alternative} (grade {grade}) -> {verdict}"); `null` -> "No tested assumption changes the answer". Also show the severity break-even (`be.start`, `be.cap`). The backend's `weakest_link` / `scenarios[].weakest_link` fields are probability-based legacy: do not use them.
 
 ## 6. Five-layer chain
 

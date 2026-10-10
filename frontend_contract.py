@@ -304,15 +304,18 @@ def ui_view(graph, oracle, position, lending, onc):
     return {"nodes": nodes, "layers": lay, "edges": edges, "injections": INJECTIONS}
 
 
-def inject(d, preset_key, node, fail, sev):
+def inject(d, preset_key, node, fail, sev, opts=None):
     """Reference implementation of RiskModel.inject (web/risk_model.js): loss and exit effect of failing `node` with
-    `fail` at severity `sev` (in the failure's unit, % or h) for position preset `preset_key` of dashboard d."""
+    `fail` at severity `sev` (in the failure's unit, % or h) for position preset `preset_key` of dashboard d.
+    opts (sensitivity): {"hours": incident duration, "oracle_falls": forced oracle behaviour, "can_hold": bool}."""
+    opts = opts or {}
     from loss_model import Position, Scenario, position_loss
     from oracle_types import oracle_falls
     from decision_core import slippage_at
     m = INJECTIONS[f"{node}:{fail}"]
     p = d["position_presets"][preset_key]
     C, D_ = p["collateral_usd"], p["debt_usd"]
+    can_hold = opts.get("can_hold", p["can_hold"])
     equity = C - D_
     curve = [(x["fraction"], x["loss"]) for x in d["exit_curve"]]
     cap = d["max_exit_fraction"]
@@ -328,10 +331,13 @@ def inject(d, preset_key, node, fail, sev):
 
     if m["type"] == "loss_model":
         shock = sev / 100
-        flag = (oracle_falls(d["oracle"], m["scenario_layer"], shock, m["hours"], m.get("token"))
+        hours = opts.get("hours", m["hours"])
+        flag = (oracle_falls(d["oracle"], m["scenario_layer"], shock, hours, m.get("token"))
                 if m["oracle"] == "rule" else m["oracle"])
-        s = Scenario("inject", m["scenario_layer"], shock, m["permanent"], m["hours"], "", False)
-        r = position_loss(s, Position("p", C, D_, p["lltv"] or 0.915, p["can_hold"],
+        if "oracle_falls" in opts:
+            flag = opts["oracle_falls"]
+        s = Scenario("inject", m["scenario_layer"], shock, m["permanent"], hours, "", False)
+        r = position_loss(s, Position("p", C, D_, p["lltv"] or 0.915, can_hold,
                                       flag if m["scenario_layer"] == 2 else None,
                                       flag if m["scenario_layer"] == 3 else None))
         out.update(L_low=r["L_low"], L_high=r["L_high"], loss_usd=r["L_high"] * equity, oracle_falls=flag,
@@ -348,12 +354,12 @@ def inject(d, preset_key, node, fail, sev):
 
 
 # ------------------------------------------------------------------ decision without a probability
-def decide_at(d, preset_key, node, fail, sev, carry=0.0):
+def decide_at(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     """Given the incident has happened at severity `sev`: sell the share x of the position that minimises
     x * (slippage + carry) + (1 - x) * L(sev), never beyond the largest quote (decision_core.decide with p = 1).
     Costs per unit of equity: slippage and carry x collateral / equity. Mirrored by RiskModel.decideAt."""
     from decision_core import Scenario as DS, decide, slippage_at
-    r = inject(d, preset_key, node, fail, sev)
+    r = inject(d, preset_key, node, fail, sev, opts)
     p = d["position_presets"][preset_key]
     C, E = p["collateral_usd"], p["collateral_usd"] - p["debt_usd"]
     scale = C / E
@@ -396,3 +402,51 @@ def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, 
     sells = lambda s: decide_at(d, preset_key, node, fail, s, carry)["sell_fraction"] > 0
     full = lambda s: decide_at(d, preset_key, node, fail, s, carry)["verdict"] in ("SELL_TO_CAP", "EXIT")
     return {"start": first(sells), "cap": first(full), "lo": lo, "hi": hi}
+
+
+GRADE_RANK = "ABCD"
+
+
+def sensitivity(d, preset_key, node, fail, sev, carry=0.0):
+    """Which assumption flips the verdict, given the incident at severity sev (no probability). Each candidate
+    replaces one assumption by its stated alternative and reruns decide_at. weakest = the lowest-graded candidate
+    that flips the verdict (ties: larger change). Other position presets are shown as comparisons (the position is the
+    user's choice, not an assumption about the world) and never chosen as weakest. Mirrored by RiskModel.sensitivity."""
+    base = decide_at(d, preset_key, node, fail, sev, carry)
+    m = INJECTIONS[f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    E = p["collateral_usd"] - p["debt_usd"]
+    o = d.get("oracle") or {}
+    cands = []
+    if m["type"] == "loss_model":
+        if m["oracle"] == "rule" and o.get("kind") == "meta_oracle_timelock" and o.get("challenge_timelock_s"):
+            h = o["challenge_timelock_s"] / 3600 / 2
+            cands.append(("duration", f"the incident lasts {h:g} h, less than the oracle's {2 * h:g} h challenge timelock",
+                          "D", preset_key, carry, {"hours": h}))
+        if p["debt_usd"] > 0:
+            cands.append(("oracle", "the lending oracle " + ("does not follow" if base["oracle_falls"] else "follows")
+                          + " the shock", (o.get("evidence") or {}).get("grade", "D"), preset_key, carry,
+                          {"oracle_falls": not base["oracle_falls"]}))
+        cands.append(("can_hold", "the position must sell at the worst point" if p["can_hold"]
+                      else "the position can hold to expiry", "D", preset_key, carry, {"can_hold": not p["can_hold"]}))
+    for k, q in d["position_presets"].items():
+        if k != preset_key:
+            cands.append(("position", q["label"], q["evidence"]["grade"], k, carry, None))
+    cands.append(("carry", f"cash after selling earns 1% less a year than the PT (carry {carry + 0.01:.2%})", "D",
+                  preset_key, carry + 0.01, None))
+    rows = []
+    for key, alt, grade, pk, c, op in cands:
+        r = decide_at(d, pk, node, fail, sev, c, op)
+        Ek = d["position_presets"][pk]["collateral_usd"] - d["position_presets"][pk]["debt_usd"]
+        rows.append({"key": key, "alternative": alt, "grade": grade, "verdict": r["verdict"],
+                     "comparison": key == "position",
+                     "sell_fraction": r["sell_fraction"], "loss_if_stay_usd": r["loss_if_stay_usd"],
+                     "flips": r["verdict"] != base["verdict"],
+                     "effect": abs(r["sell_fraction"] - base["sell_fraction"])
+                     + abs(r["loss_if_stay_usd"] / Ek - base["loss_if_stay_usd"] / E)})
+    flips = [x for x in rows if x["flips"] and not x["comparison"]]
+    weakest = None
+    if flips:
+        g = max(x["grade"] for x in flips)          # "D" > "C" > "B" > "A": lowest grade
+        weakest = max((x for x in flips if x["grade"] == g), key=lambda x: x["effect"])
+    return {"verdict": base["verdict"], "candidates": rows, "weakest": weakest}
