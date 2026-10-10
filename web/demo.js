@@ -191,8 +191,9 @@
         e.to === "position" ? Object.assign({}, e, { to: "pos" }) : e,
       );
 
-      /* Detector feed. Real entries (d.detected) name a dependency-graph node; map it to one of the 9 UI nodes.
-   The two sample entries are invented and stay labelled as such. */
+      /* Example incidents. There is no detector (team decision): d.detected is always empty, and if it ever has
+   entries they name a dependency-graph node, mapped to one of the 9 UI nodes. The two examples are invented quick
+   picks and stay labelled as such. */
       const uiNodeOf = (id) =>
         NODES[id]
           ? id
@@ -220,8 +221,8 @@
       ].filter((x) => fails(x.node).includes(x.fail));
       const dets = () =>
         S.feed === "real" ? REAL : S.feed === "sample" ? SAMPLE : [];
-      const sigTxt = (x) => x.signal + (x.real ? "" : " · sample alert");
-      /* Any dependency can be failed by hand; detected incidents are listed first. */
+      const sigTxt = (x) => x.signal + (x.real ? "" : COPY.examples.suffix);
+      /* Any dependency can be failed by hand; the examples are listed first. */
       let CUR = { type: "none" };
       const S = {
         view: "list",
@@ -410,13 +411,13 @@
           const dd = dets().filter((x) => NODES[x.node].layer === L.n),
             hyp = org === L.n && S.det === null;
           const tags =
-            (dd.length ? '<span class="tag det">Detected</span>' : "") +
+            (dd.length ? `<span class="tag det">${COPY.examples.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
           const fact = dd.length
             ? dd
                 .map((x) => `<b>${NODES[x.node].label} ${x.signal}</b>`)
                 .join(" · ") +
-              (dd.some((x) => !x.real) ? " · sample alert" : "")
+              (dd.some((x) => !x.real) ? COPY.examples.suffix : "")
             : lf.fact;
           return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}"><span class="ln">${L.n}</span>
       <button class="lrow" data-layer="${L.n}" aria-label="Test an incident at layer ${L.n}, ${L.name}">
@@ -455,7 +456,10 @@
       };
       const GSUB = {
         eth: "Every contract below settles here",
-        ethena: "Off-chain part not verified",
+        ethena:
+          d.offchain && d.offchain.USDe
+            ? COPY.offchain.card(d.offchain.USDe.counts.relations)
+            : NODES.ethena.note || "",
         usde: "Backs sUSDe",
         susde: "The PT redeems to this",
         feeds: "Feeds the oracle reads",
@@ -545,7 +549,7 @@
             dt = ds.find((x) => x.node === id),
             g = n.evidence && n.evidence.grade;
           const tags =
-            (dt ? '<span class="tag det">Detected</span>' : "") +
+            (dt ? `<span class="tag det">${COPY.examples.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
           const sub = fx[id]
             ? `<b>${fx[id]}</b>`
@@ -737,7 +741,7 @@
           );
         }
         $("#decision").innerHTML =
-          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.det !== null ? "Detected" : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
+          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.det !== null ? COPY.examples.band : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
     <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${body}</div>`;
       }
 
@@ -870,7 +874,7 @@
                     : `sell to the pool limit from ${S0}.`);
         $("#sevNote").textContent =
           (S.det !== null
-            ? `Observed now: ${sevText(dets()[S.det].sev)}. Move right to test it getting worse.`
+            ? COPY.examples.sevNote(sevText(dets()[S.det].sev))
             : `${f.sev}: ${sevText()}.`) + zt;
         let h = "";
         if (be.start !== null || m.hasLoss) {
@@ -892,11 +896,11 @@
           ? "Which incident?"
           : "Test a failure at…";
         $("#n1").textContent = ds.length
-          ? `${ds.length} detected now. Any other choice is a what-if test.`
-          : "No anomalies detected in this snapshot. Pick any dependency to run a what-if test.";
+          ? COPY.examples.countNote(ds.length)
+          : COPY.examples.noneNote;
         $("#node").innerHTML =
           (ds.length
-            ? `<optgroup label="Detected now">${ds.map((x, i) => `<option value="det:${i}">${NODES[x.node].label} · ${x.signal}</option>`).join("")}</optgroup>`
+            ? `<optgroup label="${COPY.examples.group}">${ds.map((x, i) => `<option value="det:${i}">${NODES[x.node].label} · ${x.signal}</option>`).join("")}</optgroup>`
             : "") +
           LAY.map(
               (L) =>
@@ -961,7 +965,7 @@
         S.sev = x.sev;
         apply();
       }
-      /* Most severe detection = largest loss at the observed value; ties keep feed order. */
+      /* Most severe example = largest loss at its value; ties keep list order. */
       function pickTop() {
         const ds = dets();
         if (!ds.length) return null;
@@ -1094,7 +1098,9 @@
                     ],
                   ]
                 : [];
+        /* Off-chain entities are shown grouped and sourced in their own row (offchainRow), not as members. */
         const members = (n.members || [])
+          .filter((k) => !k.startsWith("offchain:"))
           .map((k) => {
             const g = GN[k];
             if (!g) return `<span class="mono">${short(k)}</span>`;
@@ -1111,13 +1117,13 @@
           .join("<br>");
         openDrawer(n.label, [
           dt && [
-            "Detected",
+            COPY.examples.drawerRow,
             dt.signal +
               (dt.real
                 ? dt.evidence
                   ? " · " + src(dt.evidence)
                   : ""
-                : " (sample alert, the detector is not connected yet)"),
+                : COPY.examples.drawerSuffix),
           ],
           ["Type", n.kind],
           ["Layer", n.layer + " · " + LAY[n.layer - 1].name],
@@ -1126,8 +1132,49 @@
           n.note && ["Note", cap1(n.note)],
           ...extra,
           members && ["Contracts behind it", members],
+          offchainRow(id),
           links && ["Links", links],
         ]);
+      }
+      /* Off-chain dependencies from the issuer's documents (guide section 8): ethena -> d.offchain.USDe, susde ->
+   d.offchain.sUSDe, usde -> a pointer to the ethena drawer (the same 31 relations twice would be noise).
+   Collapsed: issuer, summary and the count per kind; the relations open on demand. Grade D, drawn dashed. */
+      const OFFKEY = { ethena: "USDe", usde: "USDe", susde: "sUSDe" };
+      function offchainRow(id) {
+        const o = d.offchain && d.offchain[OFFKEY[id]],
+          C = COPY.offchain;
+        if (!o || !o.relations) return null;
+        if (id === "usde")
+          return [
+            C.title,
+            `${o.summary} ${C.seeEthena} <button class="link" data-drawer="ethena">${C.openEthena}</button>`,
+          ];
+        const groups = {};
+        o.relations.forEach((r) => (groups[r.kind] = groups[r.kind] || []).push(r));
+        const kind = (k) => C.kinds[k] || k;
+        const day = (t) =>
+          t
+            ? new Date(t).toLocaleString("en-GB", { timeZone: "UTC", day: "numeric", month: "short" })
+            : "";
+        const rel = (r) => {
+          const e = r.evidence || {};
+          const quote = !e.quote
+            ? ""
+            : e.quote_found
+              ? `<q class="oq">${e.quote}</q><span class="note">${C.rechecked(day(e.checked_at))}</span>`
+              : `<span class="note">${C.notFound}</span>`;
+          return `<li><b>${r.entity}</b>: ${r.relation} ${gr(e.grade)}${e.official === false ? ` <span class="tp">${C.thirdParty}</span>` : ""}${e.url ? ` · <a class="osrc" href="${e.url}" target="_blank" rel="noopener">${C.source}</a>` : ""}${quote}</li>`;
+        };
+        const did = "d-off-" + id;
+        return [
+          C.title,
+          `${C.issuer}: <b>${o.issuer}</b>. ${o.summary}
+   <details class="offc" id="${did}" ${S.open[did] ? "open" : ""}><summary>${Object.keys(groups)
+     .map((k) => `${kind(k)} ${groups[k].length}`)
+     .join(" · ")}</summary><div>${Object.keys(groups)
+     .map((k) => `<h4>${kind(k)}</h4><ul>${groups[k].map(rel).join("")}</ul>`)
+     .join("")}</div></details>`,
+        ];
       }
       function edgeEvidence(i) {
         const e = EDGES[i];
@@ -1141,7 +1188,8 @@
       document.addEventListener("click", (ev) => {
         const t = ev.target.closest("button");
         if (!t) return;
-        if (t.dataset.layer) {
+        if (t.dataset.drawer) nodeEvidence(t.dataset.drawer);
+        else if (t.dataset.layer) {
           S.replay = "";
           const n = +t.dataset.layer,
             i = detAt((x) => NODES[x.node].layer === n);
@@ -1307,16 +1355,13 @@
         Object.keys(REPLAYS)
           .map((k) => `<option value="${k}">${REPLAYS[k].opt}</option>`)
           .join("");
+      $("#feedLbl").textContent = COPY.examples.feedLabel;
       $("#feed").innerHTML =
         (REAL.length
-          ? `<option value="real">Backend detector: ${REAL.length}</option>`
+          ? `<option value="real">${COPY.examples.feedFromData(REAL.length)}</option>`
           : "") +
-        `<option value="sample">Sample: ${SAMPLE.length} ${SAMPLE.length === 1 ? "anomaly" : "anomalies"}</option><option value="none">No anomalies</option>`;
-      $("#protoNote").textContent =
-        (d.detector && d.detector.connected
-          ? "The detector is connected."
-          : "The detector is not connected yet.") +
-        " The sample alerts are invented to show the layout.";
+        `<option value="sample">${COPY.examples.feedShow(SAMPLE.length)}</option><option value="none">${COPY.examples.feedNone}</option>`;
+      $("#protoNote").textContent = COPY.examples.protoNote;
       $("#stamp").innerHTML =
         `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""} · position size <span class="asm">${money(N)}</span>`;
       $("#advNote").innerHTML =
