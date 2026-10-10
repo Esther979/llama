@@ -209,7 +209,7 @@ Update the state, gaps and to-do when an item is done or the backend answers.
 - One concern per change: a fix, the split, a guide update and a visual tweak are separate commits.
 - Do not run a formatter over existing files. The three files as split in `9d63d93` are the baseline.
 - Show a per-file summary of the diff before committing. Commit and push only when the user asks. Push after each
-  verified commit; do not let work sit on one machine.
+  verified commit, once the user approves; do not let work sit on one machine.
 - Branch: `frontend`. Merge `main` in before starting (not rebase: the branch is pushed), since the backend moves
   fast.
 
