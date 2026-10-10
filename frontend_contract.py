@@ -307,14 +307,15 @@ def ui_view(graph, oracle, position, lending, onc):
 def inject(d, preset_key, node, fail, sev, opts=None):
     """Reference implementation of RiskModel.inject (web/risk_model.js): loss and exit effect of failing `node` with
     `fail` at severity `sev` (in the failure's unit, % or h) for position preset `preset_key` of dashboard d.
-    opts (sensitivity): {"hours": incident duration, "oracle_falls": forced oracle behaviour, "can_hold": bool}."""
+    opts (sensitivity / timeline): {"hours": incident duration, "oracle_falls": forced oracle behaviour, "can_hold": bool,
+    "permanent": share of the shock left after the incident, "collateral_usd" / "debt_usd": position at that time}."""
     opts = opts or {}
     from loss_model import Position, Scenario, position_loss
     from oracle_types import oracle_falls
     from decision_core import slippage_at
     m = INJECTIONS[f"{node}:{fail}"]
     p = d["position_presets"][preset_key]
-    C, D_ = p["collateral_usd"], p["debt_usd"]
+    C, D_ = opts.get("collateral_usd", p["collateral_usd"]), opts.get("debt_usd", p["debt_usd"])
     can_hold = opts.get("can_hold", p["can_hold"])
     equity = C - D_
     curve = [(x["fraction"], x["loss"]) for x in d["exit_curve"]]
@@ -336,7 +337,7 @@ def inject(d, preset_key, node, fail, sev, opts=None):
                 if m["oracle"] == "rule" else m["oracle"])
         if "oracle_falls" in opts:
             flag = opts["oracle_falls"]
-        s = Scenario("inject", m["scenario_layer"], shock, m["permanent"], hours, "", False)
+        s = Scenario("inject", m["scenario_layer"], shock, opts.get("permanent", m["permanent"]), hours, "", False)
         r = position_loss(s, Position("p", C, D_, p["lltv"] or 0.915, can_hold,
                                       flag if m["scenario_layer"] == 2 else None,
                                       flag if m["scenario_layer"] == 3 else None))
@@ -361,7 +362,9 @@ def decide_at(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     from decision_core import Scenario as DS, decide, slippage_at
     r = inject(d, preset_key, node, fail, sev, opts)
     p = d["position_presets"][preset_key]
-    C, E = p["collateral_usd"], p["collateral_usd"] - p["debt_usd"]
+    o = opts or {}
+    C = o.get("collateral_usd", p["collateral_usd"])
+    E = C - o.get("debt_usd", p["debt_usd"])
     scale = C / E
     raw = [(x["fraction"], x["loss"]) for x in d["exit_curve"]]
     L = r["L_high"]
@@ -450,3 +453,101 @@ def sensitivity(d, preset_key, node, fail, sev, carry=0.0):
         g = max(x["grade"] for x in flips)          # "D" > "C" > "B" > "A": lowest grade
         weakest = max((x for x in flips if x["grade"] == g), key=lambda x: x["effect"])
     return {"verdict": base["verdict"], "candidates": rows, "weakest": weakest}
+
+
+# ------------------------------------------------------------------ timeline: how long the incident lasts
+DURATIONS_H = [1, 6, 12, 16, 24, 48, 72, 168, 336, 720, 1440, 2160, 4320]   # 1 h .. 6 months
+
+
+def time_model(d_position, oracle, onc, generated_at):
+    """What changes with time: PT price (market: implied APY; oracle: linear discount), expiry, borrow rate."""
+    import datetime as dt
+    f = ((oracle or {}).get("primary") or {}).get("parts", {}).get("BASE_FEED_1") or {}
+    mat = f.get("maturity")
+    now = dt.datetime.fromisoformat(generated_at).timestamp()
+    if mat is None:
+        exp = dt.datetime.fromisoformat(d_position["expiry"] + "T00:00:00+00:00").timestamp()
+    else:
+        exp = mat
+    return {"generated_at": generated_at, "expiry": d_position["expiry"], "days_to_expiry": (exp - now) / 86400,
+            "implied_apy": d_position["implied_apy"], "oracle_discount_per_year": f.get("base_discount_per_year"),
+            "borrow_apr": (onc or {}).get("borrow_apr"),
+            "evidence": {"implied_apy": {"grade": "A", "source": "Pendle markets API"},
+                         "oracle_discount_per_year": {"grade": "A", "source": "PendleSparkLinearDiscountOracle."
+                                                      "baseDiscountPerYear (eth_call)"},
+                         "borrow_apr": {"grade": "A", "source": "AdaptiveCurveIrm.borrowRateView at the positions block; "
+                                                                "assumed constant over the incident (D)"}}}
+
+
+def pt_prices(tm, days):
+    """PT price `days` from now: market (constant implied APY) and oracle (linear discount); 1 after expiry."""
+    left = max(0.0, tm["days_to_expiry"] - days)
+    mk = 1 / (1 + tm["implied_apy"]) ** (left / 365) if tm["implied_apy"] is not None else None
+    disc = tm["oracle_discount_per_year"]
+    orc = 1 - left / 365 * disc if disc is not None else None
+    return mk, orc
+
+
+def decide_at_duration(d, preset_key, node, fail, sev, hours, recovers=True, alt_apy=None):
+    """Decision now for an incident of severity sev lasting `hours`. recovers: the shock disappears after the
+    incident (holders who can wait lose nothing, liquidations during it stay). PT valued at its price: the
+    position's value, collateral (oracle price) and debt (borrow APR) are taken at the end of the incident.
+    Yield given up by exiting = (implied APY - alt) over the incident, at most until expiry. Mirrored by
+    RiskModel.decideAtDuration."""
+    import math
+    tm = d["time_model"]
+    m = INJECTIONS[f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    days = hours / 24
+    mk0, orc0 = pt_prices(tm, 0.0)
+    mkT, orcT = pt_prices(tm, days)
+    alt = tm["implied_apy"] if alt_apy is None else alt_apy
+    carry = max(0.0, tm["implied_apy"] - alt) * min(days, max(0.0, tm["days_to_expiry"])) / 365
+    C0, D0 = p["collateral_usd"], p["debt_usd"]
+    C = C0 * (orcT / orc0 if orc0 and orcT else 1.0)
+    D_ = D0 * math.exp((tm["borrow_apr"] or 0.0) * days / 365) if D0 > 0 else 0.0
+    opts = {"hours": hours, "collateral_usd": C, "debt_usd": D_}
+    if recovers and m["type"] == "loss_model":
+        opts["permanent"] = 0.0
+    r = decide_at(d, preset_key, node, fail, sev, carry, opts)
+    r.update(hours=hours, days=days, recovers=recovers, past_expiry=days >= tm["days_to_expiry"], carry=carry,
+             pt_price_market=mkT, pt_price_oracle=orcT, position_value_usd=C0 * (mkT / mk0 if mk0 and mkT else 1.0),
+             collateral_usd=C, debt_usd=D_, ltv=D_ / C if C else None)
+    return r
+
+
+def timeline_pt(d, preset_key, node, fail, sev, recovers=True, alt_apy=None, durations=None):
+    """decide_at_duration over a grid of incident durations (1 h .. 6 months, plus expiry)."""
+    tm = d["time_model"]
+    hs = sorted(set((durations or DURATIONS_H) + [round(tm["days_to_expiry"] * 24, 6)]))
+    return [decide_at_duration(d, preset_key, node, fail, sev, h, recovers, alt_apy) for h in hs if h > 0]
+
+
+def timeline_summary(d, preset_key, rows):
+    """Does the duration change the verdict? Change points with their reason, or why the timeline is flat.
+    Mirrored by RiskModel.timelineSummary."""
+    levered = d["position_presets"][preset_key]["debt_usd"] > 0
+    changes = []
+    for a, b in zip(rows, rows[1:]):
+        if a["verdict"] == b["verdict"]:
+            continue
+        why = []
+        if b.get("oracle_falls") is True and a.get("oracle_falls") is not True:
+            why.append("the meta-oracle switches (challenge timelock reached)")
+        if b.get("past_expiry") and not a.get("past_expiry"):
+            why.append("the PT reaches expiry")
+        if any(b.get("liquidated") or []) and not any(a.get("liquidated") or []):
+            why.append("the debt keeps growing after expiry until the LTV crosses the liquidation line"
+                       if levered and a.get("past_expiry") else "the position is liquidated")
+        if not why:
+            why.append("the debt keeps growing after expiry" if levered and a.get("past_expiry") else
+                       "the loss or the yield given up changes with the duration")
+        changes.append({"from_hours": a["hours"], "to_hours": b["hours"], "verdict_before": a["verdict"],
+                        "verdict_after": b["verdict"], "reason": "; ".join(why)})
+    flat = None
+    if not changes:
+        flat = ("no debt: nothing in this position changes with time (no oracle timer, no interest), so the verdict "
+                "depends only on the severity and on whether the loss recovers" if not levered else
+                "the verdict is the same at every duration on the grid")
+    return {"duration_matters": bool(changes), "changes": changes,
+            "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}

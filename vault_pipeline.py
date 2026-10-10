@@ -448,8 +448,20 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
     for sv in SEVERITY_GRID:
         lo, hi, _ = vault_loss(Scenario("grid", layer, sv, perm, None, "", True))
         grid.append({"severity": sv, "L_low": lo, "L_high": hi})
+    # incident duration: the loss only changes where a meta-oracle of an affected market can switch (its challenge
+    # timelock), so one grid per duration segment is exact; and per "recovers after the incident" or not
+    starts = [0.0] + sorted({m["oracle"]["challenge_timelock_s"] / 3600 for m in affected
+                             if m["oracle"].get("kind") == "meta_oracle_timelock" and m["oracle"].get("challenge_timelock_s")})
+    dgrids = []
+    for h in starts:
+        for rec in (False, True):
+            pts = []
+            for sv in SEVERITY_GRID:
+                lo, hi, _ = vault_loss(Scenario("grid", layer, sv, 0.0 if rec else perm, h, "", True))
+                pts.append({"severity": sv, "L_low": lo, "L_high": hi})
+            dgrids.append({"from_hours": h, "recovers": rec, "grid": pts})
     return {"key": f"{kind}:{(t['symbol'] or tok)}", "type": kind, "token": tok, "symbol": t["symbol"], "layer": layer,
-            "severity_grid": grid, "permanent": perm, **severity_defaults(kind, presets, cfg),
+            "severity_grid": grid, "duration_grids": dgrids, "permanent": perm, **severity_defaults(kind, presets, cfg),
             "affected_markets": [m["key"] for m in affected],
             "affected_allocation": sum(m["allocation"] for m in affected), "propagation_paths": paths,
             "outcomes": rows, "expected_loss": exp, "tail_loss_95": cv, "var_95": var,
@@ -499,17 +511,27 @@ def severity_crossing(grid, c):
     return None
 
 
-def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None, low_branch=False):
+def duration_grid(inc, hours, recovers):
+    """The severity grid for an incident lasting `hours` (None = lasting, i.e. the full severity_grid)."""
+    if hours is None or not inc.get("duration_grids"):
+        return inc["severity_grid"]
+    cands = [g for g in inc["duration_grids"] if g["recovers"] == bool(recovers) and g["from_hours"] <= hours]
+    return max(cands, key=lambda g: g["from_hours"])["grid"] if cands else inc["severity_grid"]
+
+
+def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None, low_branch=False, hours=None,
+                    recovers=False):
     """Stay / exit for a depositor of `amount` given the incident at severity `sev` (no probability): withdraw
     each tranche whose unit cost (yield given up; + force-deallocation penalty) is below L(sev). Mirrored by
     RiskModel.vaultDecideAt."""
     sev = inc["default_severity"] if sev is None else sev
     alt = ex["alt_apy"] if alt_apy is None else alt_apy
-    h = ex["horizon_days"] if horizon_days is None else horizon_days
+    # with a duration, the yield given up is counted over the incident (you come back when it is over)
+    h = (hours / 24 if hours is not None else ex["horizon_days"]) if horizon_days is None else horizon_days
     carry = max(0.0, (ex["vault_apy"] or 0.0) - alt) * h / 365
     pen = ex["force_deallocate_penalty"]
-    grid = [{"severity": g["severity"], "L_high": g["L_low"]} for g in inc["severity_grid"]] if low_branch \
-        else inc["severity_grid"]
+    base_grid = duration_grid(inc, hours, recovers)
+    grid = [{"severity": g["severity"], "L_high": g["L_low"]} for g in base_grid] if low_branch else base_grid
     L = L_at(grid, sev)
     free_amt = min(amount, ex["free_usd"])
     forced_amt = min(amount - free_amt, ex["forced_usd"])
@@ -530,6 +552,45 @@ def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None, 
                exit_usd=exit_amt, exit_cost_usd=cost, loss_kept_usd=kept, total_if_act_usd=cost + kept,
                avoided_usd=L * amount - cost - kept)
     return out
+
+
+VAULT_DURATIONS_H = [1, 6, 12, 16, 24, 48, 72, 168, 336, 720, 1440, 2160, 4320]
+
+
+def vault_timeline(inc, ex, amount, sev=None, recovers=True, alt_apy=None):
+    """vault_decide_at over incident durations (1 h .. 6 months, plus the meta-oracle switch points)."""
+    hs = sorted(set(VAULT_DURATIONS_H + [g["from_hours"] for g in inc.get("duration_grids", []) if g["from_hours"] > 0]))
+    out = []
+    for h in hs:
+        r = vault_decide_at(inc, ex, amount, sev, alt_apy, None, False, h, recovers)
+        r.update(hours=h, days=h / 24, recovers=recovers)
+        out.append(r)
+    return out
+
+
+def vault_timeline_summary(inc, rows):
+    """Does the duration change the vault verdict? Change points with their reason, or why the timeline is flat.
+    Mirrored by RiskModel.vaultTimelineSummary."""
+    switches = {g["from_hours"] for g in inc.get("duration_grids", []) if g["from_hours"] > 0}
+    changes = []
+    for a, b in zip(rows, rows[1:]):
+        if a["verdict"] == b["verdict"]:
+            continue
+        if any(a["hours"] < h <= b["hours"] for h in switches):
+            why = "a meta-oracle of an affected market switches (challenge timelock reached)"
+        elif abs(a["L"] - b["L"]) < 1e-12:
+            why = "the yield given up grows with the duration"
+        else:
+            why = "the vault loss changes with the duration"
+        changes.append({"from_hours": a["hours"], "to_hours": b["hours"], "verdict_before": a["verdict"],
+                        "verdict_after": b["verdict"], "reason": why})
+    flat = None
+    if not changes:
+        flat = ("no affected market has an oracle timer, so the duration does not change the loss; the verdict depends "
+                "on the severity and on whether the loss recovers" if not switches else
+                "the verdict is the same at every duration on the grid")
+    return {"duration_matters": bool(changes), "changes": changes,
+            "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}
 
 
 def vault_sensitivity(inc, ex, amount, sev=None):
@@ -577,6 +638,10 @@ def asset_incident(asset, sym, presets, types, vault, name_of, cfg=None):
     cv, var = inc_mod.tail(dist)
     return {"key": f"asset_issuer:{sym}", "type": "asset_issuer", "token": asset, "symbol": sym, "layer": 2,
             "severity_grid": [{"severity": sv, "L_low": sv, "L_high": sv} for sv in SEVERITY_GRID], "permanent": 1.0,
+            "duration_grids": [{"from_hours": 0.0, "recovers": rec, "grid": [{"severity": sv, "L_low": 0.0 if rec else sv,
+                                                                              "L_high": 0.0 if rec else sv}
+                                                                             for sv in SEVERITY_GRID]}
+                               for rec in (False, True)],
             **severity_defaults("asset_issuer", presets, cfg),
             "affected_markets": [], "affected_allocation": None,
             "propagation_paths": [f"Ethereum -> {name_of(vault)} -> [asset] {sym} -> [issued by] {sym} issuer (off-chain)"],

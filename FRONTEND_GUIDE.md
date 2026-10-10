@@ -118,6 +118,27 @@ function model() {
 - Under the verdict, one line from `r.note`, and: oracle follows = `r.oracle_falls`, liquidated = `r.liquidated`. If `r.L_low !== r.L_high`: "loss between L_low and L_high depending on the oracle; the decision uses the high end".
 - "What would change the answer": `const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())`. It replaces one assumption at a time by its stated alternative and reruns the decision. Show `sv.candidates` as a table (`alternative`, `grade`, `verdict`, a mark when `flips`), the other position presets (`comparison: true`) in a separate "other positions" group, and highlight `sv.weakest`: the lowest-graded assumption that flips the verdict ("The answer hinges on: {alternative} (grade {grade}) -> {verdict}"); `null` -> "No tested assumption changes the answer". Also show the severity break-even (`be.start`, `be.cap`). The backend's `weakest_link` / `scenarios[].weakest_link` fields are probability-based legacy: do not use them.
 
+## 5b. Timeline: how long the incident lasts
+
+The organisers asked for a timeline ("over how many months, what risk") with the PT valued at its price. Add to step 2, under the severity slider:
+
+- "How long does it last?": a duration slider, log scale from 1 hour to 6 months (`hours`), with tick marks at the meta-oracle switch (`d.oracle.challenge_timelock_s / 3600` = 16 h) and at the PT's expiry (`d.time_model.days_to_expiry x 24` h).
+- "After the incident": a toggle "recovers" (default) / "stays" (`recovers` true / false).
+
+Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours, recovers, altApy)` instead of `decideAt` (same result fields, plus `hours`, `days`, `past_expiry`, `carry`, `pt_price_market`, `pt_price_oracle`, `position_value_usd`, `collateral_usd`, `debt_usd`, `ltv`). `altApy` = the "cash earns" assumption as a fraction (`S.alt / 100`; `null` = the PT's implied APY, i.e. no yield given up). What it models:
+
+| Effect of the duration | How |
+|---|---|
+| Meta-oracle switch | below 16 h the oracle does not switch, so a USDe depeg liquidates nobody; from 16 h it does (`oracle_falls`) |
+| Recovery | `recovers`: the shock disappears after the incident, so a holder who can wait loses nothing, but liquidations that happened during it stay |
+| PT valued at its price | position value = PT units x PT price at the end of the incident: market price from the implied APY, oracle price from the linear discount (6% a year), both 1 at expiry (`position_value_usd`, `pt_price_*`) |
+| Debt over time | levered presets: debt grows at the market's borrow APR (`d.time_model.borrow_apr`, read on chain); the oracle price rises with the linear discount; after expiry it stays at 1 while the debt keeps growing (`ltv`) |
+| Yield given up | exiting gives up (implied APY - alt) over the incident, at most until expiry (`carry`) |
+
+Describe the timeline with `RiskModel.timelineSummary(d, S.pos, rows)`: `duration_matters` false -> "The duration does not change the answer: {why_flat}" (e.g. an unlevered holder: no debt, so no oracle timer and no interest; the verdict then comes from the severity and the recovers / stays toggle, it is not "always stay"); true -> one line per `changes[]` entry: "From {to_hours} h: {verdict_before} -> {verdict_after} ({reason})".
+
+Timeline chart: `RiskModel.timeline(d, S.pos, S.node, S.fail, S.sev, recovers, altApy)` returns the same object for 1 h, 6 h, 12 h, 16 h, 1 d, 2 d, 3 d, 1 w, 2 w, 30 d, expiry, 60 d, 90 d, 180 d. Plot `loss_if_stay_usd` against the duration (log x axis), colour the background by `verdict`, and mark 16 h and expiry. Assumptions to show (D): pool depth as today, borrow APR constant, implied APY constant.
+
 ## 6. Five-layer chain
 
 Layer facts (replace the old texts, numbers from the data):

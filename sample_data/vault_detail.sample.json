@@ -2,7 +2,7 @@
  "vault_name": "RockawayX Confidential RWA USDC",
  "vault_address": "0xc207d3f66537d7f66456808379a0e560cf20da36",
  "coverage": "full",
- "block": 26163134,
+ "block": 26163217,
  "input": {
   "token_name": "USDC",
   "chain": "ethereum",
@@ -13,7 +13,7 @@
  },
  "asset": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
  "asset_symbol": "USDC",
- "total_assets": 26445072.0611,
+ "total_assets": 26445131.106417,
  "idle": 0.0,
  "liquidity_market": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
  "dependency_graph": {
@@ -32,7 +32,7 @@
    "key": "morpho_market:0x002278ea",
    "market_id": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 21868358.854156,
+   "allocation": 21868407.967479,
    "lltv": 0.86,
    "analyzed": true,
    "collateral": "0x22ae3d9a738471f405169af055d31c687087d4c7",
@@ -54,7 +54,7 @@
       "last_update": {
        "answer": 1138206,
        "updated_at": 1791647831,
-       "age_seconds": 744
+       "age_seconds": 1740
       },
       "prices": null,
       "tracks_market": false,
@@ -62,7 +62,7 @@
       "rule": "reported exchange rate / NAV: does not follow the market; whether it falls on an issuer failure depends on who reports it",
       "evidence": {
        "grade": "C",
-       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163134; classified from description 'PST-USDC Exchange Rate (Calculated)'"
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163217; classified from description 'PST-USDC Exchange Rate (Calculated)'"
       }
      }
     },
@@ -71,13 +71,13 @@
     "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
     "evidence": {
      "grade": "C",
-     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163134"
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163217"
     }
    },
    "supply": 37967578.700906,
    "borrow": 34390296.483806,
    "liquidity": 3577282.2171,
-   "share_of_market": 0.5759745446615526,
+   "share_of_market": 0.5759758382210759,
    "n_borrowers": 12,
    "max_ltv": 0.8375781855449006,
    "debt_within_1pct_of_liquidation": 0
@@ -86,7 +86,7 @@
    "key": "morpho_market:0x2bbdd815",
    "market_id": "0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 600033.961986,
+   "allocation": 600035.082819,
    "lltv": 0.77,
    "analyzed": true,
    "collateral": "0x997e2efbce91d170b00ea402e35a66c887ee1da9",
@@ -108,7 +108,7 @@
       "last_update": {
        "answer": 1023787813447026332,
        "updated_at": 1791647759,
-       "age_seconds": 816
+       "age_seconds": 1812
       },
       "prices": "hastra auto",
       "tracks_market": false,
@@ -116,7 +116,7 @@
       "rule": "reported exchange rate / NAV: does not follow the market; whether it falls on an issuer failure depends on who reports it",
       "evidence": {
        "grade": "C",
-       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163134; classified from description 'Hastra Auto / WYLDS Exchange Rate'"
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163217; classified from description 'Hastra Auto / WYLDS Exchange Rate'"
       }
      },
      "QUOTE_FEED_1": {
@@ -127,7 +127,7 @@
       "last_update": {
        "answer": 99988047,
        "updated_at": 1791639575,
-       "age_seconds": 9000
+       "age_seconds": 9996
       },
       "prices": "usdc",
       "tracks_market": true,
@@ -135,7 +135,7 @@
       "rule": "Chainlink price feed of the described pair: follows its market price",
       "evidence": {
        "grade": "C",
-       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163134; classified from description 'USDC / USD'"
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163217; classified from description 'USDC / USD'"
       }
      }
     },
@@ -146,13 +146,13 @@
     "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
     "evidence": {
      "grade": "C",
-     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163134"
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163217"
     }
    },
    "supply": 600005.055635,
    "borrow": 539657.779268,
    "liquidity": 60347.276367,
-   "share_of_market": 1.0000481768457257,
+   "share_of_market": 1.0000500448849856,
    "n_borrowers": 3,
    "max_ltv": 0.727687030351019,
    "debt_within_1pct_of_liquidation": 0
@@ -161,7 +161,7 @@
    "key": "morpho_market:0x1e9d6146",
    "market_id": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 3976678.192411,
+   "allocation": 3976687.003572,
    "lltv": 0.915,
    "analyzed": true,
    "collateral": "0xecfafdc7741323a945a163ed068b5a3c43483957",
@@ -182,14 +182,14 @@
       "tracks_market": null,
       "tracks_underlying": null,
       "last_update": {
-       "answer": 981747905209824586,
-       "updated_at": 1791648575,
+       "answer": 981751365096465803,
+       "updated_at": 1791649571,
        "age_seconds": 0
       },
       "rule": "type not in the table: both branches computed",
       "evidence": {
        "grade": "D",
-       "source": "Etherscan verified source (OjoPTFeed); eth_call @ block 26163134; not classified"
+       "source": "Etherscan verified source (OjoPTFeed); eth_call @ block 26163217; not classified"
       }
      }
     },
@@ -198,16 +198,16 @@
     "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
     "evidence": {
      "grade": "D",
-     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163134"
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163217"
     }
    },
-   "supply": 120727483.446635,
-   "borrow": 106332203.138631,
-   "liquidity": 14395280.308004,
-   "share_of_market": 0.03293929500459442,
+   "supply": 120728067.150839,
+   "borrow": 106333166.842835,
+   "liquidity": 14394900.308004,
+   "share_of_market": 0.032939208731002735,
    "n_borrowers": 231,
-   "max_ltv": 0.9125672004032597,
-   "debt_within_1pct_of_liquidation": 7991.835903
+   "max_ltv": 0.912572255015918,
+   "debt_within_1pct_of_liquidation": 7991.908334
   },
   {
    "key": "morpho_market:0xf8697bec",
@@ -261,21 +261,21 @@
     {
      "label": "PST / USDC (LLTV 0.86)",
      "market_id": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
-     "allocation": 21868358.854156,
+     "allocation": 21868407.967479,
      "detail": "12 borrowers",
      "evidence": "A"
     },
     {
      "label": "AUTO / USDC (LLTV 0.77)",
      "market_id": "0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
-     "allocation": 600033.961986,
+     "allocation": 600035.082819,
      "detail": "3 borrowers",
      "evidence": "A"
     },
     {
      "label": "PT-reUSD-10DEC2026 / USDC (LLTV 0.915)",
      "market_id": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
-     "allocation": 3976678.192411,
+     "allocation": 3976687.003572,
      "detail": "231 borrowers",
      "evidence": "A"
     }
@@ -382,62 +382,266 @@
     {
      "severity": 0.15,
      "L_low": 0.0,
-     "L_high": 0.006444207483069614
+     "L_high": 0.006444207567547825
     },
     {
      "severity": 0.2,
-     "L_low": 0.014858986542862714,
-     "L_high": 0.040475229647967625
+     "L_low": 0.01485898673765169,
+     "L_high": 0.04047523017856428
     },
     {
      "severity": 0.3,
-     "L_low": 0.09698684648641168,
-     "L_high": 0.12381194914418367
+     "L_low": 0.09698684775782872,
+     "L_high": 0.12381195076725553
     },
     {
      "severity": 0.4,
-     "L_low": 0.18822871726914642,
-     "L_high": 0.2112216721718645
+     "L_low": 0.18822871973666863,
+     "L_high": 0.21122167494080524
     },
     {
      "severity": 0.5,
-     "L_low": 0.28041724585549066,
-     "L_high": 0.3000986361002439
+     "L_low": 0.2804172495315279,
+     "L_high": 0.3000986400342879
     },
     {
      "severity": 0.6,
-     "L_low": 0.3741381519846182,
-     "L_high": 0.3898832650133703
+     "L_low": 0.3741381568892587,
+     "L_high": 0.3898832701244162
     },
     {
      "severity": 0.7,
-     "L_low": 0.4678590628700475,
-     "L_high": 0.47966789764161166
+     "L_low": 0.46785906900329144,
+     "L_high": 0.4796679039296596
     },
     {
      "severity": 0.8,
-     "L_low": 0.5615799737554773,
-     "L_high": 0.5694525302698533
+     "L_low": 0.5615799811173245,
+     "L_high": 0.5694525377349032
     },
     {
      "severity": 0.9,
-     "L_low": 0.6553008846409067,
-     "L_high": 0.6592371628980949
+     "L_low": 0.6553008932313573,
+     "L_high": 0.6592371715401467
     },
     {
      "severity": 0.95,
-     "L_low": 0.7021613400836212,
-     "L_high": 0.7041294792122154
+     "L_low": 0.7021613492883735,
+     "L_high": 0.7041294884427682
     },
     {
      "severity": 0.99,
-     "L_low": 0.7396497044377932,
-     "L_high": 0.7400433322635119
+     "L_low": 0.7396497141339867,
+     "L_high": 0.7400433419648655
     },
     {
      "severity": 1.0,
-     "L_low": 0.7490217955267499,
-     "L_high": 0.7490217955267499
+     "L_low": 0.7490218053458038,
+     "L_high": 0.7490218053458038
+    }
+   ],
+   "duration_grids": [
+    {
+     "from_hours": 0.0,
+     "recovers": false,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.006444207567547825
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.01485898673765169,
+       "L_high": 0.04047523017856428
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.09698684775782872,
+       "L_high": 0.12381195076725553
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.18822871973666863,
+       "L_high": 0.21122167494080524
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.2804172495315279,
+       "L_high": 0.3000986400342879
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.3741381568892587,
+       "L_high": 0.3898832701244162
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.46785906900329144,
+       "L_high": 0.4796679039296596
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.5615799811173245,
+       "L_high": 0.5694525377349032
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.6553008932313573,
+       "L_high": 0.6592371715401467
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.7021613492883735,
+       "L_high": 0.7041294884427682
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.7396497141339867,
+       "L_high": 0.7400433419648655
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.7490218053458038,
+       "L_high": 0.7490218053458038
+      }
+     ]
+    },
+    {
+     "from_hours": 0.0,
+     "recovers": true,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.006444207567547825
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.04047523017856428
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.12381195076725553
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.21122167494080524
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.3000986400342879
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.3898832701244162
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.4796679039296596
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.5694525377349032
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.6592371715401467
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.7041294884427682
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.7400433419648655
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.7490218053458038
+      }
+     ]
     }
    ],
    "permanent": 1.0,
@@ -472,7 +676,7 @@
    "affected_markets": [
     "morpho_market:0x002278ea"
    ],
-   "affected_allocation": 21868358.854156,
+   "affected_allocation": 21868407.967479,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[0]] Morpho Blue market -> [marketParams.collateralToken] PST"
    ],
@@ -500,7 +704,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.5759745446615526,
+       "vault_share_of_market": 0.5759758382210759,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -513,8 +717,8 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.7478453252573644,
-     "L_high": 0.747894737008661,
+     "L_low": 0.7478453350609957,
+     "L_high": 0.7478947468129402,
      "per_market": [
       {
        "market": "morpho_market:0x002278ea",
@@ -522,19 +726,19 @@
        "oracle_falls": null,
        "market_bad_debt_low": 34336280.48373004,
        "market_bad_debt_high": 34338549.155732684,
-       "vault_share_of_market": 0.5759745446615526,
-       "vault_loss_low": 19776823.516987767,
-       "vault_loss_high": 19778130.214311473
+       "vault_share_of_market": 0.5759758382210759,
+       "vault_loss_low": 19776867.93301038,
+       "vault_loss_high": 19778174.63326875
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.03441233452493839,
-   "tail_loss_95": 0.6882466904987671,
+   "expected_loss": 0.03441233497605553,
+   "tail_loss_95": 0.68824669952111,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.747894737008661,
+   "L_worst": 0.7478947468129402,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -555,21 +759,21 @@
    "decision": {
     "amount": 1000000.0,
     "severity": 0.841444408559261,
-    "L": 0.6066632402397332,
-    "loss_if_stay_usd": 606663.2402397331,
+    "L": 0.6066632481925847,
+    "loss_if_stay_usd": 606663.2481925846,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "severity_break_even_free": 0.1382630980013543,
-    "severity_break_even_forced": 0.16246994481258903,
+    "severity_break_even_free": 0.13826309749975685,
+    "severity_break_even_forced": 0.16246994452499902,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
     "loss_kept_usd": 0.0,
     "total_if_act_usd": 4931.506849315068,
-    "avoided_usd": 601731.7333904181
+    "avoided_usd": 601731.7413432696
    },
    "sensitivity": {
     "verdict": "EXIT",
@@ -581,9 +785,9 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.6004220509682955,
+      "L": 0.6004220588393301,
       "flips": false,
-      "effect": 0.006241189271437686
+      "effect": 0.006241189353254573
      },
      {
       "key": "alt_yield",
@@ -592,7 +796,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.6066632402397332,
+      "L": 0.6066632481925847,
       "flips": false,
       "effect": 0.0
      },
@@ -603,7 +807,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.6066632402397332,
+      "L": 0.6066632481925847,
       "flips": false,
       "effect": 0.0
      },
@@ -614,7 +818,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.6066632402397332,
+      "L": 0.6066632481925847,
       "flips": false,
       "effect": 0.0
      },
@@ -625,7 +829,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.6066632402397332,
+      "L": 0.6066632481925847,
       "flips": false,
       "effect": 0.0
      },
@@ -635,10 +839,10 @@
       "grade": "D",
       "verdict": "EXIT_PARTIAL",
       "comparison": true,
-      "exit_share": 0.7614307685877999,
-      "L": 0.6066632402397332,
+      "exit_share": 0.7614316497039,
+      "L": 0.6066632481925847,
       "flips": true,
-      "effect": 0.2385692314122001
+      "effect": 0.23856835029610002
      }
     ],
     "weakest": null
@@ -711,53 +915,257 @@
     },
     {
      "severity": 0.3,
-     "L_low": 0.00015840477032934294,
-     "L_high": 0.0006039673419267356
+     "L_low": 0.0001584047125428025,
+     "L_high": 0.0006039671215976183
     },
     {
      "severity": 0.4,
-     "L_low": 0.0010932220931482845,
-     "L_high": 0.001485004427782175
+     "L_low": 0.0010932216943375505,
+     "L_high": 0.0014850038860480576
     },
     {
      "severity": 0.5,
-     "L_low": 0.0020395562347760385,
-     "L_high": 0.002589305274039317
+     "L_low": 0.0020395554907397407,
+     "L_high": 0.0025893043294529026
     },
     {
      "severity": 0.6,
-     "L_low": 0.0050965158899621,
-     "L_high": 0.006152989370870022
+     "L_low": 0.005096514030737652,
+     "L_high": 0.006152987126240846
     },
     {
      "severity": 0.7,
-     "L_low": 0.008924318357019788,
-     "L_high": 0.00971667346770073
+     "L_low": 0.008924315101401395,
+     "L_high": 0.00971666992302879
     },
     {
      "severity": 0.8,
-     "L_low": 0.012752120824077475,
-     "L_high": 0.013280357564531437
+     "L_low": 0.012752116172065139,
+     "L_high": 0.013280352719816736
     },
     {
      "severity": 0.9,
-     "L_low": 0.016579923291135164,
-     "L_high": 0.016844041661362143
+     "L_low": 0.01657991724272888,
+     "L_high": 0.01684403551660468
     },
     {
      "severity": 0.95,
-     "L_low": 0.018493824524664006,
-     "L_high": 0.018625883709777497
+     "L_low": 0.01849381777806075,
+     "L_high": 0.01862587691499865
     },
     {
      "severity": 0.99,
-     "L_low": 0.020024945511487077,
-     "L_high": 0.020051357348509775
+     "L_low": 0.020024938206326247,
+     "L_high": 0.020051350033713822
     },
     {
      "severity": 1.0,
-     "L_low": 0.02040772575819285,
-     "L_high": 0.02040772575819285
+     "L_low": 0.020407718313392626,
+     "L_high": 0.020407718313392626
+    }
+   ],
+   "duration_grids": [
+    {
+     "from_hours": 0.0,
+     "recovers": false,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0001584047125428025,
+       "L_high": 0.0006039671215976183
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0010932216943375505,
+       "L_high": 0.0014850038860480576
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0020395554907397407,
+       "L_high": 0.0025893043294529026
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.005096514030737652,
+       "L_high": 0.006152987126240846
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.008924315101401395,
+       "L_high": 0.00971666992302879
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.012752116172065139,
+       "L_high": 0.013280352719816736
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.01657991724272888,
+       "L_high": 0.01684403551660468
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.01849381777806075,
+       "L_high": 0.01862587691499865
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.020024938206326247,
+       "L_high": 0.020051350033713822
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.020407718313392626,
+       "L_high": 0.020407718313392626
+      }
+     ]
+    },
+    {
+     "from_hours": 0.0,
+     "recovers": true,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.0006039671215976183
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.0014850038860480576
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.0025893043294529026
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.006152987126240846
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.00971666992302879
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.013280352719816736
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.01684403551660468
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.01862587691499865
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.020051350033713822
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.020407718313392626
+      }
+     ]
     }
    ],
    "permanent": 1.0,
@@ -792,7 +1200,7 @@
    "affected_markets": [
     "morpho_market:0x2bbdd815"
    ],
-   "affected_allocation": 600033.961986,
+   "affected_allocation": 600035.082819,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[1]] Morpho Blue market -> [marketParams.collateralToken] AUTO"
    ],
@@ -820,7 +1228,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 1.0000481768457257,
+       "vault_share_of_market": 1.0000500448849856,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -833,8 +1241,8 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.02035967569385347,
-     "L_high": 0.020362991148292885,
+     "L_low": 0.02035966826658205,
+     "L_high": 0.020362983719811975,
      "per_market": [
       {
        "market": "morpho_market:0x2bbdd815",
@@ -842,19 +1250,19 @@
        "oracle_falls": null,
        "market_bad_debt_low": 538387.1530697669,
        "market_bad_debt_high": 538474.826277514,
-       "vault_share_of_market": 1.0000481768457257,
-       "vault_loss_low": 538413.090864581,
-       "vault_loss_high": 538500.7682961468
+       "vault_share_of_market": 1.0000500448849856,
+       "vault_loss_low": 538414.09659292,
+       "vault_loss_high": 538501.7741882626
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.000936947445473599,
-   "tail_loss_95": 0.018738948909471965,
+   "expected_loss": 0.0009369471036723301,
+   "tail_loss_95": 0.018738942073446584,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.020362991148292885,
+   "L_worst": 0.020362983719811975,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -875,21 +1283,21 @@
    "decision": {
     "amount": 1000000.0,
     "severity": 0.841444408559261,
-    "L": 0.014757305361383363,
-    "loss_if_stay_usd": 14757.305361383362,
+    "L": 0.014757299977873627,
+    "loss_if_stay_usd": 14757.299977873627,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "severity_break_even_free": 0.5657241638606167,
-    "severity_break_even_forced": 0.8463326501429251,
+    "severity_break_even_free": 0.5657242143429058,
+    "severity_break_even_forced": 0.846332802992078,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
     "loss_kept_usd": 0.0,
     "total_if_act_usd": 4931.506849315068,
-    "avoided_usd": 9825.798512068293
+    "avoided_usd": 9825.793128558558
    },
    "sensitivity": {
     "verdict": "EXIT",
@@ -901,9 +1309,9 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.014338530917366333,
+      "L": 0.014338525686626784,
       "flips": false,
-      "effect": 0.00041877444401702997
+      "effect": 0.00041877429124684284
      },
      {
       "key": "alt_yield",
@@ -912,7 +1320,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.014757305361383363,
+      "L": 0.014757299977873627,
       "flips": false,
       "effect": 0.0
      },
@@ -923,7 +1331,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.014757305361383363,
+      "L": 0.014757299977873627,
       "flips": false,
       "effect": 0.0
      },
@@ -934,7 +1342,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.014757305361383363,
+      "L": 0.014757299977873627,
       "flips": false,
       "effect": 0.0
      },
@@ -945,7 +1353,7 @@
       "verdict": "STAY",
       "comparison": false,
       "exit_share": 0.0,
-      "L": 0.014757305361383363,
+      "L": 0.014757299977873627,
       "flips": true,
       "effect": 1.0
      },
@@ -956,7 +1364,7 @@
       "verdict": "EXIT_PARTIAL",
       "comparison": true,
       "exit_share": 0.35772822171,
-      "L": 0.014757305361383363,
+      "L": 0.014757299977873627,
       "flips": true,
       "effect": 0.64227177829
      }
@@ -968,7 +1376,7 @@
      "verdict": "STAY",
      "comparison": false,
      "exit_share": 0.0,
-     "L": 0.014757305361383363,
+     "L": 0.014757299977873627,
      "flips": true,
      "effect": 1.0
     }
@@ -1022,72 +1430,276 @@
     {
      "severity": 0.075,
      "L_low": 0.0,
-     "L_high": 1.217726512892266e-07
+     "L_high": 1.2182775853402467e-07
     },
     {
      "severity": 0.1,
      "L_low": 0.0,
-     "L_high": 0.0004242316032521473
+     "L_high": 0.0004244018885597513
     },
     {
      "severity": 0.15,
      "L_low": 0.0,
-     "L_high": 0.004505823321306144
+     "L_high": 0.004506303398895937
     },
     {
      "severity": 0.2,
      "L_low": 0.0,
-     "L_high": 0.009987619807063943
+     "L_high": 0.009988176480642747
     },
     {
      "severity": 0.3,
      "L_low": 0.0,
-     "L_high": 0.024242252868124363
+     "L_high": 0.024242923666125106
     },
     {
      "severity": 0.4,
      "L_low": 0.0,
-     "L_high": 0.03934038552126072
+     "L_high": 0.03934105793691608
     },
     {
      "severity": 0.5,
      "L_low": 0.0,
-     "L_high": 0.0545884845438044
+     "L_high": 0.05458913672124899
     },
     {
      "severity": 0.6,
      "L_low": 0.0,
-     "L_high": 0.06985527319122053
+     "L_high": 0.06985590593195631
     },
     {
      "severity": 0.7,
      "L_low": 0.0,
-     "L_high": 0.08513925042985453
+     "L_high": 0.08513986465958015
     },
     {
      "severity": 0.8,
      "L_low": 0.0,
-     "L_high": 0.10074409808078327
+     "L_high": 0.10074469543961101
     },
     {
      "severity": 0.9,
      "L_low": 0.0,
-     "L_high": 0.11640103857680066
+     "L_high": 0.11640161762760814
     },
     {
      "severity": 0.95,
      "L_low": 0.0,
-     "L_high": 0.12442283465710252
+     "L_high": 0.12442340305722793
     },
     {
      "severity": 0.99,
      "L_low": 0.0,
-     "L_high": 0.1308402715574375
+     "L_high": 0.1308408314370173
     },
     {
      "severity": 1.0,
      "L_low": 0.0,
-     "L_high": 0.13244463087805214
+     "L_high": 0.13244518862749635
+    }
+   ],
+   "duration_grids": [
+    {
+     "from_hours": 0.0,
+     "recovers": false,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 1.2182775853402467e-07
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0004244018885597513
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.004506303398895937
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.009988176480642747
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.024242923666125106
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.03934105793691608
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.05458913672124899
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.06985590593195631
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.08513986465958015
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.10074469543961101
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.11640161762760814
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.12442340305722793
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.1308408314370173
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.13244518862749635
+      }
+     ]
+    },
+    {
+     "from_hours": 0.0,
+     "recovers": true,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 1.2182775853402467e-07
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0004244018885597513
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.004506303398895937
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.009988176480642747
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.024242923666125106
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.03934105793691608
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.05458913672124899
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.06985590593195631
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.08513986465958015
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.10074469543961101
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.11640161762760814
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.12442340305722793
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.1308408314370173
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.13244518862749635
+      }
+     ]
     }
    ],
    "permanent": 0.0,
@@ -1102,7 +1714,7 @@
    "affected_markets": [
     "morpho_market:0x1e9d6146"
    ],
-   "affected_allocation": 3976678.192411,
+   "affected_allocation": 3976687.003572,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026"
    ],
@@ -1130,7 +1742,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293929500459442,
+       "vault_share_of_market": 0.032939208731002735,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -1178,8 +1790,8 @@
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "severity_break_even_free": 0.15388270094589326,
-    "severity_break_even_forced": 0.23468266788119865,
+    "severity_break_even_free": 0.1538782679211869,
+    "severity_break_even_forced": 0.23467848502923166,
     "verdict": "STAY",
     "exit_usd": 0.0,
     "exit_cost_usd": 0.0,
@@ -1306,72 +1918,276 @@
     {
      "severity": 0.075,
      "L_low": 0.0,
-     "L_high": 1.217726512892266e-07
+     "L_high": 1.2182775853402467e-07
     },
     {
      "severity": 0.1,
-     "L_low": 1.3990711943116758e-07,
-     "L_high": 0.0004242316032521473
+     "L_low": 1.4008969973459313e-07,
+     "L_high": 0.0004244018885597513
     },
     {
      "severity": 0.15,
-     "L_low": 0.0023912076979831177,
-     "L_high": 0.004505823321306144
+     "L_low": 0.0023916501710242537,
+     "L_high": 0.004506303398895937
     },
     {
      "severity": 0.2,
-     "L_low": 0.007561979274241821,
-     "L_high": 0.009987619807063943
+     "L_low": 0.007562534214587152,
+     "L_high": 0.009988176480642747
     },
     {
      "severity": 0.3,
-     "L_low": 0.021555542584153323,
-     "L_high": 0.024242252868124363
+     "L_low": 0.021556216943390685,
+     "L_high": 0.024242923666125106
     },
     {
      "severity": 0.4,
-     "L_low": 0.03694638401669906,
-     "L_high": 0.03934038552126072
+     "L_low": 0.03694705961091291,
+     "L_high": 0.03934105793691608
     },
     {
      "severity": 0.5,
-     "L_low": 0.052593452722790326,
-     "L_high": 0.0545884845438044
+     "L_low": 0.05259410754211476,
+     "L_high": 0.05458913672124899
     },
     {
      "severity": 0.6,
-     "L_low": 0.06825579331868101,
-     "L_high": 0.06985527319122053
+     "L_low": 0.06825642818307469,
+     "L_high": 0.06985590593195631
     },
     {
      "severity": 0.7,
-     "L_low": 0.08393697006054375,
-     "L_high": 0.08513925042985453
+     "L_low": 0.08393758410480094,
+     "L_high": 0.08513986465958015
     },
     {
      "severity": 0.8,
-     "L_low": 0.09992629791597947,
-     "L_high": 0.10074409808078327
+     "L_low": 0.09992689636061527,
+     "L_high": 0.10074469543961101
     },
     {
      "severity": 0.9,
-     "L_low": 0.11598122164566897,
-     "L_high": 0.11640103857680066
+     "L_low": 0.11598180125387476,
+     "L_high": 0.11640161762760814
     },
     {
      "severity": 0.95,
-     "L_low": 0.1242129261906832,
-     "L_high": 0.12442283465710252
+     "L_low": 0.1242134948695079,
+     "L_high": 0.12442340305722793
     },
     {
      "severity": 0.99,
-     "L_low": 0.13079828986387532,
-     "L_high": 0.1308402715574375
+     "L_low": 0.13079884979919507,
+     "L_high": 0.1308408314370173
     },
     {
      "severity": 1.0,
-     "L_low": 0.13244463087805214,
-     "L_high": 0.13244463087805214
+     "L_low": 0.13244518862749635,
+     "L_high": 0.13244518862749635
+    }
+   ],
+   "duration_grids": [
+    {
+     "from_hours": 0.0,
+     "recovers": false,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 1.2182775853402467e-07
+      },
+      {
+       "severity": 0.1,
+       "L_low": 1.4008969973459313e-07,
+       "L_high": 0.0004244018885597513
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0023916501710242537,
+       "L_high": 0.004506303398895937
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.007562534214587152,
+       "L_high": 0.009988176480642747
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.021556216943390685,
+       "L_high": 0.024242923666125106
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.03694705961091291,
+       "L_high": 0.03934105793691608
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.05259410754211476,
+       "L_high": 0.05458913672124899
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.06825642818307469,
+       "L_high": 0.06985590593195631
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.08393758410480094,
+       "L_high": 0.08513986465958015
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.09992689636061527,
+       "L_high": 0.10074469543961101
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.11598180125387476,
+       "L_high": 0.11640161762760814
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.1242134948695079,
+       "L_high": 0.12442340305722793
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.13079884979919507,
+       "L_high": 0.1308408314370173
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.13244518862749635,
+       "L_high": 0.13244518862749635
+      }
+     ]
+    },
+    {
+     "from_hours": 0.0,
+     "recovers": true,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 1.2182775853402467e-07
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0004244018885597513
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.004506303398895937
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.009988176480642747
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.024242923666125106
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.03934105793691608
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.05458913672124899
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.06985590593195631
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.08513986465958015
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.10074469543961101
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.11640161762760814
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.12442340305722793
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.1308408314370173
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.13244518862749635
+      }
+     ]
     }
    ],
    "permanent": 1.0,
@@ -1406,7 +2222,7 @@
    "affected_markets": [
     "morpho_market:0x1e9d6146"
    ],
-   "affected_allocation": 3976678.192411,
+   "affected_allocation": 3976687.003572,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026"
    ],
@@ -1434,7 +2250,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293929500459442,
+       "vault_share_of_market": 0.032939208731002735,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -1447,28 +2263,28 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.13223796714723834,
-     "L_high": 0.13224323707232982,
+     "L_low": 0.13223852517107376,
+     "L_high": 0.13224379508916828,
      "per_market": [
       {
        "market": "morpho_market:0x1e9d6146",
        "collateral": "PT-reUSD-10DEC2026",
        "oracle_falls": null,
-       "market_bad_debt_low": 106166284.67410487,
-       "market_bad_debt_high": 106170515.59491788,
-       "vault_share_of_market": 0.03293929500459442,
-       "vault_loss_low": 3497042.570422092,
-       "vault_loss_high": 3497181.933970893
+       "market_bad_debt_low": 106167247.79356328,
+       "market_bad_debt_high": 106171478.72928694,
+       "vault_share_of_market": 0.032939208731002735,
+       "vault_loss_low": 3497065.13546827,
+       "vault_loss_high": 3497204.4991431995
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.006084811521732967,
-   "tail_loss_95": 0.12169623043465923,
+   "expected_loss": 0.006084837197354368,
+   "tail_loss_95": 0.12169674394708725,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.13224323707232982,
+   "L_worst": 0.13224379508916828,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -1489,21 +2305,21 @@
    "decision": {
     "amount": 1000000.0,
     "severity": 0.841444408559261,
-    "L": 0.10723302446783309,
-    "loss_if_stay_usd": 107233.0244678331,
+    "L": 0.10723361423901012,
+    "loss_if_stay_usd": 107233.61423901012,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "severity_break_even_free": 0.15388270094589326,
-    "severity_break_even_forced": 0.23468266788119865,
+    "severity_break_even_free": 0.1538782679211869,
+    "severity_break_even_forced": 0.23467848502923166,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
     "loss_kept_usd": 0.0,
     "total_if_act_usd": 4931.506849315068,
-    "avoided_usd": 102301.51761851803
+    "avoided_usd": 102302.10738969504
    },
    "sensitivity": {
     "verdict": "EXIT",
@@ -1515,9 +2331,9 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10658016610038971,
+      "L": 0.10658075673837851,
       "flips": false,
-      "effect": 0.0006528583674433736
+      "effect": 0.0006528575006316123
      },
      {
       "key": "alt_yield",
@@ -1526,7 +2342,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1537,7 +2353,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1548,7 +2364,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1559,7 +2375,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1569,19 +2385,19 @@
       "grade": "D",
       "verdict": "EXIT_PARTIAL",
       "comparison": true,
-      "exit_share": 0.7614307685877999,
-      "L": 0.10723302446783309,
+      "exit_share": 0.7614316497039,
+      "L": 0.10723361423901012,
       "flips": true,
-      "effect": 0.2385692314122001
+      "effect": 0.23856835029610002
      }
     ],
     "weakest": null
    },
    "decision_text": {
-    "text": "If PT-reUSD-10DEC2026 loses 84.14%, staying loses 107,233 USD (10.72% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once PT-reUSD-10DEC2026 loses more than 15.39%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+    "text": "If PT-reUSD-10DEC2026 loses 84.14%, staying loses 107,234 USD (10.72% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once PT-reUSD-10DEC2026 loses more than 15.39%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
     "numbers": [
      "84.14%",
-     "107,233",
+     "107,234",
      "10.72%",
      "1,000,000",
      "4,932",
@@ -1626,72 +2442,276 @@
     {
      "severity": 0.075,
      "L_low": 0.0,
-     "L_high": 1.217726512892266e-07
+     "L_high": 1.2182775853402467e-07
     },
     {
      "severity": 0.1,
-     "L_low": 1.3990711943116758e-07,
-     "L_high": 0.0004242316032521473
+     "L_low": 1.4008969973459313e-07,
+     "L_high": 0.0004244018885597513
     },
     {
      "severity": 0.15,
-     "L_low": 0.0023912076979831177,
-     "L_high": 0.004505823321306144
+     "L_low": 0.0023916501710242537,
+     "L_high": 0.004506303398895937
     },
     {
      "severity": 0.2,
-     "L_low": 0.007561979274241821,
-     "L_high": 0.009987619807063943
+     "L_low": 0.007562534214587152,
+     "L_high": 0.009988176480642747
     },
     {
      "severity": 0.3,
-     "L_low": 0.021555542584153323,
-     "L_high": 0.024242252868124363
+     "L_low": 0.021556216943390685,
+     "L_high": 0.024242923666125106
     },
     {
      "severity": 0.4,
-     "L_low": 0.03694638401669906,
-     "L_high": 0.03934038552126072
+     "L_low": 0.03694705961091291,
+     "L_high": 0.03934105793691608
     },
     {
      "severity": 0.5,
-     "L_low": 0.052593452722790326,
-     "L_high": 0.0545884845438044
+     "L_low": 0.05259410754211476,
+     "L_high": 0.05458913672124899
     },
     {
      "severity": 0.6,
-     "L_low": 0.06825579331868101,
-     "L_high": 0.06985527319122053
+     "L_low": 0.06825642818307469,
+     "L_high": 0.06985590593195631
     },
     {
      "severity": 0.7,
-     "L_low": 0.08393697006054375,
-     "L_high": 0.08513925042985453
+     "L_low": 0.08393758410480094,
+     "L_high": 0.08513986465958015
     },
     {
      "severity": 0.8,
-     "L_low": 0.09992629791597947,
-     "L_high": 0.10074409808078327
+     "L_low": 0.09992689636061527,
+     "L_high": 0.10074469543961101
     },
     {
      "severity": 0.9,
-     "L_low": 0.11598122164566897,
-     "L_high": 0.11640103857680066
+     "L_low": 0.11598180125387476,
+     "L_high": 0.11640161762760814
     },
     {
      "severity": 0.95,
-     "L_low": 0.1242129261906832,
-     "L_high": 0.12442283465710252
+     "L_low": 0.1242134948695079,
+     "L_high": 0.12442340305722793
     },
     {
      "severity": 0.99,
-     "L_low": 0.13079828986387532,
-     "L_high": 0.1308402715574375
+     "L_low": 0.13079884979919507,
+     "L_high": 0.1308408314370173
     },
     {
      "severity": 1.0,
-     "L_low": 0.13244463087805214,
-     "L_high": 0.13244463087805214
+     "L_low": 0.13244518862749635,
+     "L_high": 0.13244518862749635
+    }
+   ],
+   "duration_grids": [
+    {
+     "from_hours": 0.0,
+     "recovers": false,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 1.2182775853402467e-07
+      },
+      {
+       "severity": 0.1,
+       "L_low": 1.4008969973459313e-07,
+       "L_high": 0.0004244018885597513
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0023916501710242537,
+       "L_high": 0.004506303398895937
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.007562534214587152,
+       "L_high": 0.009988176480642747
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.021556216943390685,
+       "L_high": 0.024242923666125106
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.03694705961091291,
+       "L_high": 0.03934105793691608
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.05259410754211476,
+       "L_high": 0.05458913672124899
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.06825642818307469,
+       "L_high": 0.06985590593195631
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.08393758410480094,
+       "L_high": 0.08513986465958015
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.09992689636061527,
+       "L_high": 0.10074469543961101
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.11598180125387476,
+       "L_high": 0.11640161762760814
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.1242134948695079,
+       "L_high": 0.12442340305722793
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.13079884979919507,
+       "L_high": 0.1308408314370173
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.13244518862749635,
+       "L_high": 0.13244518862749635
+      }
+     ]
+    },
+    {
+     "from_hours": 0.0,
+     "recovers": true,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 1.2182775853402467e-07
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0004244018885597513
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.004506303398895937
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.009988176480642747
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.024242923666125106
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.03934105793691608
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.05458913672124899
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.06985590593195631
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.08513986465958015
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.10074469543961101
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.11640161762760814
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.12442340305722793
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.1308408314370173
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.13244518862749635
+      }
+     ]
     }
    ],
    "permanent": 1.0,
@@ -1726,7 +2746,7 @@
    "affected_markets": [
     "morpho_market:0x1e9d6146"
    ],
-   "affected_allocation": 3976678.192411,
+   "affected_allocation": 3976687.003572,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026 -> [SY] PendleREUSDSY -> [REUSD] ShareToken"
    ],
@@ -1746,7 +2766,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293929500459442,
+       "vault_share_of_market": 0.032939208731002735,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -1768,7 +2788,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293929500459442,
+       "vault_share_of_market": 0.032939208731002735,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -1781,28 +2801,28 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.13223796714723834,
-     "L_high": 0.13224323707232982,
+     "L_low": 0.13223852517107376,
+     "L_high": 0.13224379508916828,
      "per_market": [
       {
        "market": "morpho_market:0x1e9d6146",
        "collateral": "PT-reUSD-10DEC2026",
        "oracle_falls": null,
-       "market_bad_debt_low": 106166284.67410487,
-       "market_bad_debt_high": 106170515.59491788,
-       "vault_share_of_market": 0.03293929500459442,
-       "vault_loss_low": 3497042.570422092,
-       "vault_loss_high": 3497181.933970893
+       "market_bad_debt_low": 106167247.79356328,
+       "market_bad_debt_high": 106171478.72928694,
+       "vault_share_of_market": 0.032939208731002735,
+       "vault_loss_low": 3497065.13546827,
+       "vault_loss_high": 3497204.4991431995
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.006084811521732967,
-   "tail_loss_95": 0.12169623043465923,
+   "expected_loss": 0.006084837197354368,
+   "tail_loss_95": 0.12169674394708725,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.13224323707232982,
+   "L_worst": 0.13224379508916828,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -1823,21 +2843,21 @@
    "decision": {
     "amount": 1000000.0,
     "severity": 0.841444408559261,
-    "L": 0.10723302446783309,
-    "loss_if_stay_usd": 107233.0244678331,
+    "L": 0.10723361423901012,
+    "loss_if_stay_usd": 107233.61423901012,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "severity_break_even_free": 0.15388270094589326,
-    "severity_break_even_forced": 0.23468266788119865,
+    "severity_break_even_free": 0.1538782679211869,
+    "severity_break_even_forced": 0.23467848502923166,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
     "loss_kept_usd": 0.0,
     "total_if_act_usd": 4931.506849315068,
-    "avoided_usd": 102301.51761851803
+    "avoided_usd": 102302.10738969504
    },
    "sensitivity": {
     "verdict": "EXIT",
@@ -1849,9 +2869,9 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10658016610038971,
+      "L": 0.10658075673837851,
       "flips": false,
-      "effect": 0.0006528583674433736
+      "effect": 0.0006528575006316123
      },
      {
       "key": "alt_yield",
@@ -1860,7 +2880,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1871,7 +2891,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1882,7 +2902,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1893,7 +2913,7 @@
       "verdict": "EXIT",
       "comparison": false,
       "exit_share": 1.0,
-      "L": 0.10723302446783309,
+      "L": 0.10723361423901012,
       "flips": false,
       "effect": 0.0
      },
@@ -1903,19 +2923,19 @@
       "grade": "D",
       "verdict": "EXIT_PARTIAL",
       "comparison": true,
-      "exit_share": 0.7614307685877999,
-      "L": 0.10723302446783309,
+      "exit_share": 0.7614316497039,
+      "L": 0.10723361423901012,
       "flips": true,
-      "effect": 0.2385692314122001
+      "effect": 0.23856835029610002
      }
     ],
     "weakest": null
    },
    "decision_text": {
-    "text": "If reUSD loses 84.14%, staying loses 107,233 USD (10.72% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once reUSD loses more than 15.39%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+    "text": "If reUSD loses 84.14%, staying loses 107,234 USD (10.72% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once reUSD loses more than 15.39%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
     "numbers": [
      "84.14%",
-     "107,233",
+     "107,234",
      "10.72%",
      "1,000,000",
      "4,932",
@@ -2029,6 +3049,210 @@
     }
    ],
    "permanent": 1.0,
+   "duration_grids": [
+    {
+     "from_hours": 0.0,
+     "recovers": false,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.005,
+       "L_high": 0.005
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.01,
+       "L_high": 0.01
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.02,
+       "L_high": 0.02
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.03,
+       "L_high": 0.03
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.05,
+       "L_high": 0.05
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.075,
+       "L_high": 0.075
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.1,
+       "L_high": 0.1
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.15,
+       "L_high": 0.15
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.2,
+       "L_high": 0.2
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.3,
+       "L_high": 0.3
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.4,
+       "L_high": 0.4
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.5,
+       "L_high": 0.5
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.6,
+       "L_high": 0.6
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.7,
+       "L_high": 0.7
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.8,
+       "L_high": 0.8
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.9,
+       "L_high": 0.9
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.95,
+       "L_high": 0.95
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.99,
+       "L_high": 0.99
+      },
+      {
+       "severity": 1.0,
+       "L_low": 1.0,
+       "L_high": 1.0
+      }
+     ]
+    },
+    {
+     "from_hours": 0.0,
+     "recovers": true,
+     "grid": [
+      {
+       "severity": 0.005,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.01,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.02,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.03,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.05,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.075,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.1,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.15,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.2,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.3,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.4,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.5,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.6,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.7,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.8,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.9,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.95,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 0.99,
+       "L_low": 0.0,
+       "L_high": 0.0
+      },
+      {
+       "severity": 1.0,
+       "L_low": 0.0,
+       "L_high": 0.0
+      }
+     ]
+    }
+   ],
    "default_severity": 0.841444408559261,
    "severity_anchors": [
     {
@@ -2244,12 +3468,12 @@
       "free_usd": 0.0,
       "forced_usd": 0.0,
       "locked_usd": 1000000.0,
-      "expected_loss_on_locked_usd": 606663.2402397331
+      "expected_loss_on_locked_usd": 606663.2481925846
      }
     ],
     "worst_credit_incident": "issuer_default:PST",
-    "worst_expected_loss": 0.6066632402397332,
-    "worst_loss_at_default_severity": 0.6066632402397332,
+    "worst_expected_loss": 0.6066632481925847,
+    "worst_loss_at_default_severity": 0.6066632481925847,
     "text": "If other depositors withdraw first and take the free liquidity, 1,000,000 of 1,000,000 stays locked, losing 606,663 if issuer_default:PST hits at its default severity. Today 1,000,000 can still leave without penalty.",
     "evidence": {
      "grade": "D",
@@ -2267,13 +3491,13 @@
  "exit": {
   "deposit": 1000000.0,
   "free_usd": 3577282.2171,
-  "forced_usd": 4037025.4687779997,
+  "forced_usd": 4037034.279939,
   "free_fraction": 1.0,
   "forced_fraction": 0.0,
   "currency": "USD",
   "currency_source": "DeFiLlama pegType peggedUSD",
-  "vault_free_fraction": 0.1352721674887053,
-  "vault_forced_fraction": 0.1526570039004113,
+  "vault_free_fraction": 0.13527186546002642,
+  "vault_forced_fraction": 0.1526569962422837,
   "locked_fraction": 0.0,
   "force_deallocate_penalty": 0.01,
   "carry_cost": 0.004931506849315068,
@@ -2286,7 +3510,7 @@
   "evidence": {
    "tranches": {
     "grade": "A",
-    "source": "idle balance, liquidityAdapter/liquidityData, market liquidity and forceDeallocatePenalty @ block 26163134"
+    "source": "idle balance, liquidityAdapter/liquidityData, market liquidity and forceDeallocatePenalty @ block 26163217"
    },
    "carry_cost": {
     "grade": "D",
@@ -2299,27 +3523,27 @@
  "default_decision": {
   "amount": 1000000.0,
   "severity": 0.841444408559261,
-  "L": 0.6066632402397332,
-  "loss_if_stay_usd": 606663.2402397331,
+  "L": 0.6066632481925847,
+  "loss_if_stay_usd": 606663.2481925846,
   "carry_cost": 0.004931506849315068,
   "penalty": 0.01,
   "free_usd": 1000000.0,
   "forced_usd": 0.0,
   "locked_usd": 0.0,
-  "severity_break_even_free": 0.1382630980013543,
-  "severity_break_even_forced": 0.16246994481258903,
+  "severity_break_even_free": 0.13826309749975685,
+  "severity_break_even_forced": 0.16246994452499902,
   "verdict": "EXIT",
   "exit_usd": 1000000.0,
   "exit_cost_usd": 4931.506849315068,
   "loss_kept_usd": 0.0,
   "total_if_act_usd": 4931.506849315068,
-  "avoided_usd": 601731.7333904181
+  "avoided_usd": 601731.7413432696
  },
  "notes": [],
  "gates": [
   {
    "pass": true,
-   "check": "allocations 26,445,072 + idle 0 within 1% of totalAssets 26,445,072 USDC"
+   "check": "allocations 26,445,131 + idle 0 within 1% of totalAssets 26,445,131 USDC"
   },
   {
    "pass": true,
@@ -2331,7 +3555,7 @@
   },
   {
    "pass": true,
-   "check": "market 0x1e9d6146 (PT-reUSD-10DEC2026): market 0x1e9d6146 exists on Morpho Blue; sum of borrowShares == totalBorrowShares (103502316699830916447 / 103502316699830916447): no borrower missing; sum of borrow 106,332,203.14 within 1% of totalBorrowAssets 106,332,203.14"
+   "check": "market 0x1e9d6146 (PT-reUSD-10DEC2026): market 0x1e9d6146 exists on Morpho Blue; sum of borrowShares == totalBorrowShares (103502316699830916447 / 103502316699830916447): no borrower missing; sum of borrow 106,333,166.84 within 1% of totalBorrowAssets 106,333,166.84"
   },
   {
    "pass": true,

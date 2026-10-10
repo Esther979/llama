@@ -121,7 +121,8 @@
   function inject(d, presetKey, node, fail, sev, opts = null) {
     opts = opts || {};
     const m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey];
-    const C = p.collateral_usd, D = p.debt_usd, equity = C - D;
+    const C = 'collateral_usd' in opts ? opts.collateral_usd : p.collateral_usd;
+    const D = 'debt_usd' in opts ? opts.debt_usd : p.debt_usd, equity = C - D;
     const canHold = 'can_hold' in opts ? opts.can_hold : p.can_hold;
     const curve = d.exit_curve.map(x => [x.fraction, x.loss]), cap = d.max_exit_fraction;
     const out = {type: m.type, note: m.note, L_low: 0, L_high: 0, loss_usd: 0, oracle_falls: null, liquidated: null,
@@ -137,7 +138,7 @@
       const shock = sev / 100, L2 = m.scenario_layer === 2, hours = 'hours' in opts ? opts.hours : m.hours;
       let flag = m.oracle === 'rule' ? oracleFalls(d.oracle, m.scenario_layer, shock, hours, m.token || null) : m.oracle;
       if ('oracle_falls' in opts) flag = opts.oracle_falls;
-      const r = positionLoss({layer: m.scenario_layer, shock, permanent: m.permanent, hours},
+      const r = positionLoss({layer: m.scenario_layer, shock, permanent: 'permanent' in opts ? opts.permanent : m.permanent, hours},
         {collateral_usd: C, debt_usd: D, lltv: p.lltv || 0.915, can_hold: canHold,
          oracle_tracks_underlying: L2 ? flag : null, oracle_tracks_market: L2 ? null : flag});
       Object.assign(out, {L_low: r.L_low, L_high: r.L_high, loss_usd: r.L_high * equity, oracle_falls: flag,
@@ -151,8 +152,9 @@
   /* Decision without a probability (port of frontend_contract.decide_at): given the incident at severity sev,
      sell x minimising x*(slippage+carry) + (1-x)*L(sev); costs per unit of equity (x collateral / equity). */
   function decideAt(d, presetKey, node, fail, sev, carry = 0, opts = null) {
-    const r = inject(d, presetKey, node, fail, sev, opts), p = d.position_presets[presetKey];
-    const C = p.collateral_usd, E = C - p.debt_usd, scale = C / E, L = r.L_high;
+    const r = inject(d, presetKey, node, fail, sev, opts), p = d.position_presets[presetKey], o = opts || {};
+    const C = 'collateral_usd' in o ? o.collateral_usd : p.collateral_usd;
+    const E = C - ('debt_usd' in o ? o.debt_usd : p.debt_usd), scale = C / E, L = r.L_high;
     const raw = d.exit_curve.map(x => [x.fraction, x.loss]);
     const dec = decide(1, L, raw.map(([x, s]) => [x, s * scale]), carry * scale), x = dec.exitFraction;
     const sale = x * ((x > 0 ? slippageAt(x, raw) : 0) + carry) * C, kept = (1 - x) * L * E;
@@ -240,10 +242,20 @@
     }
     return null;
   }
-  function vaultDecideAt(inc, ex, amount, sev = null, altApy = null, horizonDays = null, lowBranch = false) {
+  function durationGrid(inc, hours, recovers) {
+    if (hours === null || hours === undefined || !inc.duration_grids) return inc.severity_grid;
+    let best = null;
+    for (const g of inc.duration_grids)
+      if (g.recovers === !!recovers && g.from_hours <= hours && (best === null || g.from_hours > best.from_hours)) best = g;
+    return best ? best.grid : inc.severity_grid;
+  }
+  function vaultDecideAt(inc, ex, amount, sev = null, altApy = null, horizonDays = null, lowBranch = false,
+                         hours = null, recovers = false) {
     sev = sev === null ? inc.default_severity : sev;
-    const grid = lowBranch ? inc.severity_grid.map(g => ({severity: g.severity, L_high: g.L_low})) : inc.severity_grid;
-    const alt = altApy === null ? ex.alt_apy : altApy, h = horizonDays === null ? ex.horizon_days : horizonDays;
+    const baseGrid = durationGrid(inc, hours, recovers);
+    const grid = lowBranch ? baseGrid.map(g => ({severity: g.severity, L_high: g.L_low})) : baseGrid;
+    const alt = altApy === null ? ex.alt_apy : altApy;
+    const h = horizonDays === null ? (hours !== null && hours !== undefined ? hours / 24 : ex.horizon_days) : horizonDays;
     const carry = Math.max(0, (ex.vault_apy || 0) - alt) * h / 365, pen = ex.force_deallocate_penalty;
     const L = vaultLossAt(grid, sev);
     const freeAmt = Math.min(amount, ex.free_usd), forcedAmt = Math.min(amount - freeAmt, ex.forced_usd);
@@ -261,6 +273,78 @@
     return Object.assign(out, {verdict: exitAmt <= 0 ? 'STAY' : exitAmt >= amount - 1e-9 ? 'EXIT' : 'EXIT_PARTIAL',
       exit_usd: exitAmt, exit_cost_usd: cost, loss_kept_usd: kept, total_if_act_usd: cost + kept,
       avoided_usd: L * amount - cost - kept});
+  }
+
+  /* ---- timeline: how long the incident lasts (port of frontend_contract.decide_at_duration / timeline_pt) */
+  const DURATIONS_H = [1, 6, 12, 16, 24, 48, 72, 168, 336, 720, 1440, 2160, 4320];
+  function ptPrices(tm, days) {
+    const left = Math.max(0, tm.days_to_expiry - days);
+    const mk = tm.implied_apy !== null ? 1 / Math.pow(1 + tm.implied_apy, left / 365) : null;
+    const orc = tm.oracle_discount_per_year !== null ? 1 - left / 365 * tm.oracle_discount_per_year : null;
+    return [mk, orc];
+  }
+  function decideAtDuration(d, presetKey, node, fail, sev, hours, recovers = true, altApy = null) {
+    const tm = d.time_model, m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey];
+    const days = hours / 24, [mk0, orc0] = ptPrices(tm, 0), [mkT, orcT] = ptPrices(tm, days);
+    const alt = altApy === null ? tm.implied_apy : altApy;
+    const carry = Math.max(0, tm.implied_apy - alt) * Math.min(days, Math.max(0, tm.days_to_expiry)) / 365;
+    const C0 = p.collateral_usd, D0 = p.debt_usd;
+    const C = C0 * (orc0 && orcT ? orcT / orc0 : 1);
+    const D = D0 > 0 ? D0 * Math.exp((tm.borrow_apr || 0) * days / 365) : 0;
+    const opts = {hours, collateral_usd: C, debt_usd: D};
+    if (recovers && m.type === 'loss_model') opts.permanent = 0;
+    const r = decideAt(d, presetKey, node, fail, sev, carry, opts);
+    return Object.assign(r, {hours, days, recovers, past_expiry: days >= tm.days_to_expiry, carry,
+      pt_price_market: mkT, pt_price_oracle: orcT, position_value_usd: C0 * (mk0 && mkT ? mkT / mk0 : 1),
+      collateral_usd: C, debt_usd: D, ltv: C ? D / C : null});
+  }
+  function timeline(d, presetKey, node, fail, sev, recovers = true, altApy = null, durations = null) {
+    const tm = d.time_model;
+    const hs = Array.from(new Set((durations || DURATIONS_H).concat([Math.round(tm.days_to_expiry * 24 * 1e6) / 1e6])))
+      .sort((a, b) => a - b).filter(h => h > 0);
+    return hs.map(h => decideAtDuration(d, presetKey, node, fail, sev, h, recovers, altApy));
+  }
+
+  /* Does the duration change the verdict? (port of frontend_contract.timeline_summary) */
+  function timelineSummary(d, presetKey, rows) {
+    const levered = d.position_presets[presetKey].debt_usd > 0, changes = [];
+    const anyTrue = x => !!(x && x.some(Boolean));
+    for (let i = 1; i < rows.length; i++) {
+      const a = rows[i - 1], b = rows[i];
+      if (a.verdict === b.verdict) continue;
+      const why = [];
+      if (b.oracle_falls === true && a.oracle_falls !== true) why.push('the meta-oracle switches (challenge timelock reached)');
+      if (b.past_expiry && !a.past_expiry) why.push('the PT reaches expiry');
+      if (anyTrue(b.liquidated) && !anyTrue(a.liquidated))
+        why.push(levered && a.past_expiry ? 'the debt keeps growing after expiry until the LTV crosses the liquidation line'
+                                          : 'the position is liquidated');
+      if (!why.length) why.push(levered && a.past_expiry ? 'the debt keeps growing after expiry'
+                                                         : 'the loss or the yield given up changes with the duration');
+      changes.push({from_hours: a.hours, to_hours: b.hours, verdict_before: a.verdict, verdict_after: b.verdict,
+                    reason: why.join('; ')});
+    }
+    const flat = changes.length ? null : (!levered
+      ? 'no debt: nothing in this position changes with time (no oracle timer, no interest), so the verdict depends only on the severity and on whether the loss recovers'
+      : 'the verdict is the same at every duration on the grid');
+    return {duration_matters: changes.length > 0, changes, verdict: rows.length && !changes.length ? rows[0].verdict : null,
+            why_flat: flat};
+  }
+  /* Same for the vault view (port of vault_pipeline.vault_timeline_summary). */
+  function vaultTimelineSummary(inc, rows) {
+    const switches = (inc.duration_grids || []).map(g => g.from_hours).filter(h => h > 0), changes = [];
+    for (let i = 1; i < rows.length; i++) {
+      const a = rows[i - 1], b = rows[i];
+      if (a.verdict === b.verdict) continue;
+      const why = switches.some(h => a.hours < h && h <= b.hours)
+        ? 'a meta-oracle of an affected market switches (challenge timelock reached)'
+        : Math.abs(a.L - b.L) < 1e-12 ? 'the yield given up grows with the duration' : 'the vault loss changes with the duration';
+      changes.push({from_hours: a.hours, to_hours: b.hours, verdict_before: a.verdict, verdict_after: b.verdict, reason: why});
+    }
+    const flat = changes.length ? null : (!switches.length
+      ? 'no affected market has an oracle timer, so the duration does not change the loss; the verdict depends on the severity and on whether the loss recovers'
+      : 'the verdict is the same at every duration on the grid');
+    return {duration_matters: changes.length > 0, changes, verdict: rows.length && !changes.length ? rows[0].verdict : null,
+            why_flat: flat};
   }
 
   const RANK = 'ABCD';
@@ -304,6 +388,14 @@
     return {verdict: base.verdict, candidates: rows, weakest: pickWeakest(rows)};
   }
 
+  /* Vault timeline over incident durations (port of vault_pipeline.vault_timeline). */
+  function vaultTimeline(inc, ex, amount, sev = null, recovers = true, altApy = null) {
+    const extra = (inc.duration_grids || []).map(g => g.from_hours).filter(h => h > 0);
+    const hs = Array.from(new Set(DURATIONS_H.concat(extra))).sort((a, b) => a - b);
+    return hs.map(h => Object.assign(vaultDecideAt(inc, ex, amount, sev, altApy, null, false, h, recovers),
+                                     {hours: h, days: h / 24, recovers}));
+  }
+
   /* Which assumption flips the vault verdict (port of vault_pipeline.vault_sensitivity). */
   function vaultSensitivity(inc, ex, amount, sev = null) {
     const base = vaultDecideAt(inc, ex, amount, sev);
@@ -326,7 +418,8 @@
   }
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, inject, decideAt, breakEvenSeverity,
-               sensitivity, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt, vaultSensitivity};
+               sensitivity, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
+               vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;
 })(typeof window !== 'undefined' ? window : this);

@@ -511,6 +511,9 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         # ---- front-end contract (README "Frontend integration") ----
         "oracle": (onc or {}).get("oracle"),
         "dependency_graph": graph,
+        "time_model": frontend_contract.time_model(
+            {"expiry": str(m.get("expiry"))[:10], "implied_apy": d.get("impliedApy")}, (onc or {}).get("oracle"), onc,
+            dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")),
         "ui": frontend_contract.ui_view(graph, (onc or {}).get("oracle"),
                                         {"chain_id": m.get("chainId"), "name": m.get("name"), "market": market.lower(),
                                          "pt": pt, "underlying": und, "expiry": str(m.get("expiry"))[:10]},

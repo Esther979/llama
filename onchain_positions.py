@@ -56,6 +56,7 @@ SIG = {
     "price()": "a035b1fe",
     "decimals()": "313ce567",
     "balanceOf(address)": "70a08231",
+    "borrowRateView((address,address,address,address,uint256),(uint128,uint128,uint128,uint128,uint128,uint128))": "8c00bf6b",
     "SupplyCollateral(bytes32,address,address,uint256)":
         "a3b9472a1399e17e123f3c2e6586c23e504184d504de59cdaa2b375e880c6184",
     "Borrow(bytes32,address,address,address,uint256,uint256)":
@@ -282,6 +283,19 @@ def distribution(borrowers):
             "distance_buckets": buckets}
 
 
+def borrow_rate(rpc, block, mid, params_hex=None, market_hex=None):
+    """Borrow rate of a market from its IRM: borrowRateView(MarketParams, Market) (AdaptiveCurveIrm ABI, Etherscan);
+    returns (rate per second in WAD, APR). None if the call fails."""
+    try:
+        p = params_hex or rpc.eth_call(MORPHO, "0x" + SIG["idToMarketParams(bytes32)"] + mid[2:], block)[2:]
+        m = market_hex or rpc.eth_call(MORPHO, "0x" + SIG["market(bytes32)"] + mid[2:], block)[2:]
+        irm = "0x" + p[3 * 64 + 24:4 * 64]
+        r = words(rpc.eth_call(irm, "0x" + SIG["borrowRateView((address,address,address,address,uint256),(uint128,uint128,uint128,uint128,uint128,uint128))"] + p + m, block))[0]
+        return r, r * 31536000 / 1e18
+    except (RuntimeError, IndexError, ValueError):
+        return None, None
+
+
 def read_positions(rpc, block, mid, addrs, tba, tbs, price_raw, lltv_wad, dec_loan, dec_col):
     """position() of every address at block -> borrowers with collateral or debt, highest LTV first.
     Field names keep the original market's units (collateral_pt = collateral tokens, *_usdc = loan tokens)."""
@@ -333,6 +347,7 @@ def read_market(rpc, block, mid, recent_window=20000, chunk=5000, log=print):
         ob = l["topics"][3] if l["topics"][0] == T_SUPPLY_COLL else l["topics"][2]
         found.add("0x" + ob[-40:].lower())
     borrowers = read_positions(rpc, block, mid, found, tba, tbs, price_raw, params["lltv_wad"], dec_loan, dec_col)
+    rate_s, apr = borrow_rate(rpc, block, mid)
     sum_bs = sum(int(b["borrow_shares"]) for b in borrowers)
     g(sum_bs == tbs, f"sum of borrowShares == totalBorrowShares ({sum_bs} / {tbs}): no borrower missing")
     sum_b = sum(b["borrow_usdc"] for b in borrowers)
@@ -346,6 +361,7 @@ def read_market(rpc, block, mid, recent_window=20000, chunk=5000, log=print):
                        "fee_wad": str(fee), "liquidity_usdc": (tsa - tba) / 10 ** dec_loan},
             "discovery": {"sources": [f"Morpho GraphQL marketPositions + eth_getLogs blocks {covered}-{block}"],
                           "candidates": len(found)},
+            "borrow_rate_per_second": rate_s, "borrow_apr": apr,
             "borrowers": borrowers, "distribution": distribution(borrowers), "gates": gates,
             "all_gates_pass": all(x["pass"] for x in gates)}
 
@@ -458,6 +474,8 @@ def run(a):
 
     # 4. read every candidate's position on chain
     borrowers = read_positions(rpc, head, mid, found, tba, tbs, price_raw, params["lltv_wad"], dec_loan, dec_col)
+    rate_s, borrow_apr = borrow_rate(rpc, head, mid)
+    print(f"borrow APR {borrow_apr:.4%} (IRM borrowRateView)" if borrow_apr is not None else "borrow rate unavailable")
     n_debt = sum(b["borrow_usdc"] > 0 for b in borrowers)
     print(f"positions with collateral or debt: {len(borrowers)} ({n_debt} with debt)")
 
@@ -504,6 +522,7 @@ def run(a):
         "market_id": mid, "market_params": params, "lltv": lltv, "lif": lif(lltv),
         "loan_decimals": dec_loan, "collateral_decimals": dec_col,
         "oracle_price_raw": str(price_raw), "oracle_price": price,
+        "borrow_rate_per_second": rate_s, "borrow_apr": borrow_apr,
         "market": {"total_supply_assets_usdc": tsa / 10 ** dec_loan, "total_borrow_assets_usdc": tba / 10 ** dec_loan,
                    "total_borrow_shares": str(tbs), "last_update": last_update, "fee_wad": str(fee),
                    "pt_held_by_morpho": pt_in_morpho},

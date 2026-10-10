@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T15:39:04+00:00",
+ "generated_at": "2026-10-10T16:25:43+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -59,49 +59,49 @@
    "fraction": 0.01,
    "usd": 100000.0,
    "loss": 0.00015346219030587527,
-   "gas_usd": 0.14272287672020714
+   "gas_usd": 0.1005045630190654
   },
   {
    "fraction": 0.05,
    "usd": 500000.0,
    "loss": 0.00019884813232873277,
-   "gas_usd": 0.19356148764161274
+   "gas_usd": 0.13630479695891798
   },
   {
    "fraction": 0.1,
    "usd": 1000000.0,
    "loss": 0.0003297370541375244,
-   "gas_usd": 0.2711754878878555
+   "gas_usd": 0.19096009370018543
   },
   {
    "fraction": 0.25,
    "usd": 2500000.0,
    "loss": 0.0008204485568178432,
-   "gas_usd": 0.3187809544696288
+   "gas_usd": 0.22448356748427598
   },
   {
    "fraction": 0.3,
    "usd": 3000000.0,
    "loss": 0.0013752540226035226,
-   "gas_usd": 0.31869669949204976
+   "gas_usd": 0.22442423565255873
   },
   {
    "fraction": 0.35,
    "usd": 3500000.0,
    "loss": 0.0021244049666646614,
-   "gas_usd": 0.3187480950283729
+   "gas_usd": 0.22446042806990626
   },
   {
    "fraction": 0.4,
    "usd": 4000000.0,
    "loss": 0.003134602082053295,
-   "gas_usd": 0.3187551162765045
+   "gas_usd": 0.22446537238921604
   },
   {
    "fraction": 0.45,
    "usd": 4500000.0,
    "loss": 0.004908559181059591,
-   "gas_usd": 0.3187823587192551
+   "gas_usd": 0.2244845563481379
   }
  ],
  "max_exit_fraction": 0.45,
@@ -3913,7 +3913,7 @@
     "p_exit_sellable": null,
     "p_sell_to_cap": null,
     "L": 0.0,
-    "exit_cost_sellable": 0.004908630021583751,
+    "exit_cost_sellable": 0.004908609066516557,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -3928,13 +3928,13 @@
    },
    "exit_later": {
     "oracle_drop": 0.016185490170549488,
-    "pt_seized": 3092139.0014262777,
-    "seized_in_position_units": 0.30704888091467375,
+    "pt_seized": 3092117.5176287303,
+    "seized_in_position_units": 0.30704674757720357,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.14295111908532626,
-    "avg_cost_later": 0.012271197336038491,
-    "market_impact_of_liquidations": 0.006156301813048577,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.14295325242279644,
+    "avg_cost_later": 0.012271046029654151,
+    "market_impact_of_liquidations": 0.0061562378853773905,
     "note": null,
     "condition": "if the lending oracle falls by the shock (liquidators sell first)"
    }
@@ -6007,7 +6007,7 @@
     "p_exit_sellable": null,
     "p_sell_to_cap": null,
     "L": 0.0,
-    "exit_cost_sellable": 0.004908630021583751,
+    "exit_cost_sellable": 0.004908609066516557,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -6022,13 +6022,13 @@
    },
    "exit_later": {
     "oracle_drop": 0.02966625463535233,
-    "pt_seized": 3257935.0834050495,
-    "seized_in_position_units": 0.32351240387018704,
+    "pt_seized": 3257912.4476769264,
+    "seized_in_position_units": 0.3235101561462051,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.12648759612981297,
-    "avg_cost_later": 0.01304474714290326,
-    "market_impact_of_liquidations": 0.006649648363636369,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.12648984385379491,
+    "avg_cost_later": 0.013044566788220541,
+    "market_impact_of_liquidations": 0.0066495810082546365,
     "note": null,
     "condition": "if the lending oracle falls by the shock (liquidators sell first)"
    }
@@ -8105,11 +8105,11 @@
     ]
    },
    "break_even": {
-    "p_start": 0.00030977883814615467,
-    "p_exit_sellable": 0.009817260043167502,
-    "p_sell_to_cap": 0.041748346253202284,
+    "p_start": 0.00030893447187213183,
+    "p_exit_sellable": 0.009817218133033115,
+    "p_sell_to_cap": 0.041748346220968346,
     "L": 0.5,
-    "exit_cost_sellable": 0.004908630021583751,
+    "exit_cost_sellable": 0.004908609066516557,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -8127,7 +8127,7 @@
     "pt_seized": 7982358.346812968,
     "seized_in_position_units": 0.7926468364838362,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10207,11 +10207,11 @@
     ]
    },
    "break_even": {
-    "p_start": 0.00015508409475959312,
-    "p_exit_sellable": 0.004914799525769527,
-    "p_sell_to_cap": 0.020900409224639274,
+    "p_start": 0.00015466138099374645,
+    "p_exit_sellable": 0.004914778544364562,
+    "p_sell_to_cap": 0.020900409208502047,
     "L": 0.9987447088831543,
-    "exit_cost_sellable": 0.004908630021583751,
+    "exit_cost_sellable": 0.004908609066516557,
     "sellable_fraction": 0.45,
     "evidence": {
      "grade": "D",
@@ -10229,7 +10229,7 @@
     "pt_seized": 7982359.346812968,
     "seized_in_position_units": 0.7926469357836674,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10239,20 +10239,20 @@
   }
  ],
  "borrowers": {
-  "block": 26162908,
-  "block_timestamp": 1791645851,
+  "block": 26163209,
+  "block_timestamp": 1791649475,
   "market_id": "0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05",
-  "oracle_price": 0.9923794729832572,
+  "oracle_price": 0.9923863679604261,
   "lltv": 0.915,
   "lif": 1.026167265264238,
   "total_borrow_usdc": 6992654.071526,
   "discovery": {
    "mode": "auto",
    "sources": [
-    "eth_getLogs SupplyCollateral/Borrow, blocks 26152909-26162908 only (0 logs; older blocks need an archive RPC)",
+    "eth_getLogs SupplyCollateral/Borrow, blocks 26153210-26163209 only (0 logs; older blocks need an archive RPC)",
     "Morpho GraphQL marketPositions: 19 addresses (amounts not used)"
    ],
-   "logs_cover_from_block": 26152909,
+   "logs_cover_from_block": 26153210,
    "candidates": 19
   },
   "gates_passed": 7,
@@ -10261,140 +10261,140 @@
    {
     "address": "0x5c430ff6f374da12218b380d2040299ae5b6d40e",
     "collateral_pt": 3272383.785063586,
-    "collateral_usdc": 3247446.496020358,
+    "collateral_usdc": 3247469.059031844,
     "borrow_usdc": 2941926.701332,
     "borrow_shares": "2928397225278780003",
-    "ltv": 0.9059199912722926,
-    "distance_to_liquidation": 0.009923506806237659,
+    "ltv": 0.9059136970527645,
+    "distance_to_liquidation": 0.009930385734683633,
     "healthy": true
    },
    {
     "address": "0x4264ef782fc3385c62e16969618e81e079afd880",
     "collateral_pt": 15898.138666175497,
-    "collateral_usdc": 15776.986470953983,
+    "collateral_usdc": 15777.096088257114,
     "borrow_usdc": 14082.580763,
     "borrow_shares": "14017817102984410",
-    "ltv": 0.8926027026090536,
-    "distance_to_liquidation": 0.024477920645843088,
+    "ltv": 0.8925965009163922,
+    "distance_to_liquidation": 0.024484698452030385,
     "healthy": true
    },
    {
     "address": "0xe3a5bcb68ea2be70c029687bf02d3357417d8d67",
     "collateral_pt": 114321.47002506429,
-    "collateral_usdc": 113450.28017414454,
+    "collateral_usdc": 113451.06841807028,
     "borrow_usdc": 101185.977411,
     "borrow_shares": "100720638400387040",
-    "ltv": 0.8918971134816149,
-    "distance_to_liquidation": 0.02524905630424601,
+    "ltv": 0.8918909166912992,
+    "distance_to_liquidation": 0.02525582875267851,
     "healthy": true
    },
    {
     "address": "0x03babeb24619902253fdb0d5675a816879115d98",
     "collateral_pt": 413030.32398526685,
-    "collateral_usdc": 409882.81524260313,
+    "collateral_usdc": 409885.66307725705,
     "borrow_usdc": 357147.515246,
     "borrow_shares": "355505047827188788",
-    "ltv": 0.8713405440884612,
-    "distance_to_liquidation": 0.047715252362337535,
+    "ltv": 0.8713344901226352,
+    "distance_to_liquidation": 0.04772186871843154,
     "healthy": true
    },
    {
     "address": "0xdf81987465681d0515058fe0a47a3bd174012730",
     "collateral_pt": 3961491.3541291417,
-    "collateral_usdc": 3931302.7022384075,
+    "collateral_usdc": 3931330.0166308493,
     "borrow_usdc": 3414343.109055,
     "borrow_shares": "3398641061377110652",
-    "ltv": 0.8685017073630426,
-    "distance_to_liquidation": 0.05081780616060927,
+    "ltv": 0.8684956731211013,
+    "distance_to_liquidation": 0.05082440096054508,
     "healthy": true
    },
    {
     "address": "0x405b07642e7c4e1b9eda4ef21f16b22207d0f2cc",
     "collateral_pt": 18798.941538810985,
-    "collateral_usdc": 18655.683696928307,
+    "collateral_usdc": 18655.813315201016,
     "borrow_usdc": 16114.869929,
     "borrow_shares": "16040760077936299",
-    "ltv": 0.8638048431134874,
-    "distance_to_liquidation": 0.055950991132800665,
+    "ltv": 0.8637988415047754,
+    "distance_to_liquidation": 0.055957550268005085,
     "healthy": true
    },
    {
     "address": "0xbfcdb32f9e2c6d2a7c5c8c435b3da59ff6049212",
     "collateral_pt": 19625.387394236488,
-    "collateral_usdc": 19475.831599384666,
+    "collateral_usdc": 19475.96691598268,
     "borrow_usdc": 16495.364038,
     "borrow_shares": "16419504352423581",
-    "ltv": 0.8469658383430039,
-    "distance_to_liquidation": 0.0743542750349685,
+    "ltv": 0.8469599537296045,
+    "distance_to_liquidation": 0.0743607063064432,
     "healthy": true
    },
    {
     "address": "0xde79a400ec22ff42d875e8c12819183a8e12e141",
     "collateral_pt": 121330.89275927603,
-    "collateral_usdc": 120406.28741303844,
+    "collateral_usdc": 120407.1239867739,
     "borrow_usdc": 100407.713152,
     "borrow_shares": "99945953261772889",
-    "ltv": 0.8339075583948877,
-    "distance_to_liquidation": 0.0886256192405599,
+    "ltv": 0.8339017645087948,
+    "distance_to_liquidation": 0.08863195135650836,
     "healthy": true
    },
    {
     "address": "0x91ab152b06edc600b4a123c2ea1387ebe5b83795",
     "collateral_pt": 12793.92035958004,
-    "collateral_usdc": 12696.423943829806,
+    "collateral_usdc": 12696.512157618587,
     "borrow_usdc": 10327.972861,
     "borrow_shares": "10280476074868801",
-    "ltv": 0.8134552616305142,
-    "distance_to_liquidation": 0.11097785614151456,
+    "ltv": 0.8134496098444378,
+    "distance_to_liquidation": 0.11098403295689863,
     "healthy": true
    },
    {
     "address": "0x9f72e6cd13c4da05bafb173e9ff83eb6e324315f",
     "collateral_pt": 15606.547027648327,
-    "collateral_usdc": 15487.616914386066,
+    "collateral_usdc": 15487.724521171507,
     "borrow_usdc": 12023.401898,
     "borrow_shares": "11968108090529110",
-    "ltv": 0.7763235599423793,
-    "distance_to_liquidation": 0.1515589508826456,
+    "ltv": 0.7763181661427523,
+    "distance_to_liquidation": 0.1515648457456259,
     "healthy": true
    },
    {
     "address": "0x7640aecb5a149ee48e79465f9aed3508b1efa164",
     "collateral_pt": 877.6116059341042,
-    "collateral_usdc": 870.9237429808763,
+    "collateral_usdc": 870.9297940928624,
     "borrow_usdc": 579.164444,
     "borrow_shares": "576500954167251",
-    "ltv": 0.665000177877476,
-    "distance_to_liquidation": 0.27322384931423394,
+    "ltv": 0.6649955575388743,
+    "distance_to_liquidation": 0.2732288988646183,
     "healthy": true
    },
    {
     "address": "0xa4818ef55ac5b27308808c633dc6e00a8361a810",
     "collateral_pt": 16199.974258248803,
-    "collateral_usdc": 16076.52191674328,
+    "collateral_usdc": 16076.633615195928,
     "borrow_usdc": 8019.430055,
     "borrow_shares": "7982549908190356",
-    "ltv": 0.4988286705626278,
-    "distance_to_liquidation": 0.454832054029915,
+    "ltv": 0.49882520476301007,
+    "distance_to_liquidation": 0.4548358417890601,
     "healthy": true
    },
    {
     "address": "0xb91745297802ad852b286809d25199c7467584a8",
     "collateral_pt": 1.0,
-    "collateral_usdc": 0.9923794729832572,
+    "collateral_usdc": 0.9923863679604261,
     "borrow_usdc": 0.271348,
     "borrow_shares": "270100000000",
-    "ltv": 0.2734316936083763,
-    "distance_to_liquidation": 0.7011675479689876,
+    "ltv": 0.2734297938389463,
+    "distance_to_liquidation": 0.7011696242197308,
     "healthy": true
    }
   ],
   "distribution": {
    "n_borrowers": 13,
-   "ltv_min": 0.2734316936083763,
-   "ltv_median": 0.8469658383430039,
-   "ltv_max": 0.9059199912722926,
-   "ltv_debt_weighted": 0.8835372816913808,
+   "ltv_min": 0.2734297938389463,
+   "ltv_median": 0.8469599537296045,
+   "ltv_max": 0.9059136970527645,
+   "ltv_debt_weighted": 0.8835311429841375,
    "distance_buckets": [
     {
      "distance_from": 0,
@@ -10454,7 +10454,7 @@
     "oracle_drop": 0.01,
     "n_liquidatable": 1,
     "debt_liquidatable_usdc": 2941926.701332,
-    "pt_seized": 3072819.4101138585,
+    "pt_seized": 3072798.0605464308,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10462,7 +10462,7 @@
     "oracle_drop": 0.015,
     "n_liquidatable": 1,
     "debt_liquidatable_usdc": 2941926.701332,
-    "pt_seized": 3088417.4781855023,
+    "pt_seized": 3088396.020244636,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10470,7 +10470,7 @@
     "oracle_drop": 0.02,
     "n_liquidatable": 1,
     "debt_liquidatable_usdc": 2941926.701332,
-    "pt_seized": 3104174.710217061,
+    "pt_seized": 3104153.142796905,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10478,7 +10478,7 @@
     "oracle_drop": 0.025,
     "n_liquidatable": 2,
     "debt_liquidatable_usdc": 2956009.282095,
-    "pt_seized": 3135028.9947973606,
+    "pt_seized": 3135007.2130054687,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10486,7 +10486,7 @@
     "oracle_drop": 0.03,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3259056.032613719,
+    "pt_seized": 3259033.3890973805,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10494,7 +10494,7 @@
     "oracle_drop": 0.035,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3275942.333300837,
+    "pt_seized": 3275919.572460579,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10502,7 +10502,7 @@
     "oracle_drop": 0.04,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3293004.5329534444,
+    "pt_seized": 3292981.6535671446,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10510,7 +10510,7 @@
     "oracle_drop": 0.045,
     "n_liquidatable": 3,
     "debt_liquidatable_usdc": 3057195.259506,
-    "pt_seized": 3310245.394382521,
+    "pt_seized": 3310222.395208858,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10518,7 +10518,7 @@
     "oracle_drop": 0.05,
     "n_liquidatable": 4,
     "debt_liquidatable_usdc": 3414342.774752,
-    "pt_seized": 3716412.376543937,
+    "pt_seized": 3716386.5553725525,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": false
    },
@@ -10526,7 +10526,7 @@
     "oracle_drop": 0.055,
     "n_liquidatable": 5,
     "debt_liquidatable_usdc": 6828685.883807,
-    "pt_seized": 7472152.233987913,
+    "pt_seized": 7472100.318402694,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10534,7 +10534,7 @@
     "oracle_drop": 0.06,
     "n_liquidatable": 6,
     "debt_liquidatable_usdc": 6844800.753736,
-    "pt_seized": 7529624.891550153,
+    "pt_seized": 7529572.576652051,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10542,7 +10542,7 @@
     "oracle_drop": 0.065,
     "n_liquidatable": 6,
     "debt_liquidatable_usdc": 6844800.753736,
-    "pt_seized": 7569890.265301756,
+    "pt_seized": 7569837.670644841,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10550,7 +10550,7 @@
     "oracle_drop": 0.07,
     "n_liquidatable": 6,
     "debt_liquidatable_usdc": 6844800.753736,
-    "pt_seized": 7610588.600061444,
+    "pt_seized": 7610535.7226375565,
     "bad_debt_usdc": 0.0,
     "seized_exceeds_capacity": true
    },
@@ -10558,128 +10558,128 @@
     "oracle_drop": 0.075,
     "n_liquidatable": 7,
     "debt_liquidatable_usdc": 6861296.117774,
-    "pt_seized": 7653803.426004283,
-    "bad_debt_usdc": 14637.836738048587,
+    "pt_seized": 7653772.984445061,
+    "bad_debt_usdc": 14617.498157457449,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.08,
     "n_liquidatable": 7,
     "debt_liquidatable_usdc": 6861296.117774,
-    "pt_seized": 7677615.489270264,
-    "bad_debt_usdc": 30461.019789907616,
+    "pt_seized": 7677584.882267786,
+    "bad_debt_usdc": 30440.79114759015,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.085,
     "n_liquidatable": 7,
     "debt_liquidatable_usdc": 6861296.117774,
-    "pt_seized": 7701641.680364178,
-    "bad_debt_usdc": 46325.00723449869,
+    "pt_seized": 7701611.811180369,
+    "bad_debt_usdc": 46304.087936777156,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.09,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7839357.626654204,
-    "bad_debt_usdc": 62777.85014308596,
+    "pt_seized": 7839326.800637113,
+    "bad_debt_usdc": 62757.045158466935,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.095,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7863870.080979615,
-    "bad_debt_usdc": 79230.69305167325,
+    "pt_seized": 7863839.084653037,
+    "bad_debt_usdc": 79210.0023801567,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.1,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7888654.895908642,
-    "bad_debt_usdc": 95683.53596026098,
+    "pt_seized": 7888623.727380251,
+    "bad_debt_usdc": 95662.95960184651,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.11,
     "n_liquidatable": 8,
     "debt_liquidatable_usdc": 6961703.830926,
-    "pt_seized": 7931672.085863802,
-    "bad_debt_usdc": 134947.94083956745,
+    "pt_seized": 7931671.012090353,
+    "bad_debt_usdc": 134901.4332569871,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.12,
     "n_liquidatable": 9,
     "debt_liquidatable_usdc": 6972031.803787,
-    "pt_seized": 7945427.32869713,
-    "bad_debt_usdc": 210274.98134245607,
+    "pt_seized": 7945426.289966673,
+    "bad_debt_usdc": 210228.88516153765,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.13,
     "n_liquidatable": 9,
     "debt_liquidatable_usdc": 6972031.803787,
-    "pt_seized": 7947145.757608498,
-    "bad_debt_usdc": 285667.319665111,
+    "pt_seized": 7947144.706938611,
+    "bad_debt_usdc": 285621.74730442907,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.14,
     "n_liquidatable": 9,
     "debt_liquidatable_usdc": 6972031.803787,
-    "pt_seized": 7948695.832928646,
-    "bad_debt_usdc": 361232.9118372687,
+    "pt_seized": 7948694.907843781,
+    "bad_debt_usdc": 361187.7498920438,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.15,
     "n_liquidatable": 9,
     "debt_liquidatable_usdc": 6972031.803787,
-    "pt_seized": 7949444.54290014,
-    "bad_debt_usdc": 437487.21726945305,
+    "pt_seized": 7949444.455605297,
+    "bad_debt_usdc": 437441.8875081866,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.16,
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
-    "pt_seized": 7964395.028810763,
-    "bad_debt_usdc": 514242.7068418836,
+    "pt_seized": 7964394.837641801,
+    "bad_debt_usdc": 514197.91037192574,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.17,
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
-    "pt_seized": 7964653.449669976,
-    "bad_debt_usdc": 591056.8572147054,
+    "pt_seized": 7964653.345596108,
+    "bad_debt_usdc": 591012.5226856573,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.18,
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
-    "pt_seized": 7964836.1232766695,
-    "bad_debt_usdc": 667936.0734384676,
+    "pt_seized": 7964836.017933607,
+    "bad_debt_usdc": 667892.2730603714,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.19,
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
-    "pt_seized": 7965023.307342787,
-    "bad_debt_usdc": 744815.2896622306,
+    "pt_seized": 7965023.200699193,
+    "bad_debt_usdc": 744772.0234350867,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.2,
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
-    "pt_seized": 7965215.171010558,
-    "bad_debt_usdc": 821694.5058859923,
+    "pt_seized": 7965215.063033919,
+    "bad_debt_usdc": 821651.7738098025,
     "seized_exceeds_capacity": true
    },
    {
@@ -10687,7 +10687,7 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 898673.9046881308,
+    "bad_debt_usdc": 898631.6239212697,
     "seized_exceeds_capacity": true
    },
    {
@@ -10695,7 +10695,7 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 975704.0477387237,
+    "bad_debt_usdc": 975662.3021714443,
     "seized_exceeds_capacity": true
    },
    {
@@ -10703,7 +10703,7 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 1052734.1907893177,
+    "bad_debt_usdc": 1052692.9804216174,
     "seized_exceeds_capacity": true
    },
    {
@@ -10711,7 +10711,7 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 1129764.333839911,
+    "bad_debt_usdc": 1129723.6586717926,
     "seized_exceeds_capacity": true
    },
    {
@@ -10719,7 +10719,7 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 1206794.4768905037,
+    "bad_debt_usdc": 1206754.3369219662,
     "seized_exceeds_capacity": true
    },
    {
@@ -10727,7 +10727,7 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 1283824.619941098,
+    "bad_debt_usdc": 1283785.0151721397,
     "seized_exceeds_capacity": true
    },
    {
@@ -10735,39 +10735,39 @@
     "n_liquidatable": 10,
     "debt_liquidatable_usdc": 6984055.205685,
     "pt_seized": 7965280.760948786,
-    "bad_debt_usdc": 1360854.7629916905,
+    "bad_debt_usdc": 1360815.6934223133,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.28,
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
-    "pt_seized": 7966112.543449859,
-    "bad_debt_usdc": 1437884.9060422843,
+    "pt_seized": 7966112.537670738,
+    "bad_debt_usdc": 1437846.371672487,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.29,
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
-    "pt_seized": 7966124.258696353,
-    "bad_debt_usdc": 1514915.0490928774,
+    "pt_seized": 7966124.252835836,
+    "bad_debt_usdc": 1514877.0499226616,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.3,
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
-    "pt_seized": 7966136.308664176,
-    "bad_debt_usdc": 1591945.1921434714,
+    "pt_seized": 7966136.302719937,
+    "bad_debt_usdc": 1591907.728172835,
     "seized_exceeds_capacity": true
    },
    {
     "oracle_drop": 0.31,
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
-    "pt_seized": 7966148.707906428,
-    "bad_debt_usdc": 1668975.335194064,
+    "pt_seized": 7966148.701876041,
+    "bad_debt_usdc": 1668938.4064230085,
     "seized_exceeds_capacity": true
    },
    {
@@ -10775,7 +10775,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 1746007.5163611346,
+    "bad_debt_usdc": 1745971.1187798295,
     "seized_exceeds_capacity": true
    },
    {
@@ -10783,7 +10783,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 1823046.1465636017,
+    "bad_debt_usdc": 1823010.2842408465,
     "seized_exceeds_capacity": true
    },
    {
@@ -10791,7 +10791,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 1900084.7767660716,
+    "bad_debt_usdc": 1900049.449701864,
     "seized_exceeds_capacity": true
    },
    {
@@ -10799,7 +10799,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 1977123.406968539,
+    "bad_debt_usdc": 1977088.6151628797,
     "seized_exceeds_capacity": true
    },
    {
@@ -10807,7 +10807,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 2054162.0371710076,
+    "bad_debt_usdc": 2054127.7806238974,
     "seized_exceeds_capacity": true
    },
    {
@@ -10815,7 +10815,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 2131200.667373476,
+    "bad_debt_usdc": 2131166.946084915,
     "seized_exceeds_capacity": true
    },
    {
@@ -10823,7 +10823,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 2208239.297575945,
+    "bad_debt_usdc": 2208206.1115459325,
     "seized_exceeds_capacity": true
    },
    {
@@ -10831,7 +10831,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 2285277.9277784135,
+    "bad_debt_usdc": 2285245.277006949,
     "seized_exceeds_capacity": true
    },
    {
@@ -10839,7 +10839,7 @@
     "n_liquidatable": 11,
     "debt_liquidatable_usdc": 6984634.370129,
     "pt_seized": 7966158.372554719,
-    "bad_debt_usdc": 2362316.5579808834,
+    "bad_debt_usdc": 2362284.4424679666,
     "seized_exceeds_capacity": true
    }
   ],
@@ -10850,117 +10850,117 @@
     "pt_seized": 0.0,
     "seized_in_position_units": 0.0,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.45,
-    "avg_cost_later": 0.004908630021583751,
+    "avg_cost_later": 0.004908609066516557,
     "market_impact_of_liquidations": 0.0,
     "note": null
    },
    {
     "oracle_drop": 0.01,
-    "pt_seized": 3072819.4101138585,
-    "seized_in_position_units": 0.30513044875833445,
+    "pt_seized": 3072798.0605464308,
+    "seized_in_position_units": 0.3051283287498925,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.14486955124166556,
-    "avg_cost_later": 0.012188848671500987,
-    "market_impact_of_liquidations": 0.0060988140026070154,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.14487167125010753,
+    "avg_cost_later": 0.01218870017773497,
+    "market_impact_of_liquidations": 0.006098750474353991,
     "note": null
    },
    {
     "oracle_drop": 0.015,
-    "pt_seized": 3088417.4781855023,
-    "seized_in_position_units": 0.3066793342850265,
+    "pt_seized": 3088396.020244636,
+    "seized_in_position_units": 0.30667720351512034,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.14332066571497354,
-    "avg_cost_later": 0.012255222960928316,
-    "market_impact_of_liquidations": 0.006145227964789591,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.14332279648487967,
+    "avg_cost_later": 0.012255072204210972,
+    "market_impact_of_liquidations": 0.006145164114058096,
     "note": null
    },
    {
     "oracle_drop": 0.02,
-    "pt_seized": 3104174.710217061,
-    "seized_in_position_units": 0.30824402476607254,
+    "pt_seized": 3104153.142796905,
+    "seized_in_position_units": 0.3082418831248914,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.14175597523392747,
-    "avg_cost_later": 0.012323232355240998,
-    "market_impact_of_liquidations": 0.006192115538831131,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.1417581168751086,
+    "avg_cost_later": 0.012323079244723156,
+    "market_impact_of_liquidations": 0.006192051362330624,
     "note": null
    },
    {
     "oracle_drop": 0.025,
-    "pt_seized": 3135028.9947973606,
-    "seized_in_position_units": 0.31130785001695355,
+    "pt_seized": 3135007.2130054687,
+    "seized_in_position_units": 0.31130568708869527,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.13869214998304646,
-    "avg_cost_later": 0.012459313986873034,
-    "market_impact_of_liquidations": 0.006283926241996583,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.13869431291130474,
+    "avg_cost_later": 0.012459156058555238,
+    "market_impact_of_liquidations": 0.006283861427606725,
     "note": null
    },
    {
     "oracle_drop": 0.03,
-    "pt_seized": 3259056.032613719,
-    "seized_in_position_units": 0.32362371393740114,
+    "pt_seized": 3259033.3890973805,
+    "seized_in_position_units": 0.32362146544005077,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.12637628606259887,
-    "avg_cost_later": 0.01305044432336623,
-    "market_impact_of_liquidations": 0.0066529838853138495,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.12637853455994924,
+    "avg_cost_later": 0.013050263736491414,
+    "market_impact_of_liquidations": 0.006652916506757339,
     "note": null
    },
    {
     "oracle_drop": 0.035,
-    "pt_seized": 3275942.333300837,
-    "seized_in_position_units": 0.325300520745367,
+    "pt_seized": 3275919.572460579,
+    "seized_in_position_units": 0.3252982605977712,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.12469947925463304,
-    "avg_cost_later": 0.013137138692370801,
-    "market_impact_of_liquidations": 0.006703231141441668,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.12470173940222878,
+    "avg_cost_later": 0.013136954538212248,
+    "market_impact_of_liquidations": 0.006703163413773468,
     "note": null
    },
    {
     "oracle_drop": 0.04,
-    "pt_seized": 3293004.5329534444,
-    "seized_in_position_units": 0.32699479429091566,
+    "pt_seized": 3292981.6535671446,
+    "seized_in_position_units": 0.32699252237171794,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.12300520570908435,
-    "avg_cost_later": 0.013226441112450313,
-    "market_impact_of_liquidations": 0.006754001806487495,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.12300747762828207,
+    "avg_cost_later": 0.013226253216565094,
+    "market_impact_of_liquidations": 0.006753933726071017,
     "note": null
    },
    {
     "oracle_drop": 0.045,
-    "pt_seized": 3310245.394382521,
-    "seized_in_position_units": 0.32870680892071114,
+    "pt_seized": 3310222.395208858,
+    "seized_in_position_units": 0.32870452510664844,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.12129319107928888,
-    "avg_cost_later": 0.013318492421732695,
-    "market_impact_of_liquidations": 0.0068053041015338255,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.12129547489335157,
+    "avg_cost_later": 0.013318300597015843,
+    "market_impact_of_liquidations": 0.006805235664675367,
     "note": null
    },
    {
     "oracle_drop": 0.05,
-    "pt_seized": 3716412.376543937,
-    "seized_in_position_units": 0.3690391216917825,
+    "pt_seized": 3716386.5553725525,
+    "seized_in_position_units": 0.36903655765382243,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
-    "sellable_later": 0.08096087830821752,
-    "avg_cost_later": 0.015846304128104883,
-    "market_impact_of_liquidations": 0.010066135118426845,
+    "avg_cost_now": 0.004908609066516557,
+    "sellable_later": 0.08096344234617758,
+    "avg_cost_later": 0.015846029599807215,
+    "market_impact_of_liquidations": 0.01006603151107678,
     "note": null
    },
    {
     "oracle_drop": 0.055,
-    "pt_seized": 7472152.233987913,
-    "seized_in_position_units": 0.7419834555987922,
+    "pt_seized": 7472100.318402694,
+    "seized_in_position_units": 0.7419783003899428,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10968,10 +10968,10 @@
    },
    {
     "oracle_drop": 0.06,
-    "pt_seized": 7529624.891550153,
-    "seized_in_position_units": 0.7476904807938233,
+    "pt_seized": 7529572.576652051,
+    "seized_in_position_units": 0.7476852859332721,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10979,10 +10979,10 @@
    },
    {
     "oracle_drop": 0.065,
-    "pt_seized": 7569890.265301756,
-    "seized_in_position_units": 0.7516888256109023,
+    "pt_seized": 7569837.670644841,
+    "seized_in_position_units": 0.7516836029703483,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -10990,10 +10990,10 @@
    },
    {
     "oracle_drop": 0.07,
-    "pt_seized": 7610588.600061444,
-    "seized_in_position_units": 0.755730163383004,
+    "pt_seized": 7610535.7226375565,
+    "seized_in_position_units": 0.7557249126637373,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11001,10 +11001,10 @@
    },
    {
     "oracle_drop": 0.075,
-    "pt_seized": 7653803.426004283,
-    "seized_in_position_units": 0.7600213883048302,
+    "pt_seized": 7653772.984445061,
+    "seized_in_position_units": 0.7600183654631377,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11012,10 +11012,10 @@
    },
    {
     "oracle_drop": 0.08,
-    "pt_seized": 7677615.489270264,
-    "seized_in_position_units": 0.7623859221678669,
+    "pt_seized": 7677584.882267786,
+    "seized_in_position_units": 0.7623828828976871,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11023,10 +11023,10 @@
    },
    {
     "oracle_drop": 0.085,
-    "pt_seized": 7701641.680364178,
-    "seized_in_position_units": 0.7647717188880744,
+    "pt_seized": 7701611.811180369,
+    "seized_in_position_units": 0.7647687528831638,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11034,10 +11034,10 @@
    },
    {
     "oracle_drop": 0.09,
-    "pt_seized": 7839357.626654204,
-    "seized_in_position_units": 0.7784468891093851,
+    "pt_seized": 7839326.800637113,
+    "seized_in_position_units": 0.778443828091091,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11045,10 +11045,10 @@
    },
    {
     "oracle_drop": 0.095,
-    "pt_seized": 7863870.080979615,
-    "seized_in_position_units": 0.780880971686403,
+    "pt_seized": 7863839.084653037,
+    "seized_in_position_units": 0.7808778937564057,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11056,10 +11056,10 @@
    },
    {
     "oracle_drop": 0.1,
-    "pt_seized": 7888654.895908642,
-    "seized_in_position_units": 0.7833420996253879,
+    "pt_seized": 7888623.727380251,
+    "seized_in_position_units": 0.7833390045957797,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11067,10 +11067,10 @@
    },
    {
     "oracle_drop": 0.11,
-    "pt_seized": 7931672.085863802,
-    "seized_in_position_units": 0.7876136993269968,
+    "pt_seized": 7931671.012090353,
+    "seized_in_position_units": 0.7876135927014747,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11078,10 +11078,10 @@
    },
    {
     "oracle_drop": 0.12,
-    "pt_seized": 7945427.32869713,
-    "seized_in_position_units": 0.7889795926185775,
+    "pt_seized": 7945426.289966673,
+    "seized_in_position_units": 0.7889794894728184,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11089,10 +11089,10 @@
    },
    {
     "oracle_drop": 0.13,
-    "pt_seized": 7947145.757608498,
-    "seized_in_position_units": 0.78915023231942,
+    "pt_seized": 7947144.706938611,
+    "seized_in_position_units": 0.7891501279880776,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11100,10 +11100,10 @@
    },
    {
     "oracle_drop": 0.14,
-    "pt_seized": 7948695.832928646,
-    "seized_in_position_units": 0.7893041545370711,
+    "pt_seized": 7948694.907843781,
+    "seized_in_position_units": 0.7893040626763002,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11111,10 +11111,10 @@
    },
    {
     "oracle_drop": 0.15,
-    "pt_seized": 7949444.54290014,
-    "seized_in_position_units": 0.7893785013108645,
+    "pt_seized": 7949444.455605297,
+    "seized_in_position_units": 0.7893784926425014,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11122,10 +11122,10 @@
    },
    {
     "oracle_drop": 0.16,
-    "pt_seized": 7964395.028810763,
-    "seized_in_position_units": 0.7908630820382736,
+    "pt_seized": 7964394.837641801,
+    "seized_in_position_units": 0.7908630630552279,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11133,10 +11133,10 @@
    },
    {
     "oracle_drop": 0.17,
-    "pt_seized": 7964653.449669976,
-    "seized_in_position_units": 0.7908887431859741,
+    "pt_seized": 7964653.345596108,
+    "seized_in_position_units": 0.7908887328514567,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11144,10 +11144,10 @@
    },
    {
     "oracle_drop": 0.18,
-    "pt_seized": 7964836.1232766695,
-    "seized_in_position_units": 0.7909068826442851,
+    "pt_seized": 7964836.017933607,
+    "seized_in_position_units": 0.7909068721837368,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11155,10 +11155,10 @@
    },
    {
     "oracle_drop": 0.19,
-    "pt_seized": 7965023.307342787,
-    "seized_in_position_units": 0.7909254699904555,
+    "pt_seized": 7965023.200699193,
+    "seized_in_position_units": 0.7909254594007646,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11166,10 +11166,10 @@
    },
    {
     "oracle_drop": 0.2,
-    "pt_seized": 7965215.171010558,
-    "seized_in_position_units": 0.7909445220202801,
+    "pt_seized": 7965215.063033919,
+    "seized_in_position_units": 0.7909445112982181,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11180,7 +11180,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11191,7 +11191,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11202,7 +11202,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11213,7 +11213,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11224,7 +11224,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11235,7 +11235,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11246,7 +11246,7 @@
     "pt_seized": 7965280.760948786,
     "seized_in_position_units": 0.7909510350900751,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11254,10 +11254,10 @@
    },
    {
     "oracle_drop": 0.28,
-    "pt_seized": 7966112.543449859,
-    "seized_in_position_units": 0.7910336309520338,
+    "pt_seized": 7966112.537670738,
+    "seized_in_position_units": 0.7910336303781681,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11265,10 +11265,10 @@
    },
    {
     "oracle_drop": 0.29,
-    "pt_seized": 7966124.258696353,
-    "seized_in_position_units": 0.7910347942740333,
+    "pt_seized": 7966124.252835836,
+    "seized_in_position_units": 0.791034793692085,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11276,10 +11276,10 @@
    },
    {
     "oracle_drop": 0.3,
-    "pt_seized": 7966136.308664176,
-    "seized_in_position_units": 0.7910359908338042,
+    "pt_seized": 7966136.302719937,
+    "seized_in_position_units": 0.7910359902435422,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11287,10 +11287,10 @@
    },
    {
     "oracle_drop": 0.31,
-    "pt_seized": 7966148.707906428,
-    "seized_in_position_units": 0.7910372220764669,
+    "pt_seized": 7966148.701876041,
+    "seized_in_position_units": 0.7910372214776504,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11301,7 +11301,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11312,7 +11312,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11323,7 +11323,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11334,7 +11334,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11345,7 +11345,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11356,7 +11356,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11367,7 +11367,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11378,7 +11378,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11389,7 +11389,7 @@
     "pt_seized": 7966158.372554719,
     "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
-    "avg_cost_now": 0.004908630021583751,
+    "avg_cost_now": 0.004908609066516557,
     "sellable_later": 0.0,
     "avg_cost_later": null,
     "market_impact_of_liquidations": null,
@@ -11400,23 +11400,23 @@
   "evidence": {
    "list": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908 (morpho_positions_0x5613b170.json)",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209 (morpho_positions_0x5613b170.json)",
+    "block": 26163209
    },
    "distribution": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908 (morpho_positions_0x5613b170.json)",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209 (morpho_positions_0x5613b170.json)",
+    "block": 26163209
    },
    "oracle_price": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908 (morpho_positions_0x5613b170.json)",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209 (morpho_positions_0x5613b170.json)",
+    "block": 26163209
    },
    "lltv": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908 (morpho_positions_0x5613b170.json)",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209 (morpho_positions_0x5613b170.json)",
+    "block": 26163209
    },
    "capacity_pt": {
     "grade": "A",
@@ -11428,7 +11428,7 @@
    },
    "liquidation_curve": {
     "grade": "B",
-    "source": "onchain_positions.liquidation_curve: borrowers at block 26162908, full liquidation, LIF",
+    "source": "onchain_positions.liquidation_curve: borrowers at block 26163209, full liquidation, LIF",
     "basis": {
      "borrowers": "A",
      "formula": "B"
@@ -11550,18 +11550,18 @@
    "break_even": {
     "worst_outcome": "severe",
     "L_worst": 0.9987447088831543,
-    "exit_cost_sellable": 0.004908630021583751,
-    "exit_cost_value": 0.004908630021583751,
+    "exit_cost_sellable": 0.004908609066516557,
+    "exit_cost_value": 0.004908609066516557,
     "exit_cost_scale": 1.0,
     "sellable_fraction": 0.45,
-    "p_worst_alone": 0.004914799525769527,
+    "p_worst_alone": 0.004914778544364562,
     "p_worst_given_default_partial": 0.0,
     "p_partial": 0.2668711656441718,
     "alternatives": [
      {
       "preset": "issuer_half",
       "L": 0.5,
-      "p_worst_alone": 0.009817260043167502
+      "p_worst_alone": 0.009817218133033115
      }
     ]
    },
@@ -11617,25 +11617,25 @@
     {
      "outcome": "resolved",
      "oracle_drop": 0.016185490170549488,
-     "pt_seized": 3092139.0014262777,
-     "seized_in_position_units": 0.30704888091467375,
+     "pt_seized": 3092117.5176287303,
+     "seized_in_position_units": 0.30704674757720357,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908630021583751,
-     "sellable_later": 0.14295111908532626,
-     "avg_cost_later": 0.012271197336038491,
-     "market_impact_of_liquidations": 0.006156301813048577,
+     "avg_cost_now": 0.004908609066516557,
+     "sellable_later": 0.14295325242279644,
+     "avg_cost_later": 0.012271046029654151,
+     "market_impact_of_liquidations": 0.0061562378853773905,
      "note": null
     },
     {
      "outcome": "partial",
      "oracle_drop": 0.022665999999999964,
-     "pt_seized": 3112642.3679240867,
-     "seized_in_position_units": 0.30908486174711103,
+     "pt_seized": 3112620.7416716972,
+     "seized_in_position_units": 0.3090827142638991,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908630021583751,
-     "sellable_later": 0.14091513825288898,
-     "avg_cost_later": 0.012360188223988652,
-     "market_impact_of_liquidations": 0.00621731209155702,
+     "avg_cost_now": 0.004908609066516557,
+     "sellable_later": 0.1409172857361009,
+     "avg_cost_later": 0.012360033819411498,
+     "market_impact_of_liquidations": 0.0062172477399939875,
      "note": null
     },
     {
@@ -11644,7 +11644,7 @@
      "pt_seized": 7982359.346812968,
      "seized_in_position_units": 0.7926469357836674,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908630021583751,
+     "avg_cost_now": 0.004908609066516557,
      "sellable_later": 0.0,
      "avg_cost_later": null,
      "market_impact_of_liquidations": null,
@@ -11728,8 +11728,8 @@
    "break_even": {
     "worst_outcome": "partial",
     "L_worst": 0.0,
-    "exit_cost_sellable": 0.004908630021583751,
-    "exit_cost_value": 0.004908630021583751,
+    "exit_cost_sellable": 0.004908609066516557,
+    "exit_cost_value": 0.004908609066516557,
     "exit_cost_scale": 1.0,
     "sellable_fraction": 0.45,
     "p_worst_alone": null,
@@ -11777,13 +11777,13 @@
     {
      "outcome": "partial",
      "oracle_drop": 0.02966625463535233,
-     "pt_seized": 3257935.0834050495,
-     "seized_in_position_units": 0.32351240387018704,
+     "pt_seized": 3257912.4476769264,
+     "seized_in_position_units": 0.3235101561462051,
      "sellable_now": 0.45,
-     "avg_cost_now": 0.004908630021583751,
-     "sellable_later": 0.12648759612981297,
-     "avg_cost_later": 0.01304474714290326,
-     "market_impact_of_liquidations": 0.006649648363636369,
+     "avg_cost_now": 0.004908609066516557,
+     "sellable_later": 0.12648984385379491,
+     "avg_cost_later": 0.013044566788220541,
+     "market_impact_of_liquidations": 0.0066495810082546365,
      "note": null
     }
    ]
@@ -11812,7 +11812,7 @@
      "rule": "1 - timeLeft x baseDiscountPerYear / 365 days: no market or underlying input",
      "evidence": {
       "grade": "B",
-      "source": "Etherscan verified source (PendleSparkLinearDiscountOracle); eth_call @ block 26162908"
+      "source": "Etherscan verified source (PendleSparkLinearDiscountOracle); eth_call @ block 26163209"
      }
     }
    },
@@ -11821,7 +11821,7 @@
    "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
    "evidence": {
     "grade": "B",
-    "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162908"
+    "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163209"
    }
   },
   "backup": {
@@ -11843,7 +11843,7 @@
      "rule": "1 - timeLeft x baseDiscountPerYear / 365 days: no market or underlying input",
      "evidence": {
       "grade": "B",
-      "source": "Etherscan verified source (PendleSparkLinearDiscountOracle); eth_call @ block 26162908"
+      "source": "Etherscan verified source (PendleSparkLinearDiscountOracle); eth_call @ block 26163209"
      }
     },
     "BASE_FEED_2": {
@@ -11854,7 +11854,7 @@
      "last_update": {
       "answer": 99959682,
       "updated_at": 1791604751,
-      "age_seconds": 41100
+      "age_seconds": 44724
      },
      "prices": "usde",
      "tracks_market": true,
@@ -11862,7 +11862,7 @@
      "rule": "Chainlink price feed of the described pair: follows its market price",
      "evidence": {
       "grade": "C",
-      "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162908; classified from description 'USDe / USD'"
+      "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26163209; classified from description 'USDe / USD'"
      }
     },
     "QUOTE_FEED_1": {
@@ -11873,13 +11873,13 @@
      "tracks_underlying": false,
      "last_update": {
       "answer": 1000000000000,
-      "updated_at": 1791645851,
+      "updated_at": 1791649475,
       "age_seconds": 0
      },
      "rule": "constant answer",
      "evidence": {
       "grade": "C",
-      "source": "Etherscan verified source (DummyFeed); eth_call @ block 26162908"
+      "source": "Etherscan verified source (DummyFeed); eth_call @ block 26163209"
      }
     }
    },
@@ -11892,7 +11892,7 @@
    "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
    "evidence": {
     "grade": "C",
-    "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162908"
+    "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26163209"
    }
   },
   "current": "primary",
@@ -11912,7 +11912,7 @@
   "rule": "current oracle now; backup only after deviation > threshold persists for the challenge timelock and acceptChallenge() is called",
   "evidence": {
    "grade": "C",
-   "source": "Etherscan verified source (MetaOracleDeviationTimelock); eth_call @ block 26162908"
+   "source": "Etherscan verified source (MetaOracleDeviationTimelock); eth_call @ block 26163209"
   }
  },
  "dependency_graph": {
@@ -13062,6 +13062,28 @@
    "infra": 3
   }
  },
+ "time_model": {
+  "generated_at": "2026-10-10T16:25:43+00:00",
+  "expiry": "2026-11-26",
+  "days_to_expiry": 46.31547453703703,
+  "implied_apy": 0.05011039832525688,
+  "oracle_discount_per_year": 0.06,
+  "borrow_apr": 0.03676861568808,
+  "evidence": {
+   "implied_apy": {
+    "grade": "A",
+    "source": "Pendle markets API"
+   },
+   "oracle_discount_per_year": {
+    "grade": "A",
+    "source": "PendleSparkLinearDiscountOracle.baseDiscountPerYear (eth_call)"
+   },
+   "borrow_apr": {
+    "grade": "A",
+    "source": "AdaptiveCurveIrm.borrowRateView at the positions block; assumed constant over the incident (D)"
+   }
+  }
+ },
  "ui": {
   "nodes": {
    "eth": {
@@ -13764,11 +13786,11 @@
    "lltv": 0.915,
    "can_hold": true,
    "label": "PT as collateral, LTV of the largest real borrower (0xdf819874...)",
-   "debt_usd": 8685017.073630426,
-   "ltv": 0.8685017073630426,
+   "debt_usd": 8684956.731211014,
+   "ltv": 0.8684956731211013,
    "evidence": {
     "grade": "A",
-    "source": "eth_call @ block 26162908 x assumed size"
+    "source": "eth_call @ block 26163209 x assumed size"
    },
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   },
@@ -13777,11 +13799,11 @@
    "lltv": 0.915,
    "can_hold": true,
    "label": "PT as collateral, LTV of the real borrower closest to liquidation (0x5c430ff6...)",
-   "debt_usd": 9059199.912722927,
-   "ltv": 0.9059199912722926,
+   "debt_usd": 9059136.970527645,
+   "ltv": 0.9059136970527645,
    "evidence": {
     "grade": "A",
-    "source": "eth_call @ block 26162908 x assumed size"
+    "source": "eth_call @ block 26163209 x assumed size"
    },
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   }
@@ -13808,7 +13830,7 @@
   "withdrawable_now_usdc": 764516.4230929995,
   "withdrawable_fraction": 0.7645164230929995,
   "locked_fraction": 0.2354835769070005,
-  "block": 26162908,
+  "block": 26163209,
   "scenarios": [
    {
     "key": "usde_mild",
@@ -13831,20 +13853,20 @@
    {
     "key": "issuer_half",
     "bad_debt_usdc_per_branch": [
-     3132889.004756636,
-     3031908.3464004924
+     3132862.187404135,
+     3031880.883160441
     ],
-    "L_low": 0.3908523537678679,
-    "L_high": 0.40387007181676116
+    "L_low": 0.39084881339962796,
+    "L_high": 0.4038666147118129
    },
    {
     "key": "issuer_total",
     "bad_debt_usdc_per_branch": [
-     6982963.813396413,
-     6982710.245841299
+     6982963.746069236,
+     6982710.176752354
     ],
-    "L_low": 0.9001620179271644,
-    "L_high": 0.9001947060774751
+    "L_low": 0.9001620090207023,
+    "L_high": 0.9001946973981277
    }
   ],
   "incidents": [
@@ -13867,14 +13889,14 @@
       "outcome": "severe",
       "preset": "issuer_total",
       "probability": 0.046012269938650305,
-      "L_used": 0.9001947060774751
+      "L_used": 0.9001946973981277
      }
     ],
-    "expected_loss": 0.04142000181338076,
-    "expected_loss_usdc": 41420.00181338075,
-    "tail_loss_95": 0.8284000362676144,
-    "tail_loss_95_usdc": 828400.0362676143,
-    "loss_on_locked_part_usdc": 9753.730182509347
+    "expected_loss": 0.04142000141402428,
+    "expected_loss_usdc": 41420.00141402428,
+    "tail_loss_95": 0.8284000282804849,
+    "tail_loss_95_usdc": 828400.0282804848,
+    "loss_on_locked_part_usdc": 9753.730088467455
    },
    {
     "key": "oracle_dip",
@@ -13913,23 +13935,23 @@
    },
    "total_supply_usdc": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209",
+    "block": 26163209
    },
    "total_borrow_usdc": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209",
+    "block": 26163209
    },
    "utilization": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209",
+    "block": 26163209
    },
    "liquidity_usdc": {
     "grade": "A",
-    "source": "Ethereum eth_call at block 26162908",
-    "block": 26162908
+    "source": "Ethereum eth_call at block 26163209",
+    "block": 26163209
    },
    "withdrawable_fraction": {
     "grade": "D",
@@ -13962,12 +13984,12 @@
  },
  "exit_costs": {
   "first_size": 0.01,
-  "cost_first": 0.00015488941907307733,
+  "cost_first": 0.00015446723593606591,
   "cap": 0.45,
-  "cost_avg_cap": 0.004908630021583751,
-  "cost_marginal_cap": 0.020874173126601142,
-  "gas_usd_first": 0.14272287672020714,
-  "gas_usd_cap": 0.3187823587192551,
+  "cost_avg_cap": 0.004908609066516557,
+  "cost_marginal_cap": 0.020874173110484173,
+  "gas_usd_first": 0.1005045630190654,
+  "gas_usd_cap": 0.2244845563481379,
   "gas_included": true,
   "evidence": {
    "costs": {
@@ -13980,7 +14002,7 @@
    },
    "gas": {
     "grade": "A",
-    "source": "Pendle routes[0].data.gasUsed per quote x (0.1121 + 0) gwei at block 26162908 x ETH $2,506 (baseFeePerGas of block 26162908 and eth_maxPriorityFeePerGas (https://ethereum-rpc.publicnode.com); ETH = WETH price from https://coins.llama.fi/prices/current)"
+    "source": "Pendle routes[0].data.gasUsed per quote x (0.07889 + 0) gwei at block 26163209 x ETH $2,507 (baseFeePerGas of block 26163209 and eth_maxPriorityFeePerGas (https://ethereum-rpc.publicnode.com); ETH = WETH price from https://coins.llama.fi/prices/current)"
    }
   }
  },

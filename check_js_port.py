@@ -186,6 +186,34 @@ def main():
           f"effects, weakest)" + (f"  first mismatch {sbad[0]}" if sbad else ""))
     bad = bad + sbad
 
+    # timeline (incident duration): every point of every timeline
+    from frontend_contract import timeline_pt
+    tcombos = [(pk, k.split(":")[0], k.split(":")[1], sev, rec) for pk in d["position_presets"]
+               for k in d["ui"]["injections"] for sev in (2, 10) for rec in (True, False)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "t.json"), os.path.join(tmp, "t.js")
+        json.dump(tcombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(a.map(c=>{const t=M.timeline(d,c[0],c[1],c[2],c[3],c[4]);"
+                            "return [t, M.timelineSummary(d,c[0],t)];})));")
+        jout = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+        jt, jsum = [x[0] for x in jout], [x[1] for x in jout]
+    from frontend_contract import timeline_summary
+    tk = ("hours", "verdict", "L_high", "loss_if_stay_usd", "sell_fraction", "oracle_falls", "pt_price_market",
+          "pt_price_oracle", "position_value_usd", "debt_usd", "carry")
+    tbad = []
+    for c, j in zip(tcombos, jt):
+        py = timeline_pt(d, *c)
+        if len(py) != len(j) or not all((a[k] == b[k]) if isinstance(a[k], (str, bool)) or a[k] is None else same(a[k], b[k])
+                                        for a, b in zip(py, j) for k in tk):
+            tbad.append(c)
+        elif timeline_summary(d, c[0], py) != jsum[tcombos.index(c)]:
+            tbad.append(("summary",) + c)
+    print(f"GATE {'PASS' if not tbad else 'FAIL'}  timeline: {len(tcombos)} timelines equal at every duration"
+          + (f"  first mismatch {tbad[0]}" if tbad else ""))
+    bad = bad + tbad
+
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob
     from vault_pipeline import liquidity_run, vault_decide, vault_decide_at
@@ -264,6 +292,30 @@ def main():
                  (py["weakest"] and j["weakest"] and py["weakest"]["alternative"] == j["weakest"]["alternative"])))
         print(f"GATE {'PASS' if not vsbad else 'FAIL'}  vaultSensitivity: {len(vs) - vsbad}/{len(vs)} cases equal")
         vbad += vsbad
+        from vault_pipeline import vault_timeline
+        vt = [(vf, inc["key"], amount, sev, rec) for vf in vfiles for inc in json.load(open(vf))["incidents"]
+              if inc.get("duration_grids") for amount in (1e5, 1e7) for sev in (None, 0.3) for rec in (True, False)]
+        with tempfile.TemporaryDirectory() as tmp:
+            cf, sf = os.path.join(tmp, "vt.json"), os.path.join(tmp, "vt.js")
+            json.dump(vt, open(cf, "w"))
+            open(sf, "w").write("const M=require(process.argv[2]);const fs=require('fs');"
+                                "const cs=JSON.parse(fs.readFileSync(process.argv[3]));const cache={};"
+                                "console.log(JSON.stringify(cs.map(c=>{const v=cache[c[0]]||(cache[c[0]]=JSON.parse(fs.readFileSync(c[0])));"
+                                "const inc=v.incidents.find(i=>i.key===c[1]);const t=M.vaultTimeline(inc,v.exit,c[2],c[3],c[4]);"
+                                "return [t, M.vaultTimelineSummary(inc,t)];})));")
+            jvt = json.loads(subprocess.run(["node", sf, JS, cf], check=True, capture_output=True, text=True).stdout)
+        vtk = ("hours", "verdict", "L", "loss_if_stay_usd", "exit_usd", "exit_cost_usd", "locked_usd", "carry_cost")
+        from vault_pipeline import vault_timeline_summary
+        vtbad = 0
+        for c, (j, jsm) in zip(vt, jvt):
+            v = cache.setdefault(c[0], json.load(open(c[0])))
+            inc = next(i for i in v["incidents"] if i["key"] == c[1])
+            py = vault_timeline(inc, v["exit"], c[2], c[3], c[4])
+            vtbad += not (len(py) == len(j) and all(a[k] == b[k] if isinstance(a[k], str) else same(a[k], b[k])
+                                                    for a, b in zip(py, j) for k in vtk)
+                          and vault_timeline_summary(inc, py) == jsm)
+        print(f"GATE {'PASS' if not vtbad else 'FAIL'}  vaultTimeline: {len(vt) - vtbad}/{len(vt)} timelines equal")
+        vbad += vtbad
     sys.exit(1 if fails or bad or vbad else 0)
 
 
