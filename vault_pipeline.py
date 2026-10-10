@@ -32,6 +32,7 @@ import time
 import crawl as crawl_mod
 import etherscan
 import incidents as inc_mod
+import offchain
 from loss_model import PRESETS, Position, Scenario, position_loss
 from oracle_types import classify, oracle_falls
 from onchain_positions import RPC, read_market, words
@@ -373,6 +374,7 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
                                                     if 0 <= b["distance_to_liquidation"] < 0.01)}
             if m.get("analyzed") else {}) for m in markets],
         "dependency_chain": dependency_chain(addr, nodes, edges, live, incidents, asset, asset_sym, name_of),
+        "offchain": offchain_of(live, asset, asset_sym),
         "incidents": incidents, "exit": exit_, "worst_incident": top and top["key"], "decision_text": summary,
         "default_decision": top and top.get("decision"),
         "notes": notes,
@@ -727,7 +729,6 @@ def dependency_chain(vault, nodes, edges, live, incidents, asset, asset_sym, nam
     """The vault's dependencies as a chain from the settlement layer to the issuers."""
     roles = sorted({f"{e['type']}: {e['dst'][:10]}..." for e in edges if e["src"] == vault and e["kind"] == "role"})
     adapters = sorted({name_of(e["dst"]) for e in edges if e["src"] == vault and e["type"].startswith("adapters[")})
-    under = sorted({(i["symbol"], i["type"]) for i in incidents if i.get("type") in ("depeg",) and i.get("symbol")})
     return [
         {"layer": 1, "name": "Settlement chain", "items": [{"label": "Ethereum mainnet", "evidence": "A"}]},
         {"layer": 2, "name": "Vault", "items": [{"label": name_of(vault), "address": vault, "detail": "; ".join(roles[:6]),
@@ -742,12 +743,69 @@ def dependency_chain(vault, nodes, edges, live, incidents, asset, asset_sym, nam
             {"label": m["collateral_symbol"], "address": m["collateral"], "detail": f"{m['collateral_type']}; oracle "
              f"{m['oracle']['kind']} (follows market: {m['oracle']['tracks_market']}, underlying: "
              f"{m['oracle']['tracks_underlying']})", "evidence": m["oracle"]["evidence"]["grade"]} for m in live]},
-        {"layer": 6, "name": "Underlying and issuers", "items":
-            [{"label": f"{asset_sym} issuer (vault asset)", "detail": "off-chain, not verified", "evidence": "D"}]
-            + [{"label": f"{s} ({t})", "evidence": "A"} for s, t in under]
-            + [{"label": f"{m['collateral_symbol']} issuer", "detail": "off-chain, not verified", "evidence": "D"}
-               for m in live if m["collateral_type"] in ("rwa_or_credit", "yield_wrapper", "pt")]},
+        issuers_layer(live, incidents, asset, asset_sym),
     ]
+
+
+def issuer_item(sym, address, role, blocks):
+    """One issuer row of the chain: from offchain_deps.json when the token is listed (issuer, summary, number of sourced
+    relations, grade D), else "off-chain, not verified"."""
+    b = blocks.get(sym)
+    if b is None or (b.get("address") and address and b["address"] != address.lower()):
+        return {"label": f"{sym} issuer{role}", "detail": "off-chain, not verified", "evidence": "D"}
+    c = b["counts"]
+    return {"label": f"{sym} issuer{role}: {b['issuer']}", "detail": b["summary"], "evidence": "D", "offchain": sym,
+            "sources": f"{c['relations']} relations from documents ({c['official']} official, {c['third_party']} "
+                       f"third-party), {c['quotes_found']} quotes re-checked on their page"}
+
+
+def offchain_of(live, asset, asset_sym, deps=None, check=None):
+    """offchain_deps.json blocks of the vault asset and of every analysed collateral, keyed by symbol."""
+    deps = deps or offchain.load()
+    check = check if check is not None else offchain.load_check()
+    out = {}
+    for addr, sym in [(asset, asset_sym)] + [(m["collateral"], m["collateral_symbol"]) for m in live]:
+        b = offchain.token_block(deps, check, address=addr)
+        if b:
+            out[sym] = b
+    return out
+
+
+def issuers_layer(live, incidents, asset, asset_sym, blocks=None):
+    """Layer 6 of the dependency chain: the vault asset's issuer, stablecoin underlyings, collateral issuers."""
+    blocks = offchain_of(live, asset, asset_sym) if blocks is None else blocks
+    under = sorted({(i["symbol"], i["type"]) for i in incidents if i.get("type") in ("depeg",) and i.get("symbol")})
+    return {"layer": 6, "name": "Underlying and issuers", "items":
+            [issuer_item(asset_sym, asset, " (vault asset)", blocks)]
+            + [{"label": f"{s} ({t})", "evidence": "A"} for s, t in under]
+            + [issuer_item(m["collateral_symbol"], m["collateral"], "", blocks)
+               for m in live if m["collateral_type"] in ("rwa_or_credit", "yield_wrapper", "pt")]}
+
+
+def refresh_offchain(js_out=None, log=print):
+    """Re-attach offchain_deps.json to the existing vault detail files (layer 6 and `offchain`) without re-reading the
+    chain; rewrite the bundle when js_out is given."""
+    deps, check = offchain.load(), offchain.load_check()
+    n = 0
+    for name in sorted(os.listdir(OUT)):
+        if not (name.startswith("0x") and name.endswith(".json")):
+            continue
+        p = os.path.join(OUT, name)
+        with open(p) as f:
+            v = json.load(f)
+        live = [m for m in v["markets"] if m.get("analyzed")]
+        blocks = offchain_of(live, v["asset"], v["asset_symbol"], deps, check)
+        v["offchain"] = blocks
+        v["dependency_chain"] = [x for x in v["dependency_chain"] if x["layer"] != 6] + \
+            [issuers_layer(live, v["incidents"], v["asset"], v["asset_symbol"], blocks)]
+        with open(p, "w") as f:
+            json.dump(v, f, indent=1)
+        n += 1
+        log(f"  {v['vault_name']}: off-chain blocks for {', '.join(blocks) or 'none'}")
+    if js_out:
+        with open(os.path.join(DATA, "vaults_report.json")) as f:
+            bundle_js(json.load(f), js_out)
+    return n
 
 
 def sentence(inc, ex):
@@ -859,7 +917,9 @@ def bundle_js(report, path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("input")
+    ap.add_argument("input", nargs="?")
+    ap.add_argument("--offchain-only", action="store_true",
+                    help="only re-attach offchain_deps.json to the existing data/vaults files (no chain reads)")
     ap.add_argument("--only", nargs="*", help="vault addresses to analyze (default: all)")
     ap.add_argument("--rpc", default=os.environ.get("RPC_URL", "https://ethereum-rpc.publicnode.com"))
     ap.add_argument("--deposit", type=float, default=1e7,
@@ -875,6 +935,12 @@ def main():
     ap.add_argument("--no-partial-crawl", action="store_true")
     ap.add_argument("--js-out", help="also write report + vault details as 'window.VAULTS = {...};' for the front end")
     a = ap.parse_args()
+    if a.offchain_only:
+        n = refresh_offchain(a.js_out)
+        print(f"off-chain dependencies re-attached to {n} vault files" + (f"; bundle -> {a.js_out}" if a.js_out else ""))
+        return
+    if not a.input:
+        ap.error("input CSV required (unless --offchain-only)")
     cfg = vars(a)
     cfg["alt_apy_by_currency"] = {"USD": a.alt_apy, "EUR": a.alt_apy_eur, "ETH": a.alt_apy_eth}
     rows = load_rows(a.input)

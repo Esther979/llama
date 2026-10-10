@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T18:21:05+00:00",
+ "generated_at": "2026-10-10T19:55:07+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -12021,7 +12021,40 @@
      "0xe8dc0fab349ea169283c48ccfd09d797e6db7c94",
      "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
      "0x7fc7c91d556b400afa565013e3f32055a0713425",
-     "offchain:ethena"
+     "offchain:ethena",
+     "offchain:ethena:ethena-bvi-limited",
+     "offchain:ethena:copper-clearloop",
+     "offchain:ethena:ceffu-mirrorx",
+     "offchain:ethena:anchorage-digital-bank",
+     "offchain:ethena:kraken-custody",
+     "offchain:ethena:all-custodians",
+     "offchain:ethena:falconx-ethena-x-falconx-spv",
+     "offchain:ethena:ripple-prime",
+     "offchain:ethena:cme-and-coinbase-derivatives-exchange",
+     "offchain:ethena:coinbase-onchain-wallets",
+     "offchain:ethena:binance",
+     "offchain:ethena:bybit",
+     "offchain:ethena:okx",
+     "offchain:ethena:deribit",
+     "offchain:ethena:bitget",
+     "offchain:ethena:coinbase-international",
+     "offchain:ethena:spot-crypto-and-stablecoins",
+     "offchain:ethena:usdc-usdt-usdtb-circle-tether-usdtb",
+     "offchain:ethena:steth-and-other-liquid-staking-tokens",
+     "offchain:ethena:blackrock-buidl-through-usdtb",
+     "offchain:ethena:anchorage-digital-bank-usdtb-issuer",
+     "offchain:ethena:morpho-and-aave",
+     "offchain:ethena:reserve-fund",
+     "offchain:ethena:custodian-monthly-attestations",
+     "offchain:ethena:harris-trotter-chaos-labs-llamarisk-chai",
+     "offchain:ethena:ethena-risk-committee",
+     "offchain:ethena:pyth-and-redstone",
+     "offchain:ethena:aws-ap-east-1-hong-kong",
+     "offchain:susde",
+     "offchain:susde:ethena-opco-ltd",
+     "offchain:susde:ethena-foundation-rewards",
+     "offchain:susde:reserve-fund",
+     "offchain:susde:usde-all-of-its-off-chain-dependencies"
     ]
    },
    {
@@ -12707,13 +12740,539 @@
    },
    "offchain:ethena": {
     "id": "offchain:ethena",
-    "label": "Ethena: issuer, exchanges, custodians",
+    "label": "Ethena: Ethena (BVI) Limited",
     "kind": "offchain_issuer",
     "layer": 2,
     "address": null,
     "evidence": {
      "grade": "D",
-     "source": "not verified: off-chain, needs documents"
+     "source": "31 relations from the issuer's documents, each with its URL and quote (offchain_deps.json)"
+    }
+   },
+   "offchain:ethena:ethena-bvi-limited": {
+    "id": "offchain:ethena:ethena-bvi-limited",
+    "label": "Ethena (BVI) Limited",
+    "kind": "offchain_entity",
+    "role": "issuer",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Legal issuer of USDe"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/resources/usde-terms-and-conditions"
+    }
+   },
+   "offchain:ethena:copper-clearloop": {
+    "id": "offchain:ethena:copper-clearloop",
+    "label": "Copper (ClearLoop)",
+    "kind": "offchain_entity",
+    "role": "custodian",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Off-exchange custodian of USDe backing, attested monthly",
+     "Client funds sit in a bankruptcy-remote trust: a Copper failure should delay, not take, the backing"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:ceffu-mirrorx": {
+    "id": "offchain:ethena:ceffu-mirrorx",
+    "label": "Ceffu (MirrorX)",
+    "kind": "offchain_entity",
+    "role": "custodian",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Off-exchange custodian of USDe backing, attested monthly",
+     "Ceffu delegates Ethena's assets to Binance without moving them onto the exchange"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:anchorage-digital-bank": {
+    "id": "offchain:ethena:anchorage-digital-bank",
+    "label": "Anchorage Digital Bank",
+    "kind": "offchain_entity",
+    "role": "custodian",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Custodian of USDe backing, attested monthly",
+     "Anchorage custody refills the USDe MintRedeem contract: part of the redemption path"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:kraken-custody": {
+    "id": "offchain:ethena:kraken-custody",
+    "label": "Kraken Custody",
+    "kind": "offchain_entity",
+    "role": "custodian",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Custodian of USDe backing, attested monthly"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:all-custodians": {
+    "id": "offchain:ethena:all-custodians",
+    "label": "All custodians",
+    "kind": "offchain_entity",
+    "role": "custodian",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "The custodians confirm the notional backing sits with these four"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:falconx-ethena-x-falconx-spv": {
+    "id": "offchain:ethena:falconx-ethena-x-falconx-spv",
+    "label": "FalconX (Ethena x FalconX SPV)",
+    "kind": "offchain_entity",
+    "role": "counterparty",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "An SPV with FalconX holds part of the backing (collateral with Anchorage, BitGo, Kraken)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:ripple-prime": {
+    "id": "offchain:ethena:ripple-prime",
+    "label": "Ripple Prime",
+    "kind": "offchain_entity",
+    "role": "counterparty",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Futures broker (FCM) holding Ethena's margin for CME and Coinbase Derivatives"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:cme-and-coinbase-derivatives-exchange": {
+    "id": "offchain:ethena:cme-and-coinbase-derivatives-exchange",
+    "label": "CME and Coinbase Derivatives Exchange",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Regulated futures venues for the hedge, through Ripple Prime"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:coinbase-onchain-wallets": {
+    "id": "offchain:ethena:coinbase-onchain-wallets",
+    "label": "Coinbase Onchain Wallets",
+    "kind": "offchain_entity",
+    "role": "custodian",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Wallets holding part of the backing (addresses published, readable on chain)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3"
+    }
+   },
+   "offchain:ethena:binance": {
+    "id": "offchain:ethena:binance",
+    "label": "Binance",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Hedging venue for the short derivatives (through Ceffu MirrorX)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk"
+    }
+   },
+   "offchain:ethena:bybit": {
+    "id": "offchain:ethena:bybit",
+    "label": "Bybit",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Hedging venue, through Copper ClearLoop (case study of the February 2025 Bybit hack)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/ethena-and-exchange-risk-bybit-case-study"
+    }
+   },
+   "offchain:ethena:okx": {
+    "id": "offchain:ethena:okx",
+    "label": "OKX",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Hedging venue"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch"
+    }
+   },
+   "offchain:ethena:deribit": {
+    "id": "offchain:ethena:deribit",
+    "label": "Deribit",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Hedging venue"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk"
+    }
+   },
+   "offchain:ethena:bitget": {
+    "id": "offchain:ethena:bitget",
+    "label": "Bitget",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Hedging venue"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk"
+    }
+   },
+   "offchain:ethena:coinbase-international": {
+    "id": "offchain:ethena:coinbase-international",
+    "label": "Coinbase International",
+    "kind": "offchain_entity",
+    "role": "exchange",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Hedging venue, through Copper ClearLoop"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch"
+    }
+   },
+   "offchain:ethena:spot-crypto-and-stablecoins": {
+    "id": "offchain:ethena:spot-crypto-and-stablecoins",
+    "label": "Spot crypto and stablecoins",
+    "kind": "offchain_entity",
+    "role": "reserve_asset",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "USDe reserves: spot BTC, ETH, SOL, liquid staking tokens, stablecoins, and offsetting short derivatives"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/resources/usde-terms-and-conditions"
+    }
+   },
+   "offchain:ethena:usdc-usdt-usdtb-circle-tether-usdtb": {
+    "id": "offchain:ethena:usdc-usdt-usdtb-circle-tether-usdtb",
+    "label": "USDC, USDT, USDtb (Circle, Tether, USDtb)",
+    "kind": "offchain_entity",
+    "role": "reserve_asset",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Part of the backing is held in fiat-backed stablecoins without a hedge"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/backing-assets/liquid-stablecoins"
+    }
+   },
+   "offchain:ethena:steth-and-other-liquid-staking-tokens": {
+    "id": "offchain:ethena:steth-and-other-liquid-staking-tokens",
+    "label": "stETH and other liquid staking tokens",
+    "kind": "offchain_entity",
+    "role": "reserve_asset",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "LSTs margin part of the hedge (basis risk against ETH perpetuals)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/backing-assets-risk"
+    }
+   },
+   "offchain:ethena:blackrock-buidl-through-usdtb": {
+    "id": "offchain:ethena:blackrock-buidl-through-usdtb",
+    "label": "BlackRock BUIDL (through USDtb)",
+    "kind": "offchain_entity",
+    "role": "reserve_asset",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Indirect real-world-asset exposure: USDtb is backed mainly by BUIDL"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/rwa-backing"
+    }
+   },
+   "offchain:ethena:anchorage-digital-bank-usdtb-issuer": {
+    "id": "offchain:ethena:anchorage-digital-bank-usdtb-issuer",
+    "label": "Anchorage Digital Bank (USDtb issuer)",
+    "kind": "offchain_entity",
+    "role": "issuer",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Anchorage issues and manages USDtb: it is both a USDe custodian and the issuer of a reserve asset"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.usdtb.money/"
+    }
+   },
+   "offchain:ethena:morpho-and-aave": {
+    "id": "offchain:ethena:morpho-and-aave",
+    "label": "Morpho and Aave",
+    "kind": "offchain_entity",
+    "role": "other",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Part of the stable backing is supplied to DeFi lending markets"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/backing-assets/defi-lending"
+    }
+   },
+   "offchain:ethena:reserve-fund": {
+    "id": "offchain:ethena:reserve-fund",
+    "label": "Reserve Fund",
+    "kind": "offchain_entity",
+    "role": "reserve_fund",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "A pool of protocol assets as an extra margin of safety for USDe"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/reserve-fund"
+    }
+   },
+   "offchain:ethena:custodian-monthly-attestations": {
+    "id": "offchain:ethena:custodian-monthly-attestations",
+    "label": "Custodian monthly attestations",
+    "kind": "offchain_entity",
+    "role": "attestation",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Custodians attest monthly to the existence, control and value of the backing"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/resources/custodian-attestations"
+    }
+   },
+   "offchain:ethena:harris-trotter-chaos-labs-llamarisk-chai": {
+    "id": "offchain:ethena:harris-trotter-chaos-labs-llamarisk-chai",
+    "label": "Harris & Trotter, Chaos Labs, LlamaRisk, Chainlink",
+    "kind": "offchain_entity",
+    "role": "attestation",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Proof-of-reserve attestors (list at launch, April 2025)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://ethena.fi/api/blogs/usde-proof-of-reserves-launch"
+    }
+   },
+   "offchain:ethena:ethena-risk-committee": {
+    "id": "offchain:ethena:ethena-risk-committee",
+    "label": "Ethena Risk Committee",
+    "kind": "offchain_entity",
+    "role": "governance",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Approves backing assets, custodians and venues (members: Blockworks Advisory, LlamaRisk, Kairos Research)"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/governance/risk-committee"
+    }
+   },
+   "offchain:ethena:pyth-and-redstone": {
+    "id": "offchain:ethena:pyth-and-redstone",
+    "label": "Pyth and Redstone",
+    "kind": "offchain_entity",
+    "role": "oracle",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Price feeds of the off-chain hedging system; a failure pauses mint and redeem"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/technical-design/hedging-system/managing-risk-from-dependencies"
+    }
+   },
+   "offchain:ethena:aws-ap-east-1-hong-kong": {
+    "id": "offchain:ethena:aws-ap-east-1-hong-kong",
+    "label": "AWS (ap-east-1, Hong Kong)",
+    "kind": "offchain_entity",
+    "role": "infrastructure",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Ethena's mint / redeem and hedging infrastructure runs on AWS Hong Kong"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/api-documentation/overview"
+    }
+   },
+   "offchain:susde": {
+    "id": "offchain:susde",
+    "label": "sUSDe: Ethena OpCo Ltd (Ethena Foundation subsidiary)",
+    "kind": "offchain_operator",
+    "layer": 2,
+    "address": null,
+    "evidence": {
+     "grade": "D",
+     "source": "4 relations from the issuer's documents (offchain_deps.json)"
+    }
+   },
+   "offchain:susde:ethena-opco-ltd": {
+    "id": "offchain:susde:ethena-opco-ltd",
+    "label": "Ethena OpCo Ltd",
+    "kind": "offchain_entity",
+    "role": "issuer",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Maintains the sUSDe staking contract and the transfer of USDe rewards"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/resources/terms-of-service"
+    }
+   },
+   "offchain:susde:ethena-foundation-rewards": {
+    "id": "offchain:susde:ethena-foundation-rewards",
+    "label": "Ethena Foundation (rewards)",
+    "kind": "offchain_entity",
+    "role": "admin_role",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "A subsidiary computes the weekly APY off chain and pays rewards to the StakingRewardsDistributor"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/rewards-mechanism"
+    }
+   },
+   "offchain:susde:reserve-fund": {
+    "id": "offchain:susde:reserve-fund",
+    "label": "Reserve Fund",
+    "kind": "offchain_entity",
+    "role": "reserve_fund",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "Losses are meant to be borne by the Reserve Fund, not the staking contract: a sUSDe NAV loss needs a loss larger than the fund"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/protocol-overview/rewards-mechanism"
+    }
+   },
+   "offchain:susde:usde-all-of-its-off-chain-dependencies": {
+    "id": "offchain:susde:usde-all-of-its-off-chain-dependencies",
+    "label": "USDe (all of its off-chain dependencies)",
+    "kind": "offchain_entity",
+    "role": "underlying",
+    "layer": 2,
+    "address": null,
+    "contract_name": null,
+    "relations": [
+     "sUSDe holds USDe: every USDe dependency above applies"
+    ],
+    "evidence": {
+     "grade": "D",
+     "source": "issuer document: https://docs.ethena.fi/resources/usde-terms-and-conditions"
     }
    }
   },
@@ -13136,20 +13695,819 @@
     "to": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
     "type": "backing",
     "kind": "data",
-    "evidence": "not verified (off-chain)"
+    "evidence": "issuer documents: Backed by spot crypto and stablecoins held with off-exchange custodians (Copper, Ceffu, Anchorage, Kraken) and hedged with short derivatives on centralised exchanges (Binance, Bybit, OKX, Deribit, Bitget, Coinbase International, CME / CDE through Ripple Prime); a Reserve Fund absorbs losses first."
+   },
+   {
+    "from": "offchain:ethena:ethena-bvi-limited",
+    "to": "offchain:ethena",
+    "type": "issuer",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/resources/usde-terms-and-conditions: \"USDe is a digital token issued by Ethena BVI.\""
+   },
+   {
+    "from": "offchain:ethena:copper-clearloop",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"has been verified to be held within solutions offered by Copper as of 23:59 UTC September 27th 2026, including unrealized P&L.\""
+   },
+   {
+    "from": "offchain:ethena:copper-clearloop",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/backing-custody-and-security/overview/copper-clearloop-case-study: \"Copper users\u2019 funds are held within a bankruptcy-remote trust, meaning in the event of Copper\u2019s failure, users\u2019 funds are not expected to be part of Copper's estate.\""
+   },
+   {
+    "from": "offchain:ethena:ceffu-mirrorx",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"has been verified to be held within solutions offered by Ceffu as of 23:59 UTC September 27th 2026.\""
+   },
+   {
+    "from": "offchain:ethena:ceffu-mirrorx",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://www.ceffu.com/blog/ethena-has-integrated-ceffu-mirrorx-off-exchange-settlement: \"MirrorX allows institutional clients such as Ethena to deposit assets in Ceffu\u2019s custody and delegate/undelegate those assets to/from the Binance Exchange without transferring them onto the exchange itself\""
+   },
+   {
+    "from": "offchain:ethena:anchorage-digital-bank",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"has been verified to be held within solutions offered by Anchorage Digital Bank as of 23:59 UTC September 27th 2026.\""
+   },
+   {
+    "from": "offchain:ethena:anchorage-digital-bank",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/new-custodian-anchorage: \"Anchorage Digital Bank\u2019s custody offering will also be integrated within our replenishment workflows of the USDe MintRedeem smart contract\""
+   },
+   {
+    "from": "offchain:ethena:kraken-custody",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"has been verified to be held within solutions offered by Kraken Custody as of 23:59 UTC September 27th 2026.\""
+   },
+   {
+    "from": "offchain:ethena:all-custodians",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"All custodians have confirmed that the notional backing USDe is held within Copper, Ceffu, Anchorage Digital Bank, and Kraken Custody of 23:59 UTC September 27th 2026.\""
+   },
+   {
+    "from": "offchain:ethena:falconx-ethena-x-falconx-spv",
+    "to": "offchain:ethena",
+    "type": "counterparty",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"held within solutions offered by Anchorage Digital Bank and Bitgo, and Kraken Custody for the Ethena x FalconX SPV\""
+   },
+   {
+    "from": "offchain:ethena:ripple-prime",
+    "to": "offchain:ethena",
+    "type": "counterparty",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"held within segregated & regulated margin accounts by Ripple Prime, Ethena BVI Ltd\u2019s FCM used to access the Chicago Mercantile Exchange (\u201cCME\u201d) and the Coinbase Derivatives Exchange (\u201cCDE\u201d).\""
+   },
+   {
+    "from": "offchain:ethena:cme-and-coinbase-derivatives-exchange",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"held within segregated & regulated margin accounts by Ripple Prime, Ethena BVI Ltd\u2019s FCM used to access the Chicago Mercantile Exchange (\u201cCME\u201d) and the Coinbase Derivatives Exchange (\u201cCDE\u201d).\""
+   },
+   {
+    "from": "offchain:ethena:coinbase-onchain-wallets",
+    "to": "offchain:ethena",
+    "type": "custodian",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3: \"within Ethena\u2019s Coinbase Onchain Wallets as per the links below\""
+   },
+   {
+    "from": "offchain:ethena:binance",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk: \"These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.\""
+   },
+   {
+    "from": "offchain:ethena:bybit",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/ethena-and-exchange-risk-bybit-case-study: \"in this case, Copper ClearLoop to access Bybit.\""
+   },
+   {
+    "from": "offchain:ethena:okx",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch: \"Coinbase International joins Binance, Bybit, Okx, Deribit, and Bitget as the only hedging venues for USDe\u2019s backing assets.\""
+   },
+   {
+    "from": "offchain:ethena:deribit",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk: \"These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.\""
+   },
+   {
+    "from": "offchain:ethena:bitget",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk: \"These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.\""
+   },
+   {
+    "from": "offchain:ethena:coinbase-international",
+    "to": "offchain:ethena",
+    "type": "exchange",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch: \"Ethena Labs is proud to announce the integration of Coinbase International, via Copper\u2019s ClearLoop solution, as a hedging venue for the backing assets of USDe.\""
+   },
+   {
+    "from": "offchain:ethena:spot-crypto-and-stablecoins",
+    "to": "offchain:ethena",
+    "type": "reserve_asset",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/resources/usde-terms-and-conditions: \"USDe is backed by an amount of spot crypto assets, such as BTC, ETH, SOL, certain liquid staking tokens, certain stablecoins (such as USDC, USDT, and USDtb), and offsetting hedging positions on derivatives contracts\""
+   },
+   {
+    "from": "offchain:ethena:usdc-usdt-usdtb-circle-tether-usdtb",
+    "to": "offchain:ethena",
+    "type": "reserve_asset",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/backing-assets/liquid-stablecoins: \"The protocol holds a portion of its backing in liquid, fiat-referenced stablecoins - such as USDC, USDT, and USDtb - that already maintain a stable dollar value using fiat (and equivalent) reserves and therefore do not require a derivatives hedge.\""
+   },
+   {
+    "from": "offchain:ethena:steth-and-other-liquid-staking-tokens",
+    "to": "offchain:ethena",
+    "type": "reserve_asset",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/risks/backing-assets-risk: \"Given Ethena uses some stETH and other LSTs in part to margin the delta hedging derivatives positions, the integrity and confidence in those assets is paramount.\""
+   },
+   {
+    "from": "offchain:ethena:blackrock-buidl-through-usdtb",
+    "to": "offchain:ethena",
+    "type": "reserve_asset",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/rwa-backing: \"USDe\u2019s backing already includes meaningful indirect RWA exposure through USDtb - a stablecoin backed primarily by BlackRock\u2019s BUIDL\""
+   },
+   {
+    "from": "offchain:ethena:anchorage-digital-bank-usdtb-issuer",
+    "to": "offchain:ethena",
+    "type": "issuer",
+    "kind": "offchain",
+    "evidence": "https://docs.usdtb.money/: \"As of October 13, 2025, the issuance, redemption, and reserve management for USDtb were transitioned to Anchorage Digital Bank.\""
+   },
+   {
+    "from": "offchain:ethena:morpho-and-aave",
+    "to": "offchain:ethena",
+    "type": "other",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/backing-assets/defi-lending: \"Ethena supplies into established lending venues - such as markets on protocols including Morpho and Aave\""
+   },
+   {
+    "from": "offchain:ethena:reserve-fund",
+    "to": "offchain:ethena",
+    "type": "reserve_fund",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/reserve-fund: \"The Reserve Fund is a pool of assets held by the protocol as an additional margin of safety for USDe.\""
+   },
+   {
+    "from": "offchain:ethena:custodian-monthly-attestations",
+    "to": "offchain:ethena",
+    "type": "attestation",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/resources/custodian-attestations: \"Monthly attestations are completed with the custodians to validate the existence, control, and value of the backing assets of USDe.\""
+   },
+   {
+    "from": "offchain:ethena:harris-trotter-chaos-labs-llamarisk-chai",
+    "to": "offchain:ethena",
+    "type": "attestation",
+    "kind": "offchain",
+    "evidence": "https://ethena.fi/api/blogs/usde-proof-of-reserves-launch: \"The solution was created & launched in collaboration with the inaugural Proof of Reserve Attestors: Harris & Trotter, Chaos Labs, LlamaRisk, and Chainlink.\""
+   },
+   {
+    "from": "offchain:ethena:ethena-risk-committee",
+    "to": "offchain:ethena",
+    "type": "governance",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/governance/risk-committee: \"For the current six month term, the Risk Committee members are as follows:\""
+   },
+   {
+    "from": "offchain:ethena:pyth-and-redstone",
+    "to": "offchain:ethena",
+    "type": "oracle",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/technical-design/hedging-system/managing-risk-from-dependencies: \"Price Feeds, such as Pyth and Redstone.\""
+   },
+   {
+    "from": "offchain:ethena:aws-ap-east-1-hong-kong",
+    "to": "offchain:ethena",
+    "type": "infrastructure",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/api-documentation/overview: \"Ethena's infrastructure is hosted on AWS Asia Pacific (Hong Kong) region, ap-east-1.\""
+   },
+   {
+    "from": "offchain:susde",
+    "to": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+    "type": "operator",
+    "kind": "offchain",
+    "evidence": "issuer documents: Staked USDe: rewards are computed off chain each week by an Ethena Foundation subsidiary and paid into the staking contract; protocol losses should hit the Reserve Fund before the staking contract."
+   },
+   {
+    "from": "offchain:susde:ethena-opco-ltd",
+    "to": "offchain:susde",
+    "type": "issuer",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/resources/terms-of-service: \"The sUSDe staking smart contract, including the management and transfer of USDe rewards, is maintained by Ethena OpCo Ltd.\""
+   },
+   {
+    "from": "offchain:susde:ethena-foundation-rewards",
+    "to": "offchain:susde",
+    "type": "admin_role",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/rewards-mechanism: \"The Ethena Foundation, via a subsidiary, calculates APY weekly as part of internal accounting when distributing rewards to the StakingRewardsDistributor contract.\""
+   },
+   {
+    "from": "offchain:susde:reserve-fund",
+    "to": "offchain:susde",
+    "type": "reserve_fund",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/protocol-overview/rewards-mechanism: \"If the protocol were to suffer a loss due to funding or another reason, Ethena's Reserve Fund is intended to bear the cost, rather than the staking contract.\""
+   },
+   {
+    "from": "offchain:susde:usde-all-of-its-off-chain-dependencies",
+    "to": "offchain:susde",
+    "type": "underlying",
+    "kind": "offchain",
+    "evidence": "https://docs.ethena.fi/resources/usde-terms-and-conditions: \"USDe is a digital token issued by Ethena BVI.\""
    }
   ],
   "counts": {
    "data": 28,
    "role": 13,
    "operator": 16,
-   "infra": 3
+   "infra": 3,
+   "offchain": 36
+  }
+ },
+ "offchain": {
+  "USDe": {
+   "symbol": "USDe",
+   "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+   "issuer": "Ethena (BVI) Limited",
+   "summary": "Backed by spot crypto and stablecoins held with off-exchange custodians (Copper, Ceffu, Anchorage, Kraken) and hedged with short derivatives on centralised exchanges (Binance, Bybit, OKX, Deribit, Bitget, Coinbase International, CME / CDE through Ripple Prime); a Reserve Fund absorbs losses first.",
+   "retrieved_at": "2026-10-10",
+   "grade_rule": "stated in the issuer's own documents (official = false: a third-party page), not verifiable on chain; the quote is re-checked on the page by offchain.py",
+   "relations": [
+    {
+     "entity": "Ethena (BVI) Limited",
+     "kind": "issuer",
+     "relation": "Legal issuer of USDe",
+     "notes": "Terms of service: Ethena (BVI) Limited, BVI law",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/resources/usde-terms-and-conditions",
+      "url": "https://docs.ethena.fi/resources/usde-terms-and-conditions",
+      "quote": "USDe is a digital token issued by Ethena BVI.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Copper (ClearLoop)",
+     "kind": "custodian",
+     "relation": "Off-exchange custodian of USDe backing, attested monthly",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "has been verified to be held within solutions offered by Copper as of 23:59 UTC September 27th 2026, including unrealized P&L.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Copper (ClearLoop)",
+     "kind": "custodian",
+     "relation": "Client funds sit in a bankruptcy-remote trust: a Copper failure should delay, not take, the backing",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/backing-custody-and-security/overview/copper-clearloop-case-study",
+      "url": "https://docs.ethena.fi/backing-custody-and-security/overview/copper-clearloop-case-study",
+      "quote": "Copper users\u2019 funds are held within a bankruptcy-remote trust, meaning in the event of Copper\u2019s failure, users\u2019 funds are not expected to be part of Copper's estate.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Ceffu (MirrorX)",
+     "kind": "custodian",
+     "relation": "Off-exchange custodian of USDe backing, attested monthly",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "has been verified to be held within solutions offered by Ceffu as of 23:59 UTC September 27th 2026.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Ceffu (MirrorX)",
+     "kind": "custodian",
+     "relation": "Ceffu delegates Ethena's assets to Binance without moving them onto the exchange",
+     "notes": "Custodian's own announcement, March 2024",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://www.ceffu.com/blog/ethena-has-integrated-ceffu-mirrorx-off-exchange-settlement",
+      "url": "https://www.ceffu.com/blog/ethena-has-integrated-ceffu-mirrorx-off-exchange-settlement",
+      "quote": "MirrorX allows institutional clients such as Ethena to deposit assets in Ceffu\u2019s custody and delegate/undelegate those assets to/from the Binance Exchange without transferring them onto the exchange itself",
+      "official": true,
+      "quote_found": null,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Anchorage Digital Bank",
+     "kind": "custodian",
+     "relation": "Custodian of USDe backing, attested monthly",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "has been verified to be held within solutions offered by Anchorage Digital Bank as of 23:59 UTC September 27th 2026.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Anchorage Digital Bank",
+     "kind": "custodian",
+     "relation": "Anchorage custody refills the USDe MintRedeem contract: part of the redemption path",
+     "notes": "December 2025",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/new-custodian-anchorage",
+      "url": "https://ethena.fi/api/blogs/new-custodian-anchorage",
+      "quote": "Anchorage Digital Bank\u2019s custody offering will also be integrated within our replenishment workflows of the USDe MintRedeem smart contract",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Kraken Custody",
+     "kind": "custodian",
+     "relation": "Custodian of USDe backing, attested monthly",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "has been verified to be held within solutions offered by Kraken Custody as of 23:59 UTC September 27th 2026.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "All custodians",
+     "kind": "custodian",
+     "relation": "The custodians confirm the notional backing sits with these four",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "All custodians have confirmed that the notional backing USDe is held within Copper, Ceffu, Anchorage Digital Bank, and Kraken Custody of 23:59 UTC September 27th 2026.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "FalconX (Ethena x FalconX SPV)",
+     "kind": "counterparty",
+     "relation": "An SPV with FalconX holds part of the backing (collateral with Anchorage, BitGo, Kraken)",
+     "notes": "What the SPV does is not stated on the page",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "held within solutions offered by Anchorage Digital Bank and Bitgo, and Kraken Custody for the Ethena x FalconX SPV",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Ripple Prime",
+     "kind": "counterparty",
+     "relation": "Futures broker (FCM) holding Ethena's margin for CME and Coinbase Derivatives",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "held within segregated & regulated margin accounts by Ripple Prime, Ethena BVI Ltd\u2019s FCM used to access the Chicago Mercantile Exchange (\u201cCME\u201d) and the Coinbase Derivatives Exchange (\u201cCDE\u201d).",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "CME and Coinbase Derivatives Exchange",
+     "kind": "exchange",
+     "relation": "Regulated futures venues for the hedge, through Ripple Prime",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "held within segregated & regulated margin accounts by Ripple Prime, Ethena BVI Ltd\u2019s FCM used to access the Chicago Mercantile Exchange (\u201cCME\u201d) and the Coinbase Derivatives Exchange (\u201cCDE\u201d).",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Coinbase Onchain Wallets",
+     "kind": "custodian",
+     "relation": "Wallets holding part of the backing (addresses published, readable on chain)",
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+      "quote": "within Ethena\u2019s Coinbase Onchain Wallets as per the links below",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Binance",
+     "kind": "exchange",
+     "relation": "Hedging venue for the short derivatives (through Ceffu MirrorX)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+      "url": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+      "quote": "These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Bybit",
+     "kind": "exchange",
+     "relation": "Hedging venue, through Copper ClearLoop (case study of the February 2025 Bybit hack)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/ethena-and-exchange-risk-bybit-case-study",
+      "url": "https://ethena.fi/api/blogs/ethena-and-exchange-risk-bybit-case-study",
+      "quote": "in this case, Copper ClearLoop to access Bybit.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "OKX",
+     "kind": "exchange",
+     "relation": "Hedging venue",
+     "notes": "July 2025",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch",
+      "url": "https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch",
+      "quote": "Coinbase International joins Binance, Bybit, Okx, Deribit, and Bitget as the only hedging venues for USDe\u2019s backing assets.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Deribit",
+     "kind": "exchange",
+     "relation": "Hedging venue",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+      "url": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+      "quote": "These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Bitget",
+     "kind": "exchange",
+     "relation": "Hedging venue",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+      "url": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+      "quote": "These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Coinbase International",
+     "kind": "exchange",
+     "relation": "Hedging venue, through Copper ClearLoop",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch",
+      "url": "https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch",
+      "quote": "Ethena Labs is proud to announce the integration of Coinbase International, via Copper\u2019s ClearLoop solution, as a hedging venue for the backing assets of USDe.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Spot crypto and stablecoins",
+     "kind": "reserve_asset",
+     "relation": "USDe reserves: spot BTC, ETH, SOL, liquid staking tokens, stablecoins, and offsetting short derivatives",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/resources/usde-terms-and-conditions",
+      "url": "https://docs.ethena.fi/resources/usde-terms-and-conditions",
+      "quote": "USDe is backed by an amount of spot crypto assets, such as BTC, ETH, SOL, certain liquid staking tokens, certain stablecoins (such as USDC, USDT, and USDtb), and offsetting hedging positions on derivatives contracts",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "USDC, USDT, USDtb (Circle, Tether, USDtb)",
+     "kind": "reserve_asset",
+     "relation": "Part of the backing is held in fiat-backed stablecoins without a hedge",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/backing-assets/liquid-stablecoins",
+      "url": "https://docs.ethena.fi/backing-assets/liquid-stablecoins",
+      "quote": "The protocol holds a portion of its backing in liquid, fiat-referenced stablecoins - such as USDC, USDT, and USDtb - that already maintain a stable dollar value using fiat (and equivalent) reserves and therefore do not require a derivatives hedge.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "stETH and other liquid staking tokens",
+     "kind": "reserve_asset",
+     "relation": "LSTs margin part of the hedge (basis risk against ETH perpetuals)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/risks/backing-assets-risk",
+      "url": "https://docs.ethena.fi/protocol-overview/risks/backing-assets-risk",
+      "quote": "Given Ethena uses some stETH and other LSTs in part to margin the delta hedging derivatives positions, the integrity and confidence in those assets is paramount.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "BlackRock BUIDL (through USDtb)",
+     "kind": "reserve_asset",
+     "relation": "Indirect real-world-asset exposure: USDtb is backed mainly by BUIDL",
+     "notes": "June 2026",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/rwa-backing",
+      "url": "https://ethena.fi/api/blogs/rwa-backing",
+      "quote": "USDe\u2019s backing already includes meaningful indirect RWA exposure through USDtb - a stablecoin backed primarily by BlackRock\u2019s BUIDL",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Anchorage Digital Bank (USDtb issuer)",
+     "kind": "issuer",
+     "relation": "Anchorage issues and manages USDtb: it is both a USDe custodian and the issuer of a reserve asset",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.usdtb.money/",
+      "url": "https://docs.usdtb.money/",
+      "quote": "As of October 13, 2025, the issuance, redemption, and reserve management for USDtb were transitioned to Anchorage Digital Bank.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Morpho and Aave",
+     "kind": "other",
+     "relation": "Part of the stable backing is supplied to DeFi lending markets",
+     "notes": "Markets not named",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/backing-assets/defi-lending",
+      "url": "https://docs.ethena.fi/backing-assets/defi-lending",
+      "quote": "Ethena supplies into established lending venues - such as markets on protocols including Morpho and Aave",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Reserve Fund",
+     "kind": "reserve_fund",
+     "relation": "A pool of protocol assets as an extra margin of safety for USDe",
+     "notes": "Address 0x2b5ab59163a6e93b4486f6055d33ca4a115dd4d5 (September 2026 attestation): its size can be read on chain",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/reserve-fund",
+      "url": "https://docs.ethena.fi/protocol-overview/reserve-fund",
+      "quote": "The Reserve Fund is a pool of assets held by the protocol as an additional margin of safety for USDe.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Custodian monthly attestations",
+     "kind": "attestation",
+     "relation": "Custodians attest monthly to the existence, control and value of the backing",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/resources/custodian-attestations",
+      "url": "https://docs.ethena.fi/resources/custodian-attestations",
+      "quote": "Monthly attestations are completed with the custodians to validate the existence, control, and value of the backing assets of USDe.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Harris & Trotter, Chaos Labs, LlamaRisk, Chainlink",
+     "kind": "attestation",
+     "relation": "Proof-of-reserve attestors (list at launch, April 2025)",
+     "notes": "Current attestor list not confirmed",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://ethena.fi/api/blogs/usde-proof-of-reserves-launch",
+      "url": "https://ethena.fi/api/blogs/usde-proof-of-reserves-launch",
+      "quote": "The solution was created & launched in collaboration with the inaugural Proof of Reserve Attestors: Harris & Trotter, Chaos Labs, LlamaRisk, and Chainlink.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Ethena Risk Committee",
+     "kind": "governance",
+     "relation": "Approves backing assets, custodians and venues (members: Blockworks Advisory, LlamaRisk, Kairos Research)",
+     "notes": "Member names are the list right after this sentence",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/governance/risk-committee",
+      "url": "https://docs.ethena.fi/protocol-overview/governance/risk-committee",
+      "quote": "For the current six month term, the Risk Committee members are as follows:",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Pyth and Redstone",
+     "kind": "oracle",
+     "relation": "Price feeds of the off-chain hedging system; a failure pauses mint and redeem",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/technical-design/hedging-system/managing-risk-from-dependencies",
+      "url": "https://docs.ethena.fi/technical-design/hedging-system/managing-risk-from-dependencies",
+      "quote": "Price Feeds, such as Pyth and Redstone.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "AWS (ap-east-1, Hong Kong)",
+     "kind": "infrastructure",
+     "relation": "Ethena's mint / redeem and hedging infrastructure runs on AWS Hong Kong",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/api-documentation/overview",
+      "url": "https://docs.ethena.fi/api-documentation/overview",
+      "quote": "Ethena's infrastructure is hosted on AWS Asia Pacific (Hong Kong) region, ap-east-1.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    }
+   ],
+   "counts": {
+    "relations": 31,
+    "official": 31,
+    "third_party": 0,
+    "quotes_found": 30,
+    "quotes_checked_at": "2026-10-10T19:17:54+00:00"
+   }
+  },
+  "sUSDe": {
+   "symbol": "sUSDe",
+   "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+   "issuer": "Ethena OpCo Ltd (Ethena Foundation subsidiary)",
+   "summary": "Staked USDe: rewards are computed off chain each week by an Ethena Foundation subsidiary and paid into the staking contract; protocol losses should hit the Reserve Fund before the staking contract.",
+   "retrieved_at": "2026-10-10",
+   "grade_rule": "stated in the issuer's own documents (official = false: a third-party page), not verifiable on chain; the quote is re-checked on the page by offchain.py",
+   "relations": [
+    {
+     "entity": "Ethena OpCo Ltd",
+     "kind": "issuer",
+     "relation": "Maintains the sUSDe staking contract and the transfer of USDe rewards",
+     "notes": "Not offered to EU / EEA residents (same page)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/resources/terms-of-service",
+      "url": "https://docs.ethena.fi/resources/terms-of-service",
+      "quote": "The sUSDe staking smart contract, including the management and transfer of USDe rewards, is maintained by Ethena OpCo Ltd.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Ethena Foundation (rewards)",
+     "kind": "admin_role",
+     "relation": "A subsidiary computes the weekly APY off chain and pays rewards to the StakingRewardsDistributor",
+     "notes": "StakingRewardsDistributor 0xf2fa332bd83149c66b09b45670bce64746c6b439",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/rewards-mechanism",
+      "url": "https://docs.ethena.fi/protocol-overview/rewards-mechanism",
+      "quote": "The Ethena Foundation, via a subsidiary, calculates APY weekly as part of internal accounting when distributing rewards to the StakingRewardsDistributor contract.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Reserve Fund",
+     "kind": "reserve_fund",
+     "relation": "Losses are meant to be borne by the Reserve Fund, not the staking contract: a sUSDe NAV loss needs a loss larger than the fund",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/protocol-overview/rewards-mechanism",
+      "url": "https://docs.ethena.fi/protocol-overview/rewards-mechanism",
+      "quote": "If the protocol were to suffer a loss due to funding or another reason, Ethena's Reserve Fund is intended to bear the cost, rather than the staking contract.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "USDe (all of its off-chain dependencies)",
+     "kind": "underlying",
+     "relation": "sUSDe holds USDe: every USDe dependency above applies",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.ethena.fi/resources/usde-terms-and-conditions",
+      "url": "https://docs.ethena.fi/resources/usde-terms-and-conditions",
+      "quote": "USDe is a digital token issued by Ethena BVI.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    }
+   ],
+   "counts": {
+    "relations": 4,
+    "official": 4,
+    "third_party": 0,
+    "quotes_found": 4,
+    "quotes_checked_at": "2026-10-10T19:17:54+00:00"
+   }
   }
  },
  "time_model": {
-  "generated_at": "2026-10-10T18:21:05+00:00",
+  "generated_at": "2026-10-10T19:55:07+00:00",
   "expiry": "2026-11-26",
-  "days_to_expiry": 46.235358796296296,
+  "days_to_expiry": 46.17005787037037,
   "implied_apy": 0.05011039832525688,
   "oracle_discount_per_year": 0.06,
   "borrow_apr": 0.03676861568808,
@@ -13193,10 +14551,38 @@
     "layer": 2,
     "members": [
      "offchain:ethena",
+     "offchain:ethena:ethena-bvi-limited",
+     "offchain:ethena:copper-clearloop",
+     "offchain:ethena:ceffu-mirrorx",
+     "offchain:ethena:anchorage-digital-bank",
+     "offchain:ethena:kraken-custody",
+     "offchain:ethena:all-custodians",
+     "offchain:ethena:falconx-ethena-x-falconx-spv",
+     "offchain:ethena:ripple-prime",
+     "offchain:ethena:cme-and-coinbase-derivatives-exchange",
+     "offchain:ethena:coinbase-onchain-wallets",
+     "offchain:ethena:binance",
+     "offchain:ethena:bybit",
+     "offchain:ethena:okx",
+     "offchain:ethena:deribit",
+     "offchain:ethena:bitget",
+     "offchain:ethena:coinbase-international",
+     "offchain:ethena:spot-crypto-and-stablecoins",
+     "offchain:ethena:usdc-usdt-usdtb-circle-tether-usdtb",
+     "offchain:ethena:steth-and-other-liquid-staking-tokens",
+     "offchain:ethena:blackrock-buidl-through-usdtb",
+     "offchain:ethena:anchorage-digital-bank-usdtb-issuer",
+     "offchain:ethena:morpho-and-aave",
+     "offchain:ethena:reserve-fund",
+     "offchain:ethena:custodian-monthly-attestations",
+     "offchain:ethena:harris-trotter-chaos-labs-llamarisk-chai",
+     "offchain:ethena:ethena-risk-committee",
+     "offchain:ethena:pyth-and-redstone",
+     "offchain:ethena:aws-ap-east-1-hong-kong",
      "0x7fc7c91d556b400afa565013e3f32055a0713425"
     ],
     "address": null,
-    "note": "minting and silo contracts read on chain; exchanges and custodians off-chain (not verified)",
+    "note": "minting and silo contracts read on chain; off-chain: 2 attestation, 2 counterparty, 6 custodian, 7 exchange, 1 governance, 1 infrastructure, 2 issuer, 1 oracle, 1 other, 4 reserve_asset, 1 reserve_fund from Ethena's documents with sources (offchain.USDe)",
     "contract_name": null,
     "evidence": {
      "grade": "A",
@@ -13229,7 +14615,12 @@
     "layer": 2,
     "members": [
      "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
-     "0xbf98480425a29197e5d99d003017f63a1e595d02"
+     "0xbf98480425a29197e5d99d003017f63a1e595d02",
+     "offchain:susde",
+     "offchain:susde:ethena-opco-ltd",
+     "offchain:susde:ethena-foundation-rewards",
+     "offchain:susde:reserve-fund",
+     "offchain:susde:usde-all-of-its-off-chain-dependencies"
     ],
     "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
     "contract_name": "StakedUSDeV2",
@@ -13388,7 +14779,7 @@
     "to": "usde",
     "type": "backing",
     "grade": "D",
-    "evidence": "off-chain backing: not verified"
+    "evidence": "issuer documents: Backed by spot crypto and stablecoins held with off-exchange custodians (Copper, Ceffu, Anchorage, Kraken) and hedged with short derivatives on centralised exchanges (Binance, Bybit, OKX, Deribit, Bitget, Coinbase International, CME / CDE through Ripple Prime); a Reserve Fund absorbs losses first."
    },
    {
     "from": "usde",
@@ -13730,14 +15121,14 @@
     "layer": 5,
     "unit": "%",
     "min": 1,
-    "max": 10,
+    "max": 40,
     "default_severity": 1.0,
     "anchors": [],
     "model": {
      "type": "exit_later",
      "source_field": "borrowers.exit_later",
      "oracle": "oracleFalls(oracle, 3, shock, hours): false for this market, so the PT price fall alone liquidates nobody here",
-     "note": "severity = oracle drop of the liquidation curve (0.5%..10%)"
+     "note": "severity = oracle drop of the liquidation curve (0.5%..40%)"
     },
     "probabilities": {
      "outcomes": null,

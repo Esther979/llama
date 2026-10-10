@@ -3,6 +3,7 @@ Fields of dashboard.json that the Risk Desk front end reads (dependency graph by
 position presets, detector feed). Used by export_dashboard.py; contract in README "Frontend integration".
 """
 import csv
+from collections import Counter
 import json
 import os
 
@@ -17,9 +18,10 @@ LAYER_OF = {  # contract name (Etherscan) -> layer
 }
 
 
-def dependency_graph(edges_csv, nodes_json, position, lending):
+def dependency_graph(edges_csv, nodes_json, position, lending, offchain_blocks=None):
     """Crawl output (crawl.py) arranged in the brief's five layers, plus the chain, the Pendle market (Pendle API)
-    and the off-chain issuer (not verified). Returns None if the crawl files are missing."""
+    and the off-chain dependencies of USDe / sUSDe (offchain_deps.json: issuer documents with quotes, grade D).
+    Returns None if the crawl files are missing."""
     if not (os.path.exists(edges_csv) and os.path.exists(nodes_json)):
         return None
     with open(edges_csv) as f:
@@ -50,9 +52,15 @@ def dependency_graph(edges_csv, nodes_json, position, lending):
     nodes[pm] = {"id": pm, "label": f"Pendle {position['name']} market", "kind": "amm_market", "layer": 4,
                  "address": position["market"], "contract_name": None,
                  "evidence": {"grade": "A", "source": "Pendle API markets list (fetch_data.py step1)"}}
+    import offchain
+    blocks = offchain_blocks or {}
     off = "offchain:ethena"
-    nodes[off] = {"id": off, "label": "Ethena: issuer, exchanges, custodians", "kind": "offchain_issuer", "layer": 2,
-                  "address": None, "evidence": {"grade": "D", "source": "not verified: off-chain, needs documents"}}
+    ub = blocks.get("USDe")
+    nodes[off] = {"id": off, "label": f"Ethena: {ub['issuer']}" if ub else "Ethena: issuer, exchanges, custodians",
+                  "kind": "offchain_issuer", "layer": 2, "address": None,
+                  "evidence": {"grade": "D", "source": (f"{ub['counts']['relations']} relations from the issuer's documents, "
+                                                        f"each with its URL and quote (offchain_deps.json)") if ub else
+                               "not verified: off-chain, needs documents"}}
     out_edges = [{"from": e["src"], "to": e["dst"], "type": e["type"], "kind": e["kind"], "evidence": e["evidence"]}
                  for e in edges]
     usde = next((k for k, n in nodes.items() if n.get("contract_name") == "USDe"), None)
@@ -60,11 +68,24 @@ def dependency_graph(edges_csv, nodes_json, position, lending):
                    "evidence": "Pendle API market.pt, details.liquidity"}]
     if usde:
         out_edges.append({"from": off, "to": usde, "type": "backing", "kind": "data",
-                          "evidence": "not verified (off-chain)"})
+                          "evidence": f"issuer documents: {ub['summary']}" if ub else "not verified (off-chain)"})
+    for sym, parent, target in (("USDe", off, None), ("sUSDe", "offchain:susde", position["underlying"])):
+        b = blocks.get(sym)
+        if not b:
+            continue
+        if parent not in nodes:
+            nodes[parent] = {"id": parent, "label": f"{sym}: {b['issuer']}", "kind": "offchain_operator", "layer": 2,
+                             "address": None, "evidence": {"grade": "D", "source": f"{b['counts']['relations']} relations "
+                                                           f"from the issuer's documents (offchain_deps.json)"}}
+            out_edges.append({"from": parent, "to": target, "type": "operator", "kind": "offchain",
+                              "evidence": f"issuer documents: {b['summary']}"})
+        n_, e_ = offchain.graph_parts(b, parent, 2)
+        nodes.update(n_)
+        out_edges += e_
     by_layer = [{"n": n, "name": nm, "nodes": [k for k, v in nodes.items() if v["layer"] == n]} for n, nm in LAYERS]
     return {"block": block, "source": os.path.basename(edges_csv), "layers": by_layer, "nodes": nodes,
             "edges": out_edges,
-            "counts": {k: sum(e["kind"] == k for e in out_edges) for k in ("data", "role", "operator", "infra")}}
+            "counts": {k: sum(e["kind"] == k for e in out_edges) for k in ("data", "role", "operator", "infra", "offchain")}}
 
 
 def failure_types(cal, graph):
@@ -119,11 +140,11 @@ def failure_types(cal, graph):
                                            "note": "liquidations use the last price; no direct loss modelled"},
                   "probabilities": nd("no sample")},
         "cascade": {"label": "Other borrowers are liquidated into the pool", "layer": 5, "unit": "%", "min": 1,
-                    "max": 10, "default_severity": 1.0, "anchors": [],
+                    "max": 40, "default_severity": 1.0, "anchors": [],
                     "model": {"type": "exit_later", "source_field": "borrowers.exit_later",
                               "oracle": "oracleFalls(oracle, 3, shock, hours): false for this market, so the PT "
                                         "price fall alone liquidates nobody here",
-                              "note": "severity = oracle drop of the liquidation curve (0.5%..10%)"},
+                              "note": "severity = oracle drop of the liquidation curve (0.5%..40%)"},
                     "probabilities": nd("no sample")},
         "drain": {"label": "Liquidity leaves the pool", "layer": 4, "unit": "%", "min": 10, "max": 90,
                   "default_severity": 50, "anchors": [],
@@ -404,12 +425,19 @@ def ui_view(graph, oracle, position, lending, onc):
     nodes = {
         "eth": {"label": "Ethereum mainnet", "kind": "Chain", "layer": 1, "members": ["chain:1"], "address": None},
         "ethena": {"label": "Ethena: issuer, exchanges, custodians", "kind": "Issuer", "layer": 2,
-                   "members": ["offchain:ethena"] + by_name.get("EthenaMinting", []) + by_name.get("USDeSilo", []),
+                   "members": ["offchain:ethena"] + [k for k in g if k.startswith("offchain:ethena:")]
+                   + by_name.get("EthenaMinting", []) + by_name.get("USDeSilo", []),
                    "address": one("EthenaMinting"),
-                   "note": "minting and silo contracts read on chain; exchanges and custodians off-chain (not verified)"},
+                   "note": ("minting and silo contracts read on chain; off-chain: " + ", ".join(
+                       f"{n} {k}" for k, n in sorted(Counter(g[m]['role'] for m in g
+                                                             if m.startswith('offchain:ethena:')).items()))
+                            + " from Ethena's documents with sources (offchain.USDe)")
+                   if any(k.startswith("offchain:ethena:") for k in g)
+                   else "minting and silo contracts read on chain; exchanges and custodians off-chain (not verified)"},
         "usde": {"label": "USDe", "kind": "Asset", "layer": 2, "members": by_name.get("USDe", []), "address": one("USDe")},
         "susde": {"label": "sUSDe", "kind": "Asset (PT redeems to this)", "layer": 2,
-                  "members": by_name.get("StakedUSDeV2", []) + by_name.get("PendleSUSDESY", []),
+                  "members": by_name.get("StakedUSDeV2", []) + by_name.get("PendleSUSDESY", [])
+                  + [k for k in g if k == "offchain:susde" or k.startswith("offchain:susde:")],
                   "address": position["underlying"]},
         "feeds": {"label": "Upstream price feeds", "kind": "Oracle feeds", "layer": 3, "members": feeds,
                   "address": one("PendleSparkLinearDiscountOracle"),
@@ -439,7 +467,9 @@ def ui_view(graph, oracle, position, lending, onc):
     lay = [{"n": n, "name": nm, "nodes": [k for k, v in nodes.items() if v["layer"] == n]} for n, nm in UI_LAYERS.items()]
     e_of = lambda t: next((e["evidence"] for e in graph["edges"] if e["type"] == t), "not found in the crawl")
     edges = [
-        {"from": "ethena", "to": "usde", "type": "backing", "grade": "D", "evidence": "off-chain backing: not verified"},
+        {"from": "ethena", "to": "usde", "type": "backing", "grade": "D",
+         "evidence": next((e["evidence"] for e in graph["edges"] if e["from"] == "offchain:ethena" and e["type"] == "backing"),
+                          "off-chain backing: not verified")},
         {"from": "usde", "to": "susde", "type": "staking", "grade": "A", "evidence": e_of("asset")},
         {"from": "susde", "to": "pt", "type": "redemption", "grade": "A", "evidence": e_of("SY")},
         {"from": "market", "to": "pt", "type": "liquidity", "grade": "A", "evidence": "Pendle API market.pt, details.liquidity"},
@@ -727,3 +757,128 @@ def timeline_summary(d, preset_key, rows):
                 "the verdict is the same at every duration on the grid")
     return {"duration_matters": bool(changes), "changes": changes,
             "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}
+
+
+# ------------------------------------------------------------------ reasons a manager can act on (PT view)
+def _round_int(v, d):
+    """round(|v| x 10^d) half away from zero, as an integer (same arithmetic as RiskModel's _roundInt)."""
+    import math
+    a = math.floor(abs(v) * 10 ** d + 0.5)
+    return -a if v < 0 else a
+
+
+def _num(v, d=2):
+    """v with at most d decimals (trailing zeros dropped) and thousands commas; identical in RiskModel._num."""
+    n = _round_int(v, d)
+    sign, n = ("-" if n < 0 else ""), abs(n)
+    ip, fp = divmod(n, 10 ** d)
+    out = f"{ip:,}"
+    frac = str(fp).rjust(d, "0").rstrip("0") if d else ""
+    return sign + out + ("." + frac if frac else "")
+
+
+def decision_text(d, preset_key, node, fail, sev, carry=0.0):
+    """The PT view's reasons, built only from the model's results: verdict, a title, the headline sentence (loss if
+    staying vs selling now), the propagation reasons (oracle, liquidation, recovery, exit), the break-even severity
+    and the assumption the answer hinges on. `numbers` lists every number written; `unchecked` = numbers in the text
+    that are not among them (must be empty). `rule` is the injection's fixed note (data, not checked).
+    Mirrored by RiskModel.decisionText."""
+    from loss_model import lif
+    from reasoning import NUM
+    r = decide_at(d, preset_key, node, fail, sev, carry)
+    be = break_even_severity(d, preset_key, node, fail, carry)
+    sv = sensitivity(d, preset_key, node, fail, sev, carry)
+    m = d["ui"]["injections"][f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    ft = d["failure_types"]["types"][fail]
+    o = d.get("oracle") or {}
+    nl, fl = d["ui"]["nodes"][node]["label"], ft["label"]
+    nums = []
+
+    def f(s):
+        nums.extend(NUM.findall(s))
+        return s
+    money = lambda v: f("$" + _num(v, 0))
+    pct = lambda v: f(_num(v * 100, 2) + "%")
+    unit = lambda v: f(_num(v, 2) + ("%" if ft["unit"] == "%" else " h"))
+    D, C = p["debt_usd"], p["collateral_usd"]
+    Co = p.get("collateral_oracle_usd", C)
+    title = f"{fl} ({nl}), severity {unit(sev)}"
+    reasons = []
+    if m["type"] == "loss_model":
+        loss = r["loss_if_stay_usd"]
+        if loss <= 0:
+            head = "STAY: doing nothing loses nothing at this severity, so there is nothing to sell for."
+        elif r["verdict"] == "STAY":
+            head = f"STAY: doing nothing loses {money(loss)}; selling would cost more than it saves."
+        else:
+            head = (f"{r['verdict']}: doing nothing loses {money(loss)}. Selling {money(r['sell_usd'])} now "
+                    f"({pct(r['sell_fraction'])} of the position) costs {money(r['sale_cost_usd'])}"
+                    + (f" and leaves {money(r['loss_kept_usd'])} at risk on the rest." if r["loss_kept_usd"] > 0 else ".")
+                    + (f" {pct(r['stuck_fraction'])} of the position cannot be sold through the pool now."
+                       if r["stuck_fraction"] > 0 else ""))
+        of, meta = r["oracle_falls"], o.get("kind") == "meta_oracle_timelock" and m["oracle"] == "rule"
+        if of is True:
+            reasons.append(f"The lending oracle follows it: the deviation is above the meta-oracle's "
+                           f"{pct(o['deviation_threshold'])} threshold for at least "
+                           f"{f(_num(o['challenge_timelock_s'] / 3600, 2))} h, so it switches to its backup feed."
+                           if meta else "The lending oracle reports the low price itself.")
+        elif of is False:
+            reasons.append(f"The lending oracle does not follow it: the meta-oracle switches only after a deviation "
+                           f"above {pct(o['deviation_threshold'])} lasting "
+                           f"{f(_num(o['challenge_timelock_s'] / 3600, 2))} h." if meta else
+                           "The lending oracle does not follow it: no feed of the oracle prices this.")
+        else:
+            reasons.append(f"The oracle's behaviour is unknown: the loss is the worse of both branches "
+                           f"({pct(r['L_low'])} to {pct(r['L_high'])} of equity).")
+        if D <= 0:
+            reasons[-1] += " This matters only for a levered position: this one has no debt."
+        if D > 0:
+            thr = 1 - D / (Co * p["lltv"])
+            if any(r["liquidated"] or []):
+                reasons.append(f"The position is liquidated: the oracle falls {unit(sev)} while the liquidation line is "
+                               f"{pct(thr)} away; Morpho seizes collateral worth the debt plus a "
+                               f"{pct(lif(p['lltv']) - 1)} bonus.")
+            elif thr > 0:
+                reasons.append(f"Not liquidated: the oracle would have to fall {pct(thr)} before this position can be "
+                               f"liquidated.")
+            else:
+                reasons.append("The position is already above the liquidation line.")
+        if m["permanent"] == 0 and p["can_hold"]:
+            reasons.append("The price recovers (the PT redeems at expiry), so a holder who can wait loses nothing on "
+                           "the value" + ("; liquidations during the incident stay." if D > 0 else "."))
+        elif m["permanent"] == 1:
+            reasons.append("The loss is permanent: no recovery is assumed.")
+    elif m["type"] in ("exit_later", "exit_only"):
+        head = ("STAY: no direct loss on this position; " + (
+            f"the part that can be sold falls from {pct(r['sellable_now'])} to {pct(r['sellable_later'])}."
+            if r["sellable_later"] < r["sellable_now"] - 1e-12 else
+            f"{pct(r['sellable_now'])} of the position can still be sold."))
+    else:
+        head = "STAY: no direct loss is modelled for this failure."
+    later = r["sellable_later"] < r["sellable_now"] - 1e-12 and m["type"] != "not_modelled"
+    reasons.append(f"Today the pool takes {pct(r['sellable_now'])} of this position "
+                   f"({money(r['sellable_now'] * C)})"
+                   + (("; after the failure nothing can be sold." if r["sellable_later"] <= 0 else
+                       f"; after the failure only {pct(r['sellable_later'])}.") if later else "."))
+    if m["type"] != "loss_model":
+        brk = "No break-even severity: this failure causes no direct loss."
+    elif be["start"] is None:
+        brk = f"Selling does not pay at any severity from {unit(be['lo'])} to {unit(be['hi'])}."
+    elif be["start"] <= be["lo"]:
+        brk = (f"Selling pays from the lowest severity tested ({unit(be['lo'])})"
+               + ("." if be["cap"] is None else " up to all the pool takes." if be["cap"] <= be["lo"]
+                  else f"; it sells all the pool takes above {unit(be['cap'])}."))
+    else:
+        brk = (f"Selling starts to pay above {unit(be['start'])}"
+               + (f" and sells all the pool takes above {unit(be['cap'])}." if be["cap"] is not None else "."))
+    w = sv["weakest"]
+    if w:
+        f(w["alternative"])
+        hinge = f"The answer hinges on: {w['alternative']} (grade {w['grade']}): the verdict would be {w['verdict']}."
+    else:
+        hinge = "No tested assumption changes the answer."
+    text = " ".join([title, head] + reasons + [brk, hinge]).replace(nl, "").replace(fl, "")
+    bad = [x for x in NUM.findall(text) if x not in nums]
+    return {"verdict": r["verdict"], "title": title, "headline": head, "rule": m["note"], "reasons": reasons,
+            "break_even": brk, "hinges_on": hinge, "numbers": nums, "unchecked": bad}

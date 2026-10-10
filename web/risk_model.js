@@ -6,7 +6,7 @@
      oracleFalls                oracle_types.py (oracle_falls; meta-oracle threshold + timelock)
      slippageAt, decide         decision_core.py
      breakEven                  incidents.py (exact break-even from the exit curve, no p grid)
-     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize   frontend_contract.py (position size: the manager's input)
+     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText   frontend_contract.py (position size: the manager's input)
 
    Shapes (same field names as the Python dataclasses):
      scenario = {layer: 2|3, shock: 0..1, permanent: 0..1, hours: number|null}
@@ -458,6 +458,87 @@
             why_flat: flat};
   }
 
+  /* ---- reasons a manager can act on (port of frontend_contract.decision_text): every number comes from the model;
+     numbers are formatted by _num (round half away from zero, thousands commas), identical to the Python. */
+  const NUM = /\$?\d[\d,]*(?:\.\d+)?[%x]?/g;
+  function _roundInt(v, d) { const a = Math.floor(Math.abs(v) * Math.pow(10, d) + 0.5); return v < 0 ? -a : a; }
+  function _num(v, d = 2) {
+    let n = _roundInt(v, d); const sign = n < 0 ? '-' : ''; n = Math.abs(n);
+    const p = Math.pow(10, d), ip = Math.floor(n / p), fp = n - ip * p;
+    const frac = d ? String(fp).padStart(d, '0').replace(/0+$/, '') : '';
+    return sign + String(ip).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : '');
+  }
+  function decisionText(d, presetKey, node, fail, sev, carry = 0) {
+    const r = decideAt(d, presetKey, node, fail, sev, carry), be = breakEvenSeverity(d, presetKey, node, fail, carry);
+    const sv = sensitivity(d, presetKey, node, fail, sev, carry);
+    const m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey], ft = d.failure_types.types[fail];
+    const o = d.oracle || {}, nl = d.ui.nodes[node].label, fl = ft.label, nums = [];
+    const f = s => { nums.push(...(s.match(NUM) || [])); return s; };
+    const money = v => f('$' + _num(v, 0)), pct = v => f(_num(v * 100, 2) + '%');
+    const unit = v => f(_num(v, 2) + (ft.unit === '%' ? '%' : ' h'));
+    const D = p.debt_usd, C = p.collateral_usd, Co = 'collateral_oracle_usd' in p ? p.collateral_oracle_usd : C;
+    const title = `${fl} (${nl}), severity ${unit(sev)}`, reasons = [];
+    let head;
+    if (m.type === 'loss_model') {
+      const loss = r.loss_if_stay_usd;
+      if (loss <= 0) head = 'STAY: doing nothing loses nothing at this severity, so there is nothing to sell for.';
+      else if (r.verdict === 'STAY') head = `STAY: doing nothing loses ${money(loss)}; selling would cost more than it saves.`;
+      else head = `${r.verdict}: doing nothing loses ${money(loss)}. Selling ${money(r.sell_usd)} now ` +
+        `(${pct(r.sell_fraction)} of the position) costs ${money(r.sale_cost_usd)}` +
+        (r.loss_kept_usd > 0 ? ` and leaves ${money(r.loss_kept_usd)} at risk on the rest.` : '.') +
+        (r.stuck_fraction > 0 ? ` ${pct(r.stuck_fraction)} of the position cannot be sold through the pool now.` : '');
+      const of = r.oracle_falls, meta = o.kind === 'meta_oracle_timelock' && m.oracle === 'rule';
+      if (of === true)
+        reasons.push(meta ? `The lending oracle follows it: the deviation is above the meta-oracle's ` +
+          `${pct(o.deviation_threshold)} threshold for at least ${f(_num(o.challenge_timelock_s / 3600, 2))} h, ` +
+          `so it switches to its backup feed.` : 'The lending oracle reports the low price itself.');
+      else if (of === false)
+        reasons.push(meta ? `The lending oracle does not follow it: the meta-oracle switches only after a deviation ` +
+          `above ${pct(o.deviation_threshold)} lasting ${f(_num(o.challenge_timelock_s / 3600, 2))} h.`
+          : 'The lending oracle does not follow it: no feed of the oracle prices this.');
+      else reasons.push(`The oracle's behaviour is unknown: the loss is the worse of both branches ` +
+          `(${pct(r.L_low)} to ${pct(r.L_high)} of equity).`);
+      if (D <= 0) reasons[reasons.length - 1] += ' This matters only for a levered position: this one has no debt.';
+      if (D > 0) {
+        const thr = 1 - D / (Co * p.lltv);
+        if ((r.liquidated || []).some(Boolean))
+          reasons.push(`The position is liquidated: the oracle falls ${unit(sev)} while the liquidation line is ` +
+            `${pct(thr)} away; Morpho seizes collateral worth the debt plus a ${pct(lif(p.lltv) - 1)} bonus.`);
+        else if (thr > 0)
+          reasons.push(`Not liquidated: the oracle would have to fall ${pct(thr)} before this position can be liquidated.`);
+        else reasons.push('The position is already above the liquidation line.');
+      }
+      if (m.permanent === 0 && p.can_hold)
+        reasons.push('The price recovers (the PT redeems at expiry), so a holder who can wait loses nothing on the value' +
+          (D > 0 ? '; liquidations during the incident stay.' : '.'));
+      else if (m.permanent === 1) reasons.push('The loss is permanent: no recovery is assumed.');
+    } else if (m.type === 'exit_later' || m.type === 'exit_only') {
+      head = 'STAY: no direct loss on this position; ' + (r.sellable_later < r.sellable_now - 1e-12
+        ? `the part that can be sold falls from ${pct(r.sellable_now)} to ${pct(r.sellable_later)}.`
+        : `${pct(r.sellable_now)} of the position can still be sold.`);
+    } else head = 'STAY: no direct loss is modelled for this failure.';
+    const later = r.sellable_later < r.sellable_now - 1e-12 && m.type !== 'not_modelled';
+    reasons.push(`Today the pool takes ${pct(r.sellable_now)} of this position (${money(r.sellable_now * C)})` +
+      (later ? (r.sellable_later <= 0 ? '; after the failure nothing can be sold.'
+                                      : `; after the failure only ${pct(r.sellable_later)}.`) : '.'));
+    let brk;
+    if (m.type !== 'loss_model') brk = 'No break-even severity: this failure causes no direct loss.';
+    else if (be.start === null) brk = `Selling does not pay at any severity from ${unit(be.lo)} to ${unit(be.hi)}.`;
+    else if (be.start <= be.lo)
+      brk = `Selling pays from the lowest severity tested (${unit(be.lo)})` + (be.cap === null ? '.'
+        : be.cap <= be.lo ? ' up to all the pool takes.' : `; it sells all the pool takes above ${unit(be.cap)}.`);
+    else brk = `Selling starts to pay above ${unit(be.start)}` +
+      (be.cap !== null ? ` and sells all the pool takes above ${unit(be.cap)}.` : '.');
+    const w = sv.weakest;
+    let hinge;
+    if (w) { f(w.alternative); hinge = `The answer hinges on: ${w.alternative} (grade ${w.grade}): the verdict would be ${w.verdict}.`; }
+    else hinge = 'No tested assumption changes the answer.';
+    const text = [title, head].concat(reasons, [brk, hinge]).join(' ').split(nl).join('').split(fl).join('');
+    const bad = (text.match(NUM) || []).filter(x => !nums.includes(x));
+    return {verdict: r.verdict, title, headline: head, rule: m.note, reasons, break_even: brk, hinges_on: hinge,
+            numbers: nums, unchecked: bad};
+  }
+
   const RANK = 'ABCD';
   const pickWeakest = rows => {
     const flips = rows.filter(x => x.flips && !x.comparison);
@@ -531,7 +612,7 @@
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
                inject, decideAt, breakEvenSeverity,
-               sensitivity, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
+               sensitivity, decisionText, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;

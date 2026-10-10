@@ -469,11 +469,15 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                         curve, gas_pts, notional, pt_price, sz, x["shock"])})
         incidents_out.append(o)
 
+    import offchain
+    deps, ocheck = offchain.load(), offchain.load_check()
+    off_blocks = {s: offchain.token_block(deps, ocheck, symbol=s) for s in ("USDe", "sUSDe")}
+    off_blocks = {k: v for k, v in off_blocks.items() if v}
     graph = frontend_contract.dependency_graph(os.path.join(data_dir, f"edges_{graph_tag}.csv"),
                                                os.path.join(data_dir, f"nodes_{graph_tag}.json"),
                                                {"chain_id": m.get("chainId"), "name": m.get("name"), "market": market.lower(),
                                                 "pt": pt, "underlying": und, "expiry": str(m.get("expiry"))[:10]},
-                                               lending[0] if lending else None)
+                                               lending[0] if lending else None, off_blocks)
     lender_out = None
     if onc:
         lender_out = inc_mod.lender(onc, lender_supply, presets, [s.key for s in PRESETS],
@@ -536,6 +540,7 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         # ---- front-end contract (README "Frontend integration") ----
         "oracle": (onc or {}).get("oracle"),
         "dependency_graph": graph,
+        "offchain": off_blocks,
         "time_model": frontend_contract.time_model(
             {"expiry": str(m.get("expiry"))[:10], "implied_apy": d.get("impliedApy")}, (onc or {}).get("oracle"), onc,
             dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")),

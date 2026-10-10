@@ -86,12 +86,13 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 | `oracle_types.py` | Oracle classification: linear discount, MorphoChainlinkOracleV2 (base side only), MetaOracleDeviationTimelock (threshold + timelock), Chainlink market vs reported-rate feeds, constant; `underlying_assets`; `oracle_falls(cls, layer, shock, hours, token)`; unknown → D |
 | `onchain_positions.py` | Morpho borrowers over JSON-RPC (stdlib, batched): `read_market` (any market), liquidation curve 0.5–40%, `--wallet` (PT balanceOf + Morpho position of given addresses, same block), gas price, borrow rate (IRM `borrowRateView`), oracle tree; 7 gates |
 | `export_dashboard.py` | Builds `data/dashboard.json` for the PT view (`--positions`, `--borrower`, `--js-out`) |
-| `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `wallet_presets`, `at_size`, `carry_of`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary` |
+| `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `wallet_presets`, `at_size`, `carry_of`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary`, `decision_text` (reasons: headline, oracle / liquidation / recovery / exit, break-even, weakest assumption; every number checked) |
 | `vault_pipeline.py` | Vault view: RockawayX-format input → routing, per-vault crawl, markets / allocations, borrowers, oracle types, incidents (collateral, underlying, asset issuer, liquidity run) with severity and duration grids, `vault_decide_at`, `vault_sensitivity`, `vault_timeline(_summary)`, `--js-out` |
 | `web/risk_model.js` | JS port of every model function above (`RiskModel.*`) for the front end |
 | `check_js_port.py` | JS vs Python on thousands of cases (17 gates) |
 | `llama_graph.py` | DeFiLlama free endpoints: protocol edges, price and stablecoin replay |
 | `FRONTEND_GUIDE.md`, `FRONTEND_VAULT_GUIDE.md` | Step-by-step instructions for the front-end colleague (to give to Claude), with acceptance tables |
+| `offchain.py`, `offchain_deps.json` | Off-chain dependencies (USDe, sUSDe, EURCV, mGLOeuro, PST): 102 relations, each with URL + verbatim quote, re-checked by `python3 offchain.py`; attached to the PT graph (`offchain`, `offchain:*` nodes) and to vault details (layer 6, `offchain`); grade D |
 | `README.md` | Data contracts of `dashboard.json`, `vaults_report.json`, vault details; run order |
 | `sample_data/` | `dashboard.sample.json/.js` (+ levered, borrower), `vaults.sample.js`, `vaults_report.sample.json`, `vault_detail.sample.json`, `rockawayx_vaults.csv` (the 33 RockawayX vaults) |
 
@@ -105,7 +106,9 @@ python3 export_dashboard.py --market 0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e 
   --extra-curves data/exit_curve_0x47ad2cd1_1m.csv \
   --positions data/morpho_positions_0x5613b170.json --js-out sample_data/dashboard.sample.js
 cp data/dashboard.json sample_data/dashboard.sample.json   # + levered (--debt 8950000) and borrower (--borrower 0x5c43...) samples
+python3 offchain.py   # re-check off-chain sources (before the exports)
 python3 vault_pipeline.py sample_data/rockawayx_vaults.csv --js-out sample_data/vaults.sample.js   # ~10 min
+# off-chain sources only: python3 vault_pipeline.py --offchain-only --js-out sample_data/vaults.sample.js
 cp data/vaults_report.json sample_data/vaults_report.sample.json
 python3 backtest_reusd.py && python3 calibrate_depeg.py && python3 check_js_port.py
 ```
@@ -128,6 +131,15 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
 - Borrow APR 3.68% (IRM) < oracle accretion 6%/yr; after expiry the oracle stays at 1 while debt accrues → the
   closest borrower crosses the LLTV in ~6 months without any shock (timeline finding).
 - PT expiry 26 Nov 2026 (46 days), Pendle implied APY 5.01%.
+- Off-chain (offchain_deps.json, 10 Oct 2026): USDe backing with Copper, Ceffu, Anchorage, Kraken (Sept 2026
+  custodian attestation) plus a FalconX SPV and Ripple Prime (FCM for CME / CDE); hedges on Binance, Bybit, OKX,
+  Deribit, Bitget, Coinbase International; losses hit the Reserve Fund before sUSDe. EURCV: SG-Forge (ACPR e-money
+  institution, MiCA EMT), reserves in a segregated account at Société Générale, direct redemption only for EEA
+  holders and suspendable by a recovery plan, one registrar role mints / freezes / upgrades. mGLOeuro: Midas token
+  on Fasanara's SME receivables strategy; the Belem market's oracle reads a NAV feed "submitted manually by feed
+  admins", updated monthly. PST: Huma pool on Solana lending mostly through its affiliate Arf; the Ethereum token is
+  a Chainlink CCIP burn/mint copy (redemption goes back through Solana); RockawayX curates the vaults and also makes
+  PST's secondary market.
 - Vaults: 33 RockawayX rows; 12 Ethereum Morpho VaultV2 get full numbers (Belem RWA EURCV included), 4 other Ethereum
   protocols get a dependency graph only, 6 other chains not supported, 11 Solana/Kamino out of scope. Break-even
   severities of the worst incident: Tori 7.9%, YIELD 10.1%, Huma 11.8%, f(x) 13.6%, Confidential RWA 13.8% (PST),
@@ -163,8 +175,10 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
    PT both held and on Morpho, PT in Pendle LP / other markets, sizes above ~$450M.
 2. **Volatile collateral** in the vault view (WBTC / wstETH / cbBTC, ~14% of Belem's vault, not analysed): severity
    anchors from DeFiLlama BTC/ETH drawdowns, oracles are Chainlink market feeds (follow immediately).
-3. **Off-chain dependencies with source URLs** (Ethena exchanges / custodians, SG-Forge for EURCV, Huma receivables);
-   the LLM only finds relations, numbers come from code.
+3. Done (first batch): off-chain dependencies with source URLs for USDe, sUSDe, EURCV, mGLOeuro, PST (`offchain.py`,
+   102 relations, 101 quotes re-checked; Ceffu's page returns 403). Left: the other vault tokens (fxSAVE, strUSD,
+   PT-reUSD / reUSD, PRIME, siUSD, etrUSD / trUSD, AUTO, nvPRIME, EUROP); the LLM only finds relations, numbers come
+   from code.
 4. **Front-end integration check** against both acceptance tables; a 2–3 minute demo script (Belem vault → mGLOeuro →
    chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command for refresh + checks.
 5. Liquidation feasibility for RWA collateral without DEX liquidity (bad debt if liquidators cannot sell).

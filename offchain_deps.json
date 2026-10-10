@@ -1,0 +1,912 @@
+{
+ "retrieved_at": "2026-10-10",
+ "grade": {
+  "grade": "D",
+  "rule": "stated in the issuer's own documents (official = false: a third-party page), not verifiable on chain; offchain.py re-checks each quote on its page"
+ },
+ "note": "Relations found by reading documents (partly with an LLM); no number here is computed or used by the model.",
+ "tokens": [
+  {
+   "symbol": "USDe",
+   "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+   "issuer": "Ethena (BVI) Limited",
+   "summary": "Backed by spot crypto and stablecoins held with off-exchange custodians (Copper, Ceffu, Anchorage, Kraken) and hedged with short derivatives on centralised exchanges (Binance, Bybit, OKX, Deribit, Bitget, Coinbase International, CME / CDE through Ripple Prime); a Reserve Fund absorbs losses first.",
+   "relations": [
+    {
+     "entity": "Ethena (BVI) Limited",
+     "kind": "issuer",
+     "relation": "Legal issuer of USDe",
+     "url": "https://docs.ethena.fi/resources/usde-terms-and-conditions",
+     "quote": "USDe is a digital token issued by Ethena BVI.",
+     "official": true,
+     "notes": "Terms of service: Ethena (BVI) Limited, BVI law"
+    },
+    {
+     "entity": "Copper (ClearLoop)",
+     "kind": "custodian",
+     "relation": "Off-exchange custodian of USDe backing, attested monthly",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "has been verified to be held within solutions offered by Copper as of 23:59 UTC September 27th 2026, including unrealized P&L.",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "Copper (ClearLoop)",
+     "kind": "custodian",
+     "relation": "Client funds sit in a bankruptcy-remote trust: a Copper failure should delay, not take, the backing",
+     "url": "https://docs.ethena.fi/backing-custody-and-security/overview/copper-clearloop-case-study",
+     "quote": "Copper users’ funds are held within a bankruptcy-remote trust, meaning in the event of Copper’s failure, users’ funds are not expected to be part of Copper's estate.",
+     "official": true
+    },
+    {
+     "entity": "Ceffu (MirrorX)",
+     "kind": "custodian",
+     "relation": "Off-exchange custodian of USDe backing, attested monthly",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "has been verified to be held within solutions offered by Ceffu as of 23:59 UTC September 27th 2026.",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "Ceffu (MirrorX)",
+     "kind": "custodian",
+     "relation": "Ceffu delegates Ethena's assets to Binance without moving them onto the exchange",
+     "url": "https://www.ceffu.com/blog/ethena-has-integrated-ceffu-mirrorx-off-exchange-settlement",
+     "quote": "MirrorX allows institutional clients such as Ethena to deposit assets in Ceffu’s custody and delegate/undelegate those assets to/from the Binance Exchange without transferring them onto the exchange itself",
+     "official": true,
+     "notes": "Custodian's own announcement, March 2024"
+    },
+    {
+     "entity": "Anchorage Digital Bank",
+     "kind": "custodian",
+     "relation": "Custodian of USDe backing, attested monthly",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "has been verified to be held within solutions offered by Anchorage Digital Bank as of 23:59 UTC September 27th 2026.",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "Anchorage Digital Bank",
+     "kind": "custodian",
+     "relation": "Anchorage custody refills the USDe MintRedeem contract: part of the redemption path",
+     "url": "https://ethena.fi/api/blogs/new-custodian-anchorage",
+     "quote": "Anchorage Digital Bank’s custody offering will also be integrated within our replenishment workflows of the USDe MintRedeem smart contract",
+     "official": true,
+     "notes": "December 2025"
+    },
+    {
+     "entity": "Kraken Custody",
+     "kind": "custodian",
+     "relation": "Custodian of USDe backing, attested monthly",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "has been verified to be held within solutions offered by Kraken Custody as of 23:59 UTC September 27th 2026.",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "All custodians",
+     "kind": "custodian",
+     "relation": "The custodians confirm the notional backing sits with these four",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "All custodians have confirmed that the notional backing USDe is held within Copper, Ceffu, Anchorage Digital Bank, and Kraken Custody of 23:59 UTC September 27th 2026.",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "FalconX (Ethena x FalconX SPV)",
+     "kind": "counterparty",
+     "relation": "An SPV with FalconX holds part of the backing (collateral with Anchorage, BitGo, Kraken)",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "held within solutions offered by Anchorage Digital Bank and Bitgo, and Kraken Custody for the Ethena x FalconX SPV",
+     "official": true,
+     "notes": "What the SPV does is not stated on the page"
+    },
+    {
+     "entity": "Ripple Prime",
+     "kind": "counterparty",
+     "relation": "Futures broker (FCM) holding Ethena's margin for CME and Coinbase Derivatives",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "held within segregated & regulated margin accounts by Ripple Prime, Ethena BVI Ltd’s FCM used to access the Chicago Mercantile Exchange (“CME”) and the Coinbase Derivatives Exchange (“CDE”).",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "CME and Coinbase Derivatives Exchange",
+     "kind": "exchange",
+     "relation": "Regulated futures venues for the hedge, through Ripple Prime",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "held within segregated & regulated margin accounts by Ripple Prime, Ethena BVI Ltd’s FCM used to access the Chicago Mercantile Exchange (“CME”) and the Coinbase Derivatives Exchange (“CDE”).",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "Coinbase Onchain Wallets",
+     "kind": "custodian",
+     "relation": "Wallets holding part of the backing (addresses published, readable on chain)",
+     "url": "https://ethena.fi/api/blogs/custodian-attestations-of-assets-backing-usde-september-3",
+     "quote": "within Ethena’s Coinbase Onchain Wallets as per the links below",
+     "official": true,
+     "notes": "Monthly custodian attestation of September 2026 (published 10 Oct 2026); text from the blog's JSON API behind the JS-rendered page https://ethena.fi/blog/custodian-attestations-of-assets-backing-usde-september-3"
+    },
+    {
+     "entity": "Binance",
+     "kind": "exchange",
+     "relation": "Hedging venue for the short derivatives (through Ceffu MirrorX)",
+     "url": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+     "quote": "These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.",
+     "official": true
+    },
+    {
+     "entity": "Bybit",
+     "kind": "exchange",
+     "relation": "Hedging venue, through Copper ClearLoop (case study of the February 2025 Bybit hack)",
+     "url": "https://ethena.fi/api/blogs/ethena-and-exchange-risk-bybit-case-study",
+     "quote": "in this case, Copper ClearLoop to access Bybit.",
+     "official": true
+    },
+    {
+     "entity": "OKX",
+     "kind": "exchange",
+     "relation": "Hedging venue",
+     "url": "https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch",
+     "quote": "Coinbase International joins Binance, Bybit, Okx, Deribit, and Bitget as the only hedging venues for USDe’s backing assets.",
+     "official": true,
+     "notes": "July 2025"
+    },
+    {
+     "entity": "Deribit",
+     "kind": "exchange",
+     "relation": "Hedging venue",
+     "url": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+     "quote": "These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.",
+     "official": true
+    },
+    {
+     "entity": "Bitget",
+     "kind": "exchange",
+     "relation": "Hedging venue",
+     "url": "https://docs.ethena.fi/protocol-overview/risks/exchange-failure-risk",
+     "quote": "These derivatives positions are traded upon CeFi exchanges such as Binance, Bybit, Bitget, Deribit, and Okx.",
+     "official": true
+    },
+    {
+     "entity": "Coinbase International",
+     "kind": "exchange",
+     "relation": "Hedging venue, through Copper ClearLoop",
+     "url": "https://ethena.fi/api/blogs/ethena-x-coinbase-international-launch",
+     "quote": "Ethena Labs is proud to announce the integration of Coinbase International, via Copper’s ClearLoop solution, as a hedging venue for the backing assets of USDe.",
+     "official": true
+    },
+    {
+     "entity": "Spot crypto and stablecoins",
+     "kind": "reserve_asset",
+     "relation": "USDe reserves: spot BTC, ETH, SOL, liquid staking tokens, stablecoins, and offsetting short derivatives",
+     "url": "https://docs.ethena.fi/resources/usde-terms-and-conditions",
+     "quote": "USDe is backed by an amount of spot crypto assets, such as BTC, ETH, SOL, certain liquid staking tokens, certain stablecoins (such as USDC, USDT, and USDtb), and offsetting hedging positions on derivatives contracts",
+     "official": true
+    },
+    {
+     "entity": "USDC, USDT, USDtb (Circle, Tether, USDtb)",
+     "kind": "reserve_asset",
+     "relation": "Part of the backing is held in fiat-backed stablecoins without a hedge",
+     "url": "https://docs.ethena.fi/backing-assets/liquid-stablecoins",
+     "quote": "The protocol holds a portion of its backing in liquid, fiat-referenced stablecoins - such as USDC, USDT, and USDtb - that already maintain a stable dollar value using fiat (and equivalent) reserves and therefore do not require a derivatives hedge.",
+     "official": true
+    },
+    {
+     "entity": "stETH and other liquid staking tokens",
+     "kind": "reserve_asset",
+     "relation": "LSTs margin part of the hedge (basis risk against ETH perpetuals)",
+     "url": "https://docs.ethena.fi/protocol-overview/risks/backing-assets-risk",
+     "quote": "Given Ethena uses some stETH and other LSTs in part to margin the delta hedging derivatives positions, the integrity and confidence in those assets is paramount.",
+     "official": true
+    },
+    {
+     "entity": "BlackRock BUIDL (through USDtb)",
+     "kind": "reserve_asset",
+     "relation": "Indirect real-world-asset exposure: USDtb is backed mainly by BUIDL",
+     "url": "https://ethena.fi/api/blogs/rwa-backing",
+     "quote": "USDe’s backing already includes meaningful indirect RWA exposure through USDtb - a stablecoin backed primarily by BlackRock’s BUIDL",
+     "official": true,
+     "notes": "June 2026"
+    },
+    {
+     "entity": "Anchorage Digital Bank (USDtb issuer)",
+     "kind": "issuer",
+     "relation": "Anchorage issues and manages USDtb: it is both a USDe custodian and the issuer of a reserve asset",
+     "url": "https://docs.usdtb.money/",
+     "quote": "As of October 13, 2025, the issuance, redemption, and reserve management for USDtb were transitioned to Anchorage Digital Bank.",
+     "official": true
+    },
+    {
+     "entity": "Morpho and Aave",
+     "kind": "other",
+     "relation": "Part of the stable backing is supplied to DeFi lending markets",
+     "url": "https://docs.ethena.fi/backing-assets/defi-lending",
+     "quote": "Ethena supplies into established lending venues - such as markets on protocols including Morpho and Aave",
+     "official": true,
+     "notes": "Markets not named"
+    },
+    {
+     "entity": "Reserve Fund",
+     "kind": "reserve_fund",
+     "relation": "A pool of protocol assets as an extra margin of safety for USDe",
+     "url": "https://docs.ethena.fi/protocol-overview/reserve-fund",
+     "quote": "The Reserve Fund is a pool of assets held by the protocol as an additional margin of safety for USDe.",
+     "official": true,
+     "notes": "Address 0x2b5ab59163a6e93b4486f6055d33ca4a115dd4d5 (September 2026 attestation): its size can be read on chain"
+    },
+    {
+     "entity": "Custodian monthly attestations",
+     "kind": "attestation",
+     "relation": "Custodians attest monthly to the existence, control and value of the backing",
+     "url": "https://docs.ethena.fi/resources/custodian-attestations",
+     "quote": "Monthly attestations are completed with the custodians to validate the existence, control, and value of the backing assets of USDe.",
+     "official": true
+    },
+    {
+     "entity": "Harris & Trotter, Chaos Labs, LlamaRisk, Chainlink",
+     "kind": "attestation",
+     "relation": "Proof-of-reserve attestors (list at launch, April 2025)",
+     "url": "https://ethena.fi/api/blogs/usde-proof-of-reserves-launch",
+     "quote": "The solution was created & launched in collaboration with the inaugural Proof of Reserve Attestors: Harris & Trotter, Chaos Labs, LlamaRisk, and Chainlink.",
+     "official": true,
+     "notes": "Current attestor list not confirmed"
+    },
+    {
+     "entity": "Ethena Risk Committee",
+     "kind": "governance",
+     "relation": "Approves backing assets, custodians and venues (members: Blockworks Advisory, LlamaRisk, Kairos Research)",
+     "url": "https://docs.ethena.fi/protocol-overview/governance/risk-committee",
+     "quote": "For the current six month term, the Risk Committee members are as follows:",
+     "official": true,
+     "notes": "Member names are the list right after this sentence"
+    },
+    {
+     "entity": "Pyth and Redstone",
+     "kind": "oracle",
+     "relation": "Price feeds of the off-chain hedging system; a failure pauses mint and redeem",
+     "url": "https://docs.ethena.fi/technical-design/hedging-system/managing-risk-from-dependencies",
+     "quote": "Price Feeds, such as Pyth and Redstone.",
+     "official": true
+    },
+    {
+     "entity": "AWS (ap-east-1, Hong Kong)",
+     "kind": "infrastructure",
+     "relation": "Ethena's mint / redeem and hedging infrastructure runs on AWS Hong Kong",
+     "url": "https://docs.ethena.fi/api-documentation/overview",
+     "quote": "Ethena's infrastructure is hosted on AWS Asia Pacific (Hong Kong) region, ap-east-1.",
+     "official": true
+    }
+   ]
+  },
+  {
+   "symbol": "sUSDe",
+   "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+   "issuer": "Ethena OpCo Ltd (Ethena Foundation subsidiary)",
+   "summary": "Staked USDe: rewards are computed off chain each week by an Ethena Foundation subsidiary and paid into the staking contract; protocol losses should hit the Reserve Fund before the staking contract.",
+   "relations": [
+    {
+     "entity": "Ethena OpCo Ltd",
+     "kind": "issuer",
+     "relation": "Maintains the sUSDe staking contract and the transfer of USDe rewards",
+     "url": "https://docs.ethena.fi/resources/terms-of-service",
+     "quote": "The sUSDe staking smart contract, including the management and transfer of USDe rewards, is maintained by Ethena OpCo Ltd.",
+     "official": true,
+     "notes": "Not offered to EU / EEA residents (same page)"
+    },
+    {
+     "entity": "Ethena Foundation (rewards)",
+     "kind": "admin_role",
+     "relation": "A subsidiary computes the weekly APY off chain and pays rewards to the StakingRewardsDistributor",
+     "url": "https://docs.ethena.fi/protocol-overview/rewards-mechanism",
+     "quote": "The Ethena Foundation, via a subsidiary, calculates APY weekly as part of internal accounting when distributing rewards to the StakingRewardsDistributor contract.",
+     "official": true,
+     "notes": "StakingRewardsDistributor 0xf2fa332bd83149c66b09b45670bce64746c6b439"
+    },
+    {
+     "entity": "Reserve Fund",
+     "kind": "reserve_fund",
+     "relation": "Losses are meant to be borne by the Reserve Fund, not the staking contract: a sUSDe NAV loss needs a loss larger than the fund",
+     "url": "https://docs.ethena.fi/protocol-overview/rewards-mechanism",
+     "quote": "If the protocol were to suffer a loss due to funding or another reason, Ethena's Reserve Fund is intended to bear the cost, rather than the staking contract.",
+     "official": true
+    },
+    {
+     "entity": "USDe (all of its off-chain dependencies)",
+     "kind": "underlying",
+     "relation": "sUSDe holds USDe: every USDe dependency above applies",
+     "url": "https://docs.ethena.fi/resources/usde-terms-and-conditions",
+     "quote": "USDe is a digital token issued by Ethena BVI.",
+     "official": true
+    }
+   ]
+  },
+  {
+   "symbol": "EURCV",
+   "address": "0x5f7827fdeb7c20b443265fc2f40845b715385ff2",
+   "issuer": "Société Générale - FORGE (SG-Forge)",
+   "summary": "MiCA e-money token issued by SG-Forge; reserves in a segregated account at Société Générale (cash today); direct redemption only for EEA holders, which a recovery plan can suspend; one registrar role can mint, burn, freeze and upgrade.",
+   "relations": [
+    {
+     "entity": "Société Générale - FORGE (SG-Forge)",
+     "kind": "issuer",
+     "relation": "Issues EURCV at one euro per token",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "The EURCV are issued by Société Générale – FORGE (the “Issuer”) at a nominal value of one unit of Euro per EURCV",
+     "official": true,
+     "notes": "MiCA white paper, 30 Sep 2026; it lists the Ethereum address of the token"
+    },
+    {
+     "entity": "Société Générale (parent)",
+     "kind": "parent_credit",
+     "relation": "The issuer is an SG subsidiary: a deterioration of SG's credit hits the issuer's obligations on EURCV",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "A deterioration of Société Generale's credit risk would have a negative impact on the obligations of Société Générale - FORGE in relation to the EURCV.",
+     "official": true
+    },
+    {
+     "entity": "Société Générale (group IT)",
+     "kind": "service_provider",
+     "relation": "The issuer runs largely on SG group information and communication systems",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "The Issuer relies largely on Société Générale’s group information and communication systems to carry out its business.",
+     "official": true
+    },
+    {
+     "entity": "Société Générale (Initial Collateral Custodian)",
+     "kind": "reserve_custodian",
+     "relation": "Purchase money goes to a segregated account in the issuer's name at Société Générale",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "The purchase price for the EURCV will be transferred by the purchaser to a segregated account opened in the name of the Issuer in the books of Société Générale (the “Initial Collateral Custodian”)",
+     "official": true
+    },
+    {
+     "entity": "Other banks (not named)",
+     "kind": "reserve_custodian",
+     "relation": "The issuer may open further segregated reserve accounts at other banks",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "The Issuer may open additional segregated accounts (each being a “Segregated Account”), from time to time, in the books of other banks",
+     "official": true
+    },
+    {
+     "entity": "Cash and EUR liquid securities",
+     "kind": "reserve_asset",
+     "relation": "Eligible reserves: cash at a collateral custodian (or EUR liquid securities)",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "a) Cash deposited with a Collateral Custodian;",
+     "official": true,
+     "notes": "The product page says reserves are 100% cash today"
+    },
+    {
+     "entity": "Bankruptcy remoteness",
+     "kind": "reserve_asset",
+     "relation": "Reserves are bankruptcy remote from SG-Forge (not from Société Générale as custodian)",
+     "url": "https://www.sgforge.com/product/coinvertible/",
+     "quote": "funds are bankruptcy remote in the event of an insolvency of Societe Generale-Forge.",
+     "official": true
+    },
+    {
+     "entity": "ACPR (French prudential regulator)",
+     "kind": "regulator",
+     "relation": "Authorises SG-Forge as an electronic money institution",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "Société Générale-FORGE is authorized as an electronic money institution by the ACPR to provide electronic money issuance services since July 1st 2024",
+     "official": true
+    },
+    {
+     "entity": "MiCA (Regulation (EU) 2023/1114)",
+     "kind": "regulator",
+     "relation": "EURCV is an e-money token under MiCA",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "EURCV constitute e-money tokens as defined by Article 3.1(7) of MiCAR.",
+     "official": true
+    },
+    {
+     "entity": "ESMA interim MiCA register",
+     "kind": "regulator",
+     "relation": "Register row: ACPR is the competent authority for SG-Forge's EMT white paper",
+     "url": "https://www.esma.europa.eu/sites/default/files/2024-12/EMTWP.csv",
+     "quote": "Autorité de Contrôle Prudentiel et de Resolution (ACPR),FR,Société Générale - Forge,969500FX8K40ZDW4F377",
+     "official": true,
+     "notes": "The row links the October 2025 white paper, not the 30 Sep 2026 one"
+    },
+    {
+     "entity": "SG-Forge redemption desk",
+     "kind": "redemption",
+     "relation": "EEA holders redeem at par directly with the issuer, by email, after KYC / AML checks",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "Holders of EURCV may submit their redemption request directly with the Issuer by email to the following email address",
+     "official": true,
+     "notes": "Payment at the latest on the last business day of the month after the checks"
+    },
+    {
+     "entity": "Non-EEA holders",
+     "kind": "redemption",
+     "relation": "Holders outside the EEA have no direct redemption right: their exit is the secondary market",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "Holders of EURCV who are not resident of the EEA do not benefit from a direct right of redemption with the Issuer.",
+     "official": true
+    },
+    {
+     "entity": "ACPR (recovery and redemption plans)",
+     "kind": "redemption",
+     "relation": "Under stress, redemptions can be suspended; an orderly redemption plan starts on an ACPR decision",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "The Issuer will implement the redemption plan upon the notification of the ACPR’s decision triggering the implementation of",
+     "official": true,
+     "notes": "Recovery options include a suspension of redemptions; a shortfall leaves holders a residual claim on the issuer"
+    },
+    {
+     "entity": "SG-Forge (own collateral test)",
+     "kind": "attestation",
+     "relation": "The issuer runs and publishes its own collateral test; no independent attestation is named",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "will be published on Société Générale – Forge website on the Business Day immediately following the relevant Collateral Test Date.",
+     "official": true,
+     "notes": "A collateral monitoring agent may be appointed; none is named"
+    },
+    {
+     "entity": "Hacken",
+     "kind": "audit",
+     "relation": "Smart-contract audit of the Ethereum token (code only, not reserves)",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "EURCV Ethereum smart contract was audited by the renowned blockchain security auditor HACKEN in June 2025.",
+     "official": true,
+     "notes": "The product page and the report's file name say October 2025"
+    },
+    {
+     "entity": "Registrar operator (SG-Forge)",
+     "kind": "admin_role",
+     "relation": "One registrar role controls mint, burn, freeze and pause; the token is upgradeable",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/Audit-Hacken-EURCV-USDCV-on-Ethereum-Oct-2025.pdf",
+     "quote": "mint/burn functionality controlled by the registrar operator and supports address",
+     "official": true,
+     "notes": "Hacken flags single-entity upgrade authority"
+    },
+    {
+     "entity": "SG-Forge (blacklist)",
+     "kind": "admin_role",
+     "relation": "The issuer can blacklist addresses holding EURCV (a vault or market address could be frozen)",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "Holders of EURCV agree that the Issuer has the authority to blacklist certain addresses holding EURCV.",
+     "official": true
+    },
+    {
+     "entity": "Bitstamp, Bullish, Bitvavo, Bit2Me",
+     "kind": "exchange",
+     "relation": "Secondary-market venues: the exit for holders without a redemption right",
+     "url": "https://www.sgforge.com/wp-content/uploads/2026/09/EURCV-WP-Ethereum_Solana_XRPL_Stellar_Canton_2026-09-30.pdf",
+     "quote": "EURCV is admitted to trading on Bitstamp, Bullish, Bitvavo and Bit2Me as at the Publication date.",
+     "official": true
+    },
+    {
+     "entity": "Wintermute",
+     "kind": "market_maker",
+     "relation": "Liquidity provider announced in July 2024",
+     "url": "https://sgforge.com/wp-content/uploads/2024/07/PR-SG-Forge-EURCV-MICA-July-1st-2024.pdf",
+     "quote": "SG-Forge also announces a new partnership with Wintermute, which joins as an additional dedicated liquidity provider for EURCV.",
+     "official": true,
+     "notes": "Not in the 2026 white paper: may be out of date"
+    }
+   ]
+  },
+  {
+   "symbol": "PST",
+   "address": "0x22ae3d9a738471f405169af055d31c687087d4c7",
+   "issuer": "Huma Finance (Huma Global Ltd., BVI)",
+   "summary": "Huma's PayFi Strategy Token: Solana pool lending to cross-border payment institutions, mostly through the affiliated originator Arf; the Ethereum token is a Chainlink CCIP burn/mint copy, so redemption goes back through Solana; priced by Huma's own NAV oracle.",
+   "relations": [
+    {
+     "entity": "Huma Finance",
+     "kind": "issuer",
+     "relation": "Huma names this address as the PST contract on Ethereum",
+     "url": "https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+     "quote": "PST contract on ETH mainnet: 0x22aE3D9a738471f405169Af055d31c687087d4c7",
+     "official": true
+    },
+    {
+     "entity": "Huma Global Ltd. (BVI) and Arf, one group",
+     "kind": "issuer",
+     "relation": "The operator and the main originator are affiliated under one corporate group",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "The operator, Huma Global Ltd. (BVI), and the dominant credit originator, Arf (Arf Financial GmbH in Switzerland, with a Liechtenstein-domiciled special-purpose vehicle, Arf Capital Ltd.), are affiliated entities combined under a common corporate group (00 Holdings Inc.) in 2024.",
+     "official": false
+    },
+    {
+     "entity": "PayFi Foundation (Cayman Islands)",
+     "kind": "legal_structure",
+     "relation": "Bankruptcy-remote asset protection, separate from the issuer",
+     "url": "https://static-r2.jup.ag/lend/risk-research/payfi-risk-report.pdf",
+     "quote": "Huma Global Ltd. (BVI) is the issuer; the PayFi Foundation (Cayman Islands) provides the bankruptcy-remote asset protection",
+     "official": false,
+     "notes": "Jupiter Lend assessment, April 2026"
+    },
+    {
+     "entity": "Arf Financial GmbH (Switzerland)",
+     "kind": "originator",
+     "relation": "Main originator: settlement liquidity for licensed payment institutions",
+     "url": "https://huma.finance/",
+     "quote": "Huma’s primary vertical, powered by its Swiss-regulated entity Arf, provides settlement liquidity to licensed financial institutions and money service businesses, enabling T+0 cross-border settlements.",
+     "official": true
+    },
+    {
+     "entity": "Arf (concentration)",
+     "kind": "originator",
+     "relation": "Most of the pool is lent to Arf-originated credit: close to one originator",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "The large majority of pool capital is deployed into Arf-originated credit.",
+     "official": false
+    },
+    {
+     "entity": "VQF (Swiss self-regulatory organisation)",
+     "kind": "regulator",
+     "relation": "Arf is a VQF member for anti-money-laundering",
+     "url": "https://arf.one/",
+     "quote": "Arf Financial GmbH is a Member Of The VQF Self-Regulatory Organization (VQF SRO Member Nr. 101012) for combating money laundering and preventing terrorism financing.",
+     "official": true
+    },
+    {
+     "entity": "No prudential supervisor",
+     "kind": "regulator",
+     "relation": "The SRO membership covers AML only: no capital or balance-sheet supervision of the originator",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "The originator holds only a Swiss self-regulatory (VQF SRO) membership, which covers anti-money-laundering obligations but provides no prudential supervision, balance-sheet oversight, or capital-adequacy requirement",
+     "official": false
+    },
+    {
+     "entity": "Licensed cross-border payment institutions",
+     "kind": "borrower",
+     "relation": "Borrowers: payment institutions drawing short-term financing to pre-fund settlement corridors (names not disclosed)",
+     "url": "https://sentora.com/research/articles/sentora-launches-huma-pst-vault-on-morpho",
+     "quote": "PST's yield depends on repayment by licensed payment institutions drawing short-term financing to pre-fund settlement corridors.",
+     "official": false
+    },
+    {
+     "entity": "Payment receivables (1 to 7 days)",
+     "kind": "underlying_asset",
+     "relation": "Each credit is repaid within days, backed by funds already in safeguarding accounts",
+     "url": "https://huma.finance/",
+     "quote": "Each transactional credit is repaid within 1 to 7 days and backed by funds already deposited into safeguarding accounts.",
+     "official": true
+    },
+    {
+     "entity": "Asset mix",
+     "kind": "underlying_asset",
+     "relation": "Cross-border prefunding, trade finance, settlement liquidity, card receivables (no split published)",
+     "url": "https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+     "quote": "including cross-border prefunding, trade finance, settlement liquidity, and credit card receivable financing",
+     "official": true
+    },
+    {
+     "entity": "TradeFlow Capital Management (Singapore)",
+     "kind": "originator",
+     "relation": "Trade-finance originator: physical commodities and goods in transit (30 to 90 days)",
+     "url": "https://huma.finance/",
+     "quote": "Partnering with TradeFlow Capital Management, a Singapore-headquartered specialized investment advisor, Huma finances physical commodities and goods in transit.",
+     "official": true
+    },
+    {
+     "entity": "Geoswift",
+     "kind": "originator",
+     "relation": "Marketplace payout financing partner",
+     "url": "https://huma.finance/",
+     "quote": "Partnering with Geoswift, Huma accelerates marketplace sellers’ payouts with stablecoin liquidity available on demand",
+     "official": true
+    },
+    {
+     "entity": "Custody accounts (not named)",
+     "kind": "custodian",
+     "relation": "Credits are backed by funds in custody accounts; the bank or custodian is not named",
+     "url": "https://sentora.com/research/articles/sentora-brings-huma-finance-s-payment-credit-to-morpho",
+     "quote": "Huma says these transactional credits generally turn over within one to seven days and are backed by funds already placed in custody accounts.",
+     "official": false
+    },
+    {
+     "entity": "Huma redemption (SLA)",
+     "kind": "redemption",
+     "relation": "Redemption is processed off chain: usually 1 business day, up to 7 days",
+     "url": "https://docs.huma.finance/products/huma-2.0/redemption.md",
+     "quote": "Most redemptions are completed **within 1 business day**, though it may take up to **7 days**, per our service-level agreement (SLA).",
+     "official": true,
+     "notes": "Solana pool; an Ethereum holder must first bridge back through CCIP (not stated by Huma)"
+    },
+    {
+     "entity": "Huma daily redemption cap",
+     "kind": "redemption",
+     "relation": "A global daily cap applies to redemptions (value not published)",
+     "url": "https://docs.huma.finance/products/huma-2.0/redemption.md",
+     "quote": "To maintain protocol stability, Huma enforces a **global daily redemption cap**.",
+     "official": true
+    },
+    {
+     "entity": "Huma redemption job",
+     "kind": "redemption",
+     "relation": "An off-chain job pays requests all-or-nothing and pauses when the pool lacks funds",
+     "url": "https://docs.huma.finance/ecosystem-resources/technical-docs/huma.md",
+     "quote": "Processing redemption requests in an all-or-nothing manner—if the pool lacks sufficient funds to cover a request in full, processing will pause until enough funds are available.",
+     "official": true
+    },
+    {
+     "entity": "Operator gating",
+     "kind": "redemption",
+     "relation": "The operator can freeze or cap redemptions; the liquidity sleeve sits in Solana money markets",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "A liquidity sleeve (roughly 10–20% of assets) is held in liquid Solana venues to service redemptions, but the operator retains the authority to freeze or cap redemptions",
+     "official": false
+    },
+    {
+     "entity": "Jupiter Lend and Kamino (Solana)",
+     "kind": "other",
+     "relation": "The redemption liquidity sleeve is deposited in Solana money markets",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "The redemption liquidity sleeve is deployed into Jupiter Lend and Kamino, the most liquid Solana money markets.",
+     "official": false
+    },
+    {
+     "entity": "Jupiter / Meteora PST-USDC pool (Solana)",
+     "kind": "exchange",
+     "relation": "Secondary exit by swap on Solana, while liquidity lasts",
+     "url": "https://docs.huma.finance/products/huma-2.0/redemption.md",
+     "quote": "**LPs can redeem instantly by swapping via the PST-USDC pool on Jupiter / Meteora**, as long as sufficient liquidity is available.",
+     "official": true
+    },
+    {
+     "entity": "RockawayX",
+     "kind": "market_maker",
+     "relation": "The curator of these Morpho vaults also provides secondary liquidity for PST",
+     "url": "https://rockawayx.com/insights/introducing-the-rockawayx-huma-usdc-main-vault-on-morpho",
+     "quote": "We also provide ongoing secondary liquidity for PST, helping ensure market depth and stability.",
+     "official": false,
+     "notes": "Curator's own page"
+    },
+    {
+     "entity": "RockawayX RFQ platform",
+     "kind": "market_maker",
+     "relation": "PST exits through RockawayX's RFQ platform (stated capacity)",
+     "url": "https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+     "quote": "was integrated into RockawayX’s RFQ platform with up to $20M capacity to make looping safer for large liquidity providers",
+     "official": true
+    },
+    {
+     "entity": "Chainlink CCIP",
+     "kind": "bridge",
+     "relation": "Exclusive bridge for PST from Solana; the Ethereum token is a CCIP burn/mint copy",
+     "url": "https://blog.huma.finance/huma-finance-selects-chainlink-ccip-to-power-cross-chain-yield",
+     "quote": "chose to adopt the Chainlink Cross-Chain Interoperability Protocol (CCIP) as its exclusive bridging infrastructure for its core yield product (PST) and all future yield products",
+     "official": true,
+     "notes": "Etherscan: contract BurnMintERC20 (Chainlink CCIP token)"
+    },
+    {
+     "entity": "Chainlink oracles",
+     "kind": "oracle",
+     "relation": "Chainlink oracles price PST on Ethereum",
+     "url": "https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+     "quote": "The integration is supported by Chainlink, whose oracles provide institutional-grade pricing for PST",
+     "official": true
+    },
+    {
+     "entity": "Huma price oracle (internal)",
+     "kind": "oracle",
+     "relation": "Huma runs its own off-chain service that tracks the PST price (NAV of private credit)",
+     "url": "https://docs.huma.finance/ecosystem-resources/technical-docs/huma.md",
+     "quote": "A dedicated service that tracks the price of $PST in real time.",
+     "official": true,
+     "notes": "Sentora: an internally operated oracle, not an independent feed"
+    },
+    {
+     "entity": "Accountable",
+     "kind": "attestation",
+     "relation": "Third-party dashboard on asset exposure and performance",
+     "url": "https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+     "quote": "PST is also independently verified by Accountable, which provides third-party assurance on asset exposure and performance with near real-time visibility.",
+     "official": true
+    },
+    {
+     "entity": "Wadsack (Swiss audit firm)",
+     "kind": "attestation",
+     "relation": "Monthly attestations, cross-checked against on-chain proofs",
+     "url": "https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+     "quote": "Verification uses onchain proofs, cross-checked against monthly attestations by Swiss audit firm Wadsack.",
+     "official": true
+    },
+    {
+     "entity": "No loan-tape audit or rating",
+     "kind": "attestation",
+     "relation": "No independent loan-tape audit, trustee or credit rating",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "no independent loan-tape audit, trustee, or credit rating has been evidenced",
+     "official": false
+    },
+    {
+     "entity": "Spearbit",
+     "kind": "audit",
+     "relation": "Audit of Huma's EVM contracts (not the CCIP PST token itself)",
+     "url": "https://docs.huma.finance/ecosystem-resources/security-audits.md",
+     "quote": "**EVM** smart contracts audited by **Spearbit**",
+     "official": true
+    },
+    {
+     "entity": "Credit agent",
+     "kind": "admin_role",
+     "relation": "Defaults are handled semi-manually by a credit agent of the same group",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "defaults are handled semi-manually by the credit agent",
+     "official": false
+    },
+    {
+     "entity": "First-loss cover",
+     "kind": "other",
+     "relation": "The first-loss cover is small",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "First-loss cover on the relevant pool is modest (on the order of a couple of percent).",
+     "official": false
+    },
+    {
+     "entity": "Huma admin keys",
+     "kind": "admin_role",
+     "relation": "Owner keys can pause the protocol and change pool parameters",
+     "url": "https://sentora.com/asset-risk-reviews/huma",
+     "quote": "Protocol-owner keys can pause the protocol and change pool parameters",
+     "official": false
+    }
+   ]
+  },
+  {
+   "symbol": "mGLOeuro",
+   "address": "0x2f8bae126b8d416c009b82ccd60e4f9cabbd7702",
+   "issuer": "Midas (Midas Fasanara Global Euro)",
+   "summary": "Midas token for EUR exposure to Fasanara Capital's asset-backed credit strategy (SME trade receivables and invoices); the price that Morpho uses is a NAV pushed by hand by Midas admins about once a month; redemption is capped or follows the fund's settlement; the legal issuer is in a gated offering memorandum.",
+   "relations": [
+    {
+     "entity": "Midas",
+     "kind": "issuer",
+     "relation": "Midas mToken contract; the name is hard-coded in the verified source",
+     "url": "https://etherscan.io/address/0x578ba8bf689d167ac30dfe2a8285a3a16519b18d#code",
+     "quote": "return (\"Midas Fasanara Global Euro\", \"mGLOeuro\");",
+     "official": true,
+     "notes": "Implementation behind the token proxy 0x2f8b…7702; upgradeable, with mint, burn and pause roles"
+    },
+    {
+     "entity": "Fasanara Capital (Global Diversified Alternative Debt)",
+     "kind": "underlying_asset",
+     "relation": "EUR exposure to Fasanara's alternative debt strategy, the same portfolio as mGLOBAL",
+     "url": "https://midas.app/llms.txt",
+     "quote": "The mGLOeuro token provides EUR-denominated exposure to Fasanara Capital's Global Diversified Alternative Debt strategy, the same portfolio as mGLOBAL",
+     "official": true
+    },
+    {
+     "entity": "SME trade receivables and digital invoices",
+     "kind": "underlying_asset",
+     "relation": "Asset class of the shared portfolio: asset-backed lending on trade receivables bought from SMEs",
+     "url": "https://midas.app/llms.txt",
+     "quote": "The mGLO token provides exposure to Fasanara's Global Fund, which follows an asset-backed lending strategy investing primarily in trade receivables and digital invoices bought from SMEs.",
+     "official": true,
+     "notes": "Stated for the sister token mGLO / mGLOBAL"
+    },
+    {
+     "entity": "Fasanara (investment manager)",
+     "kind": "asset_manager",
+     "relation": "Fasanara manages the underlying fund",
+     "url": "https://midas.app/assets/main-D6iQtpfU.js",
+     "quote": "Fasanara is the investment manager of the underlying mGLOeuro Fund, with ongoing oversight of risk parameters and performance.",
+     "official": true,
+     "notes": "Text of Midas's own product page, read from its front-end bundle (midas.app/mgloeuro is JS-rendered and behind Cloudflare)"
+    },
+    {
+     "entity": "FCA (UK)",
+     "kind": "regulator",
+     "relation": "Fasanara Capital Ltd is authorised by the UK FCA",
+     "url": "https://firmtracer.com/firm/551020",
+     "quote": "FASANARA CAPITAL LTD | FCA FRN 551020 | Authorised",
+     "official": false,
+     "notes": "Third-party copy of the FCA register"
+    },
+    {
+     "entity": "Fasanara Investments SA, SICAV-RAIF (Luxembourg)",
+     "kind": "legal_structure",
+     "relation": "The strategy's fund is a Luxembourg RAIF sub-fund (Swedish FI register)",
+     "url": "https://www.fi.se/en/our-registers/company-register/details?id=655074",
+     "quote": "Fasanara Investments SA, SICAV-RAIF - Global Diversified Alternative Debt",
+     "official": true,
+     "notes": "Whether mGLOeuro holds this sub-fund directly is not stated"
+    },
+    {
+     "entity": "Offering memorandum (gated)",
+     "kind": "legal_structure",
+     "relation": "The legal issuer and wrapper are in an offering memorandum available only to greenlisted investors",
+     "url": "https://midas.app/assets/main-D6iQtpfU.js",
+     "quote": "[R.MGLOEURO]:{memorandum:{url:`https://docsend.com/view/wytsj6jycptqng2b`,aboutSectionLabel:$Y,requiresGreenlist:!0}",
+     "official": true,
+     "notes": "Candidates: a Midas Luxembourg securitisation compartment or Midas Software GmbH; not confirmed"
+    },
+    {
+     "entity": "Midas price feed admins",
+     "kind": "oracle",
+     "relation": "The NAV feed that Morpho's oracle reads is submitted by hand by feed admins",
+     "url": "https://etherscan.io/address/0xbfd25a5d18b2e49eb4d486a99d9373440909795a#code",
+     "quote": "where price is submitted manually by feed admins",
+     "official": true,
+     "notes": "MGloEuroCustomAggregatorFeed 0x8b7b…9609 (implementation 0xbfd2…795a) is BASE_FEED_1 of the Belem market's MorphoChainlinkOracleV2"
+    },
+    {
+     "entity": "Fasanara NAV, validated by Midas",
+     "kind": "oracle",
+     "relation": "The strategy manager supplies the NAV; Midas checks it and pushes it on chain",
+     "url": "https://docs.midas.app/llms-full.txt",
+     "quote": "Once the NAV is provided by the strategy manager, Midas verifies and validates it internally.",
+     "official": true
+    },
+    {
+     "entity": "Monthly price updates",
+     "kind": "oracle",
+     "relation": "The mGLOeuro price is updated once a month",
+     "url": "https://midas.app/assets/main-D6iQtpfU.js",
+     "quote": "V0=`Updated once a month`",
+     "official": true,
+     "notes": "Text of Midas's own product page, read from its front-end bundle (midas.app/mgloeuro is JS-rendered and behind Cloudflare)"
+    },
+    {
+     "entity": "Midas redemption vault (Morpho top-up)",
+     "kind": "redemption",
+     "relation": "Redemptions can be refilled by withdrawing from a Morpho vault (not active today)",
+     "url": "https://etherscan.io/address/0x71f0b214d6f552795737d37cbccb148c2de0bcef#code",
+     "quote": "Smart contract that handles mGLOeuro redemptions via Morpho Vault",
+     "official": true,
+     "notes": "Pays EURC, EURCV or EUROP"
+    },
+    {
+     "entity": "Midas instant redemption",
+     "kind": "redemption",
+     "relation": "Instant redemption is capped and refills slowly",
+     "url": "https://midas.app/assets/main-D6iQtpfU.js",
+     "quote": "capacitySchedule:`10% of supply, replenished within 65 days`",
+     "official": true,
+     "notes": "Text of Midas's own product page, read from its front-end bundle (midas.app/mgloeuro is JS-rendered and behind Cloudflare)"
+    },
+    {
+     "entity": "Midas standard redemption",
+     "kind": "redemption",
+     "relation": "Standard redemption follows the settlement of the underlying assets (days to weeks)",
+     "url": "https://docs.midas.app/llms-full.txt",
+     "quote": "This option is fee-free and follows the natural settlement timeline of the underlying assets.",
+     "official": true
+    },
+    {
+     "entity": "Midas emergency pause",
+     "kind": "admin_role",
+     "relation": "Midas can pause deposits and redemptions",
+     "url": "https://docs.midas.app/llms-full.txt",
+     "quote": "We may pause deposit and redemption facilities",
+     "official": true
+    },
+    {
+     "entity": "Fordefi",
+     "kind": "service_provider",
+     "relation": "Technical wallet provider (not the custodian of the fund's assets)",
+     "url": "https://midas.app/assets/main-D6iQtpfU.js",
+     "quote": "Fordefi is technical service provider. Midas tokens are self-custodied. Users are responsible for managing their wallets",
+     "official": true,
+     "notes": "Text of Midas's own product page, read from its front-end bundle (midas.app/mgloeuro is JS-rendered and behind Cloudflare)"
+    },
+    {
+     "entity": "Midas Attestation Engine",
+     "kind": "attestation",
+     "relation": "Independent on-chain verification of NAV is being rolled out and does not cover every token yet",
+     "url": "https://docs.midas.app/llms-full.txt",
+     "quote": "Independent onchain verification is currently being rolled out progressively and does not yet apply to all mTokens.",
+     "official": true,
+     "notes": "No mGLOeuro-specific attestation found"
+    },
+    {
+     "entity": "Investor restrictions",
+     "kind": "regulator",
+     "relation": "Midas products are security tokens for restricted investors (no US persons)",
+     "url": "https://docs.midas.app/llms-full.txt",
+     "quote": "Midas products are security tokens.",
+     "official": true
+    }
+   ]
+  }
+ ]
+}

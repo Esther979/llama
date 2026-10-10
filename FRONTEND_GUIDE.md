@@ -20,13 +20,21 @@ The page passes the 15 rows at $10M of section 9, but it lags this guide in thre
 
 | Priority | Page today | Replace with | Why |
 |---|---|---|---|
-| 1 | Computes `carry` itself | `const carry = () => RiskModel.carryOf(d, S.alt / 100);` (section 4) | The "Cash earns after selling, % APY" input is annual; the model needs the yield given up until expiry. The annual difference overstates the cost of selling about 8 times whenever the input is not 5.01, so the verdicts are wrong |
+| 1 | Computes `carry` itself: (implied APY - cash APY) x whole days to expiry (47) / 365 | `const carry = () => RiskModel.carryOf(d, S.alt / 100);` (section 4) | The page's formula is right in kind (it already converts the annual input to the time left); `carryOf` uses the exact `d.time_model.days_to_expiry` (46.2) like the timeline functions, so the page and the backend give the same carry |
 | 2 | Builds "What would change the answer" itself | `RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Same candidates, flips and weakest assumption as the backend; its "cash earns 1% a year less" step is converted to the time left to expiry |
 | 3 | No `RiskModel.atSize` | `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` on load and on every size / wallet change (section 3b) | Position size (USD) and wallet presets; then check the $1M, $7M and $50M rows of section 9 |
+| 4 | Builds the decision sentence itself | `RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Headline, reasons, break-even and the assumption it hinges on, with every number from the model and the same wording as the backend |
 
 Open point: the merge report says the page has no position-size input yet, while the team was told the input is now
 "Position size (USD)". Check which is true on `frontend`, and which file is the page (`demo.html` or
 `Dependency_Risk_Desk_v2.html`) so that this guide names the right one.
+
+## 0b. Answers from the backend (questions from the front end)
+
+| Question | Answer |
+|---|---|
+| Which slider range is right: the data says cascade up to 10%, the acceptance table tests 20%? | The data was wrong and is fixed: `d.failure_types.types.cascade` is now 1–40%, the range of the liquidation curve (`d.borrowers.liquidation_curve`, oracle drops 0.5%–40%). Rule: `min` / `max` in `d.failure_types.types` are the range the model covers; the page may narrow a range (depeg 1–60% is fine) but not widen it. The starting value is the page's choice. `breakEvenSeverity` takes the page's slider range as `lo`, `hi`; the acceptance table uses the data's range, which gives the same result whenever the thresholds lie inside both |
+| Do the real-borrower presets have their own exit curve? | Yes, computed from their size. Every position's curve is `RiskModel.sizeCurve(d, P.collateral_usd)` (from `d.exit_curve_usd`, the quotes by USD size), and `decideAt` / `inject` already use it: `r.sellable_now` is 1 for the two real borrowers ($3.93M and $3.25M are below the $4.5M pool limit), 0.45 for $10M. `d.exit_curve` and `d.max_exit_fraction` are the curve of the size input's position (after `atSize`) and must not be used for the real-borrower or wallet presets |
 
 ## 1. Files
 
@@ -51,7 +59,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 1. Do not hard-code numbers from the old snapshot. Read everything from `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` (section 3b), recomputed whenever the size or the wallet input changes.
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
 3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), Incidents are set by hand (node, failure, severity, duration): there is no detector and `d.detected` is always empty. If the prototype's sample feed stays, keep it labelled as invented.
-4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
+4. Step 2 stays a manual slider. Range: `min` / `max` of `d.failure_types.types[key]` are what the model covers; the page may use a narrower range, never a wider one (section 0b). Starting value and label: the page's own `FAIL` table (the same keys exist in `d.failure_types.types`; show `default_severity` and `anchors` as ticks). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
 5. No probability anywhere: delete step 3, `S.p`, `pOf` / `vOf`, the partial-case assumptions (`pk`, `ps`) and the probability zones. The decision assumes the incident has happened; the severity slider is the only "how bad" input. Show on that slider the zones from `RiskModel.breakEvenSeverity` (stay / sell part / sell to the pool limit). The backend still has probability-based fields (`decision_grid`, `thresholds`, `incidents[].probabilities`...) for compatibility: do not use them.
 6. Show evidence grades: A = read from chain / API, B = contract rule back-tested, C = analogy from history, D = assumption. Dashed style = D.
 7. Keep the field names of `dashboard.json`. If something is missing, ask the backend (do not invent it).
@@ -147,7 +155,8 @@ function model() {
 ## 5. Decision card
 
 - Badge: `r.verdict` (`STAY` green, `REDUCE` amber "Sell `sell_usd`", `SELL_TO_CAP` red "Sell `sell_usd`, `stuck_fraction` stuck", `EXIT` red).
-- Sentence (numbers from `r` and `be` only): "If {node label} {failure label lowercased} by {sev}, doing nothing loses {loss_if_stay_usd}. Selling {sell_usd} now costs {sale_cost_usd} and leaves {loss_kept_usd} at risk on the rest." For `STAY`: "If ..., doing nothing loses {loss_if_stay_usd}; selling would cost more than it saves." Then: "Selling starts to pay once the severity exceeds {be.start}" (or "Selling does not pay at any severity on this slider").
+- Sentence and reasons: `const t = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, carry())`. Show `t.title`, then `t.headline` (verdict, loss if staying, what selling now costs and leaves), the list `t.reasons` (whether the lending oracle follows and why, liquidation and how far the liquidation line is, recovery, what the pool takes today and after the failure), `t.break_even` and `t.hinges_on` (the assumption the answer depends on, from `sensitivity`), and `t.rule` (the propagation rule, fixed text) in small print. Every number in these texts comes from the model (`t.numbers`; `check_js_port.py` checks the text equals the Python `decision_text` and that `t.unchecked` is empty). Use these texts instead of building sentences in the page; the template below is what they contain.
+- (Template, for reference) Sentence (numbers from `r` and `be` only): "If {node label} {failure label lowercased} by {sev}, doing nothing loses {loss_if_stay_usd}. Selling {sell_usd} now costs {sale_cost_usd} and leaves {loss_kept_usd} at risk on the rest." For `STAY`: "If ..., doing nothing loses {loss_if_stay_usd}; selling would cost more than it saves." Then: "Selling starts to pay once the severity exceeds {be.start}" (or "Selling does not pay at any severity on this slider").
 - Bars: "Do nothing" = `loss_if_stay_usd`; "Act" = `sale_cost_usd` + `loss_kept_usd`.
 - Under the verdict, one line from `r.note`, and: oracle follows = `r.oracle_falls`, liquidated = `r.liquidated`. If `r.L_low !== r.L_high`: "loss between L_low and L_high depending on the oracle; the decision uses the high end".
 - "What would change the answer": `const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())`. It replaces one assumption at a time by its stated alternative and reruns the decision. Show `sv.candidates` as a table (`alternative`, `grade`, `verdict`, a mark when `flips`), the other position presets (`comparison: true`) in a separate "other positions" group, and highlight `sv.weakest`: the lowest-graded assumption that flips the verdict ("The answer hinges on: {alternative} (grade {grade}) -> {verdict}"); `null` -> "No tested assumption changes the answer". Also show the severity break-even (`be.start`, `be.cap`). The backend's `weakest_link` / `scenarios[].weakest_link` fields are probability-based legacy: do not use them.
@@ -197,14 +206,14 @@ Remove these old texts, the backend now contradicts them: "Type unknown", "Upstr
 
 ## 7. Exit panel
 
-- Today: `max_exit_fraction`, cost `slippageAt(max_exit_fraction)`; optional gas per size in `d.exit_curve[i].gas_usd`.
+- Today: per position, `const [curve, cap] = RiskModel.sizeCurve(d, P.collateral_usd)`: sellable now `cap` (= `r.sellable_now`), cost `slippageAt(cap, curve)`; the chart draws `curve`. `d.exit_curve` / `d.max_exit_fraction` are for the size input's position only (`spot`, `lev_market_avg`), not for the real-borrower presets (section 0b). Gas per USD size in `d.exit_curve_usd[i].gas_usd`.
 - If this plays out: `r.sellable_later` and `r.avg_cost_later` (null -> "No room left"). For `lending:cascade` and for failures where the oracle follows, these come from the real liquidation curve (`d.borrowers.exit_later`, oracle drops 0.5% to 40%, so the page's cascade slider range up to 40% is covered), replacing the "pool liquidity leaves" assumption.
 - Dashed curve: only for `market:drain` (the page's existing `stressCurve(sev / 100)`).
 - The refused row: `d.evidence.max_exit_fraction.source` names the refused sizes.
 
 ## 8. Evidence drawer
 
-For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan link, `contract_name`, `evidence`, `note`), its `members` looked up in `d.dependency_graph.nodes` (label, contract name, address, grade), and the edges of `d.ui.edges` touching `k` with their `evidence`. For `oracle`, add the oracle tree `d.oracle` (primary, backup, threshold, timelock, deviation now). For `feeds`, the count of Chainlink transmitters is in the note.
+For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan link, `contract_name`, `evidence`, `note`), its `members` looked up in `d.dependency_graph.nodes` (label, contract name, address, grade), and the edges of `d.ui.edges` touching `k` with their `evidence`. Off-chain dependencies: for `ethena` and `usde` show `d.offchain.USDe`, for `susde` also `d.offchain.sUSDe`: the issuer, the `summary`, then `relations` grouped by `kind` (custodians, hedging exchanges, reserve assets, attestations, ...), each with `entity`, `relation`, a link to `evidence.url` and the `evidence.quote` in quotation marks, dashed (grade D: stated by the issuer, not verifiable on chain), "third-party source" when `evidence.official` is false, and "quote re-checked {checked_at}" when `evidence.quote_found` is true. For `oracle`, add the oracle tree `d.oracle` (primary, backup, threshold, timelock, deviation now). For `feeds`, the count of Chainlink transmitters is in the note.
 
 ## 9. Acceptance tests
 

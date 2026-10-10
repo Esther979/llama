@@ -319,9 +319,11 @@
      "evidence": "A"
     },
     {
-     "label": "PST issuer",
-     "detail": "off-chain, not verified",
-     "evidence": "D"
+     "label": "PST issuer: Huma Finance (Huma Global Ltd., BVI)",
+     "detail": "Huma's PayFi Strategy Token: Solana pool lending to cross-border payment institutions, mostly through the affiliated originator Arf; the Ethereum token is a Chainlink CCIP burn/mint copy, so redemption goes back through Solana; priced by Huma's own NAV oracle.",
+     "evidence": "D",
+     "offchain": "PST",
+     "sources": "31 relations from documents (18 official, 13 third-party), 31 quotes re-checked on their page"
     },
     {
      "label": "AUTO issuer",
@@ -3570,5 +3572,463 @@
    "check": "every number in the decision texts comes from the computed values"
   }
  ],
- "all_gates_pass": true
+ "all_gates_pass": true,
+ "offchain": {
+  "PST": {
+   "symbol": "PST",
+   "address": "0x22ae3d9a738471f405169af055d31c687087d4c7",
+   "issuer": "Huma Finance (Huma Global Ltd., BVI)",
+   "summary": "Huma's PayFi Strategy Token: Solana pool lending to cross-border payment institutions, mostly through the affiliated originator Arf; the Ethereum token is a Chainlink CCIP burn/mint copy, so redemption goes back through Solana; priced by Huma's own NAV oracle.",
+   "retrieved_at": "2026-10-10",
+   "grade_rule": "stated in the issuer's own documents (official = false: a third-party page), not verifiable on chain; the quote is re-checked on the page by offchain.py",
+   "relations": [
+    {
+     "entity": "Huma Finance",
+     "kind": "issuer",
+     "relation": "Huma names this address as the PST contract on Ethereum",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+      "url": "https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+      "quote": "PST contract on ETH mainnet: 0x22aE3D9a738471f405169Af055d31c687087d4c7",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Huma Global Ltd. (BVI) and Arf, one group",
+     "kind": "issuer",
+     "relation": "The operator and the main originator are affiliated under one corporate group",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "The operator, Huma Global Ltd. (BVI), and the dominant credit originator, Arf (Arf Financial GmbH in Switzerland, with a Liechtenstein-domiciled special-purpose vehicle, Arf Capital Ltd.), are affiliated entities combined under a common corporate group (00 Holdings Inc.) in 2024.",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "PayFi Foundation (Cayman Islands)",
+     "kind": "legal_structure",
+     "relation": "Bankruptcy-remote asset protection, separate from the issuer",
+     "notes": "Jupiter Lend assessment, April 2026",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://static-r2.jup.ag/lend/risk-research/payfi-risk-report.pdf",
+      "url": "https://static-r2.jup.ag/lend/risk-research/payfi-risk-report.pdf",
+      "quote": "Huma Global Ltd. (BVI) is the issuer; the PayFi Foundation (Cayman Islands) provides the bankruptcy-remote asset protection",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Arf Financial GmbH (Switzerland)",
+     "kind": "originator",
+     "relation": "Main originator: settlement liquidity for licensed payment institutions",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://huma.finance/",
+      "url": "https://huma.finance/",
+      "quote": "Huma\u2019s primary vertical, powered by its Swiss-regulated entity Arf, provides settlement liquidity to licensed financial institutions and money service businesses, enabling T+0 cross-border settlements.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Arf (concentration)",
+     "kind": "originator",
+     "relation": "Most of the pool is lent to Arf-originated credit: close to one originator",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "The large majority of pool capital is deployed into Arf-originated credit.",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "VQF (Swiss self-regulatory organisation)",
+     "kind": "regulator",
+     "relation": "Arf is a VQF member for anti-money-laundering",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://arf.one/",
+      "url": "https://arf.one/",
+      "quote": "Arf Financial GmbH is a Member Of The VQF Self-Regulatory Organization (VQF SRO Member Nr. 101012) for combating money laundering and preventing terrorism financing.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "No prudential supervisor",
+     "kind": "regulator",
+     "relation": "The SRO membership covers AML only: no capital or balance-sheet supervision of the originator",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "The originator holds only a Swiss self-regulatory (VQF SRO) membership, which covers anti-money-laundering obligations but provides no prudential supervision, balance-sheet oversight, or capital-adequacy requirement",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Licensed cross-border payment institutions",
+     "kind": "borrower",
+     "relation": "Borrowers: payment institutions drawing short-term financing to pre-fund settlement corridors (names not disclosed)",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/research/articles/sentora-launches-huma-pst-vault-on-morpho",
+      "url": "https://sentora.com/research/articles/sentora-launches-huma-pst-vault-on-morpho",
+      "quote": "PST's yield depends on repayment by licensed payment institutions drawing short-term financing to pre-fund settlement corridors.",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Payment receivables (1 to 7 days)",
+     "kind": "underlying_asset",
+     "relation": "Each credit is repaid within days, backed by funds already in safeguarding accounts",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://huma.finance/",
+      "url": "https://huma.finance/",
+      "quote": "Each transactional credit is repaid within 1 to 7 days and backed by funds already deposited into safeguarding accounts.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Asset mix",
+     "kind": "underlying_asset",
+     "relation": "Cross-border prefunding, trade finance, settlement liquidity, card receivables (no split published)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+      "url": "https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+      "quote": "including cross-border prefunding, trade finance, settlement liquidity, and credit card receivable financing",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "TradeFlow Capital Management (Singapore)",
+     "kind": "originator",
+     "relation": "Trade-finance originator: physical commodities and goods in transit (30 to 90 days)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://huma.finance/",
+      "url": "https://huma.finance/",
+      "quote": "Partnering with TradeFlow Capital Management, a Singapore-headquartered specialized investment advisor, Huma finances physical commodities and goods in transit.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Geoswift",
+     "kind": "originator",
+     "relation": "Marketplace payout financing partner",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://huma.finance/",
+      "url": "https://huma.finance/",
+      "quote": "Partnering with Geoswift, Huma accelerates marketplace sellers\u2019 payouts with stablecoin liquidity available on demand",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Custody accounts (not named)",
+     "kind": "custodian",
+     "relation": "Credits are backed by funds in custody accounts; the bank or custodian is not named",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/research/articles/sentora-brings-huma-finance-s-payment-credit-to-morpho",
+      "url": "https://sentora.com/research/articles/sentora-brings-huma-finance-s-payment-credit-to-morpho",
+      "quote": "Huma says these transactional credits generally turn over within one to seven days and are backed by funds already placed in custody accounts.",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Huma redemption (SLA)",
+     "kind": "redemption",
+     "relation": "Redemption is processed off chain: usually 1 business day, up to 7 days",
+     "notes": "Solana pool; an Ethereum holder must first bridge back through CCIP (not stated by Huma)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.huma.finance/products/huma-2.0/redemption.md",
+      "url": "https://docs.huma.finance/products/huma-2.0/redemption.md",
+      "quote": "Most redemptions are completed **within 1 business day**, though it may take up to **7 days**, per our service-level agreement (SLA).",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Huma daily redemption cap",
+     "kind": "redemption",
+     "relation": "A global daily cap applies to redemptions (value not published)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.huma.finance/products/huma-2.0/redemption.md",
+      "url": "https://docs.huma.finance/products/huma-2.0/redemption.md",
+      "quote": "To maintain protocol stability, Huma enforces a **global daily redemption cap**.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Huma redemption job",
+     "kind": "redemption",
+     "relation": "An off-chain job pays requests all-or-nothing and pauses when the pool lacks funds",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.huma.finance/ecosystem-resources/technical-docs/huma.md",
+      "url": "https://docs.huma.finance/ecosystem-resources/technical-docs/huma.md",
+      "quote": "Processing redemption requests in an all-or-nothing manner\u2014if the pool lacks sufficient funds to cover a request in full, processing will pause until enough funds are available.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Operator gating",
+     "kind": "redemption",
+     "relation": "The operator can freeze or cap redemptions; the liquidity sleeve sits in Solana money markets",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "A liquidity sleeve (roughly 10\u201320% of assets) is held in liquid Solana venues to service redemptions, but the operator retains the authority to freeze or cap redemptions",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Jupiter Lend and Kamino (Solana)",
+     "kind": "other",
+     "relation": "The redemption liquidity sleeve is deposited in Solana money markets",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "The redemption liquidity sleeve is deployed into Jupiter Lend and Kamino, the most liquid Solana money markets.",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Jupiter / Meteora PST-USDC pool (Solana)",
+     "kind": "exchange",
+     "relation": "Secondary exit by swap on Solana, while liquidity lasts",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.huma.finance/products/huma-2.0/redemption.md",
+      "url": "https://docs.huma.finance/products/huma-2.0/redemption.md",
+      "quote": "**LPs can redeem instantly by swapping via the PST-USDC pool on Jupiter / Meteora**, as long as sufficient liquidity is available.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "RockawayX",
+     "kind": "market_maker",
+     "relation": "The curator of these Morpho vaults also provides secondary liquidity for PST",
+     "notes": "Curator's own page",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://rockawayx.com/insights/introducing-the-rockawayx-huma-usdc-main-vault-on-morpho",
+      "url": "https://rockawayx.com/insights/introducing-the-rockawayx-huma-usdc-main-vault-on-morpho",
+      "quote": "We also provide ongoing secondary liquidity for PST, helping ensure market depth and stability.",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "RockawayX RFQ platform",
+     "kind": "market_maker",
+     "relation": "PST exits through RockawayX's RFQ platform (stated capacity)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+      "url": "https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+      "quote": "was integrated into RockawayX\u2019s RFQ platform with up to $20M capacity to make looping safer for large liquidity providers",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Chainlink CCIP",
+     "kind": "bridge",
+     "relation": "Exclusive bridge for PST from Solana; the Ethereum token is a CCIP burn/mint copy",
+     "notes": "Etherscan: contract BurnMintERC20 (Chainlink CCIP token)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/huma-finance-selects-chainlink-ccip-to-power-cross-chain-yield",
+      "url": "https://blog.huma.finance/huma-finance-selects-chainlink-ccip-to-power-cross-chain-yield",
+      "quote": "chose to adopt the Chainlink Cross-Chain Interoperability Protocol (CCIP) as its exclusive bridging infrastructure for its core yield product (PST) and all future yield products",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Chainlink oracles",
+     "kind": "oracle",
+     "relation": "Chainlink oracles price PST on Ethereum",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+      "url": "https://blog.huma.finance/pst-now-live-on-fluid-powered-by-chain-link",
+      "quote": "The integration is supported by Chainlink, whose oracles provide institutional-grade pricing for PST",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Huma price oracle (internal)",
+     "kind": "oracle",
+     "relation": "Huma runs its own off-chain service that tracks the PST price (NAV of private credit)",
+     "notes": "Sentora: an internally operated oracle, not an independent feed",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.huma.finance/ecosystem-resources/technical-docs/huma.md",
+      "url": "https://docs.huma.finance/ecosystem-resources/technical-docs/huma.md",
+      "quote": "A dedicated service that tracks the price of $PST in real time.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Accountable",
+     "kind": "attestation",
+     "relation": "Third-party dashboard on asset exposure and performance",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+      "url": "https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+      "quote": "PST is also independently verified by Accountable, which provides third-party assurance on asset exposure and performance with near real-time visibility.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Wadsack (Swiss audit firm)",
+     "kind": "attestation",
+     "relation": "Monthly attestations, cross-checked against on-chain proofs",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+      "url": "https://blog.huma.finance/huma-built-payfi.-now-institutions-build-on-huma",
+      "quote": "Verification uses onchain proofs, cross-checked against monthly attestations by Swiss audit firm Wadsack.",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "No loan-tape audit or rating",
+     "kind": "attestation",
+     "relation": "No independent loan-tape audit, trustee or credit rating",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "no independent loan-tape audit, trustee, or credit rating has been evidenced",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Spearbit",
+     "kind": "audit",
+     "relation": "Audit of Huma's EVM contracts (not the CCIP PST token itself)",
+     "evidence": {
+      "grade": "D",
+      "source": "issuer document: https://docs.huma.finance/ecosystem-resources/security-audits.md",
+      "url": "https://docs.huma.finance/ecosystem-resources/security-audits.md",
+      "quote": "**EVM** smart contracts audited by **Spearbit**",
+      "official": true,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Credit agent",
+     "kind": "admin_role",
+     "relation": "Defaults are handled semi-manually by a credit agent of the same group",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "defaults are handled semi-manually by the credit agent",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "First-loss cover",
+     "kind": "other",
+     "relation": "The first-loss cover is small",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "First-loss cover on the relevant pool is modest (on the order of a couple of percent).",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    },
+    {
+     "entity": "Huma admin keys",
+     "kind": "admin_role",
+     "relation": "Owner keys can pause the protocol and change pool parameters",
+     "evidence": {
+      "grade": "D",
+      "source": "third-party page: https://sentora.com/asset-risk-reviews/huma",
+      "url": "https://sentora.com/asset-risk-reviews/huma",
+      "quote": "Protocol-owner keys can pause the protocol and change pool parameters",
+      "official": false,
+      "quote_found": true,
+      "checked_at": "2026-10-10T19:17:54+00:00"
+     }
+    }
+   ],
+   "counts": {
+    "relations": 31,
+    "official": 18,
+    "third_party": 13,
+    "quotes_found": 31,
+    "quotes_checked_at": "2026-10-10T19:17:54+00:00"
+   }
+  }
+ }
 }
