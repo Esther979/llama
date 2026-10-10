@@ -1236,8 +1236,8 @@
       <div class="in" id="drawerIn"></div>
     </div>
 
-    <script src="sample_data/dashboard.sample.js"></script>
-    <script src="web/risk_model.js"></script>
+    <script src="../sample_data/dashboard.sample.js"></script>
+    <script src="risk_model.js"></script>
     <script>
       const $ = (s) => document.querySelector(s);
       const money = (v) => {
@@ -1266,7 +1266,7 @@
       if (!d || !RM) {
         $("#banner").hidden = false;
         $("#banner").innerHTML =
-          "<b>Could not load the backend files.</b> This page needs sample_data/dashboard.sample.js and web/risk_model.js.";
+          "<b>Could not load the backend files.</b> This page needs ../sample_data/dashboard.sample.js and risk_model.js next to it.";
         throw new Error("backend files missing");
       }
       const N = d.position.notional_usd,
