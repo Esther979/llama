@@ -86,7 +86,7 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 | `oracle_types.py` | Oracle classification: linear discount, MorphoChainlinkOracleV2 (base side only), MetaOracleDeviationTimelock (threshold + timelock), Chainlink market vs reported-rate feeds, constant; `underlying_assets`; `oracle_falls(cls, layer, shock, hours, token)`; unknown → D |
 | `onchain_positions.py` | Morpho borrowers over JSON-RPC (stdlib, batched): `read_market` (any market), liquidation curve 0.5–40%, `--wallet` (PT balanceOf + Morpho position of given addresses, same block), gas price, borrow rate (IRM `borrowRateView`), oracle tree; 7 gates |
 | `export_dashboard.py` | Builds `data/dashboard.json` for the PT view (`--positions`, `--borrower`, `--js-out`) |
-| `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `wallet_presets`, `at_size`, `carry_of`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary`, `decision_text` (reasons: headline, oracle / liquidation / recovery / exit, break-even, weakest assumption; every number checked) |
+| `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `wallet_presets`, `at_size`, `carry_of`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary`, `past_incidents` (4 real events with node, failure, severity, opts), `decision_text` (reasons: headline, oracle / liquidation / recovery / exit, break-even, weakest assumption; every number checked) |
 | `vault_pipeline.py` | Vault view: RockawayX-format input → routing, per-vault crawl, markets / allocations, borrowers, oracle types, incidents (collateral, underlying, asset issuer, liquidity run) with severity and duration grids, `vault_decide_at`, `vault_sensitivity`, `vault_timeline(_summary)`, `--js-out` |
 | `web/risk_model.js` | JS port of every model function above (`RiskModel.*`) for the front end |
 | `check_js_port.py` | JS vs Python on thousands of cases (17 gates) |
@@ -155,7 +155,9 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
   limited to the 9 nodes; severity slider manual; USDe ≠ sUSDe (done); timeline = incident duration, flat timelines
   described as "duration does not change the answer" (not "always stay").
 - No incident detector (decided with the team): incidents are set by hand in the front end (node, failure, severity,
-  duration); `detected[]` stays empty. Do not build `detect.py`.
+  duration); `detected[]` stays empty. Do not build `detect.py`. No invented incidents either (user, 10 Oct): the
+  front end's two invented examples go; real past incidents come from `past_incidents` (with `opts`: duration and
+  recovery, e.g. USDe 1 Feb 2026 recovered after 24 h).
 - Front-end questions answered: cascade range to 40% (done), carry scaled per unit of equity (done), position edges
   in `ui.edges` (done), amount above vault assets is capped (documented); the front end's size input is now
   "Position size (USD)" (was "share of the book"); "cash earns after selling, % APY" stays, converted with `carryOf`.

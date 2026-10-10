@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T19:55:06+00:00",
+ "generated_at": "2026-10-10T21:22:39+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -14883,9 +14883,9 @@
   }
  },
  "time_model": {
-  "generated_at": "2026-10-10T19:55:06+00:00",
+  "generated_at": "2026-10-10T21:22:39+00:00",
   "expiry": "2026-11-26",
-  "days_to_expiry": 46.170069444444444,
+  "days_to_expiry": 46.10927083333333,
   "implied_apy": 0.05011039832525688,
   "oracle_discount_per_year": 0.06,
   "borrow_apr": 0.03676861568808,
@@ -15677,6 +15677,78 @@
    "oracle_rule": "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, layer, shock, hours)"
   }
  },
+ "past_incidents": [
+  {
+   "key": "usde_feb_2026",
+   "label": "USDe daily low, 1 Feb 2026 (recovered the next day)",
+   "date": "2026-02-01",
+   "node": "usde",
+   "fail": "depeg",
+   "sev": 1.62,
+   "hours": 24,
+   "recovers": true,
+   "opts": {
+    "hours": 24,
+    "permanent": 0.0
+   },
+   "evidence": {
+    "grade": "C",
+    "source": "USDe (not sUSDe or the PT) daily low 0.98381 on 2026-02-01 (DeFiLlama ethena-usde), back near 1.00 after; used for sUSDe / the PT by analogy; recovery: USDe 0.98381 on 2026-02-01 -> 0.99889 on 2026-02-02 (DeFiLlama ethena-usde, data/replay_usde_prices.csv)",
+    "basis": "this asset's own history"
+   }
+  },
+  {
+   "key": "pt_reusd_aug_2026",
+   "label": "PT-reUSD oracle drop, 25 Aug 2026 (back-tested 9/9)",
+   "date": "2026-08-25",
+   "node": "oracle",
+   "fail": "oracleLow",
+   "sev": 2.77,
+   "hours": 1,
+   "recovers": true,
+   "opts": {
+    "hours": 1,
+    "permanent": 0.0
+   },
+   "evidence": {
+    "grade": "C",
+    "source": "PT-reUSD oracle drop, 25 Aug 2026 (HackMD, back-tested by backtest_reusd.py); market: PT-reUSD hourly low 0.9420 vs 0.9708 on 2026-08-25 04:00 UTC (Pendle ohlcv, market 0x13285bcb); back to -0.4% within 5h",
+    "basis": "another PT's oracle, by analogy"
+   }
+  },
+  {
+   "key": "stream_xusd_nov_2025",
+   "label": "Stream xUSD issuer failure, Nov 2025",
+   "date": "2025-11",
+   "node": "ethena",
+   "fail": "shortfall",
+   "sev": 50.0,
+   "hours": null,
+   "recovers": false,
+   "opts": {},
+   "evidence": {
+    "grade": "C",
+    "source": "Stream xUSD fell to about $0.50 in Nov 2025 (Decrypt, citing PeckShield); no recovery assumed",
+    "basis": "another stablecoin issuer, by analogy"
+   }
+  },
+  {
+   "key": "elixir_deusd_nov_2025",
+   "label": "Elixir deUSD collapse, Nov 2025",
+   "date": "2025-11",
+   "node": "ethena",
+   "fail": "shortfall",
+   "sev": 99.87,
+   "hours": null,
+   "recovers": false,
+   "opts": {},
+   "evidence": {
+    "grade": "C",
+    "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed",
+    "basis": "another stablecoin issuer, by analogy"
+   }
+  }
+ ],
  "detected": [],
  "detector": {
   "connected": false,

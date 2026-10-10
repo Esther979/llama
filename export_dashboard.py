@@ -551,6 +551,7 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         "failure_types": frontend_contract.failure_types(cal, graph),
         "position_presets": frontend_contract.position_presets(notional, lending[0] if lending else None, onc,
                                                                (onc or {}).get("oracle"), pt_price),
+        "past_incidents": frontend_contract.past_incidents(),
         "detected": [],
         "detector": {"connected": False, "schema": {"node": "dependency_graph node id", "fail": "failure_types key",
                                                      "sev": "observed severity in the failure's unit",
