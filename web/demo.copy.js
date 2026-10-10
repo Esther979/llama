@@ -31,6 +31,7 @@ const COPY = {
     source: "source",
     thirdParty: "third-party source",
     rechecked: (day) => `quote re-checked ${day}`,
+    notRechecked: "not re-checked: the source page refused the checker",
     notFound: "not found on the page at the last check, so not shown as a quote",
     kinds: {
       issuer: "Issuer",

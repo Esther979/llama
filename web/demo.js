@@ -1158,11 +1158,13 @@
             : "";
         const rel = (r) => {
           const e = r.evidence || {};
+          /* quote_found: true = re-checked on the page; null = the page refused the checker (not re-checked, still
+   shown as the issuer's words); false = not on the page, so not shown as a quote. */
           const quote = !e.quote
             ? ""
-            : e.quote_found
-              ? `<q class="oq">${e.quote}</q><span class="note">${C.rechecked(day(e.checked_at))}</span>`
-              : `<span class="note">${C.notFound}</span>`;
+            : e.quote_found === false
+              ? `<span class="note">${C.notFound}</span>`
+              : `<q class="oq">${e.quote}</q><span class="note">${e.quote_found === true ? C.rechecked(day(e.checked_at)) : C.notRechecked}</span>`;
           return `<li><b>${r.entity}</b>: ${r.relation} ${gr(e.grade)}${e.official === false ? ` <span class="tp">${C.thirdParty}</span>` : ""}${e.url ? ` · <a class="osrc" href="${e.url}" target="_blank" rel="noopener">${C.source}</a>` : ""}${quote}</li>`;
         };
         const did = "d-off-" + id;

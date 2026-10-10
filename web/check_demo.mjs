@@ -215,6 +215,25 @@ try {
     const links = (id) => { nodeEvidence(id); return document.querySelectorAll("#drawer a.osrc").length; };
     out.ethena = [links("ethena"), o.USDe ? o.USDe.counts.relations : null];
     out.susde = [links("susde"), o.sUSDe ? o.sUSDe.counts.relations : null];
+    /* quote wording per relation: true -> quote + "re-checked", null -> quote + "not re-checked" (the source page
+       refused the checker), false -> no quote + "not found" */
+    out.quoteBad = []; out.quoteN = { true: 0, null: 0, false: 0 };
+    for (const [id, key] of [["ethena", "USDe"], ["susde", "sUSDe"]]) {
+      if (!o[key]) continue;
+      nodeEvidence(id);
+      const lis = [...document.querySelectorAll("#drawer .offc li")];
+      for (const r of o[key].relations) {
+        const e = r.evidence || {}, qf = e.quote_found === true ? "true" : e.quote_found === false ? "false" : "null";
+        if (!e.quote) continue;
+        out.quoteN[qf]++;
+        const li = lis.find((x) => x.textContent.includes(r.relation));
+        const t = li ? li.textContent : "", hasQ = !!(li && li.querySelector("q"));
+        const ok = qf === "true" ? hasQ && /re-checked/.test(t) && !/not re-checked|not found/.test(t)
+          : qf === "null" ? hasQ && /not re-checked/.test(t) && !/not found/.test(t)
+          : !hasQ && /not found/.test(t);
+        if (!ok) out.quoteBad.push(r.entity + " (quote_found " + qf + "): " + (li ? t.slice(-70) : "row missing"));
+      }
+    }
     nodeEvidence("usde");
     const b = document.querySelector('#drawer button[data-drawer="ethena"]');
     if (b) b.click();
@@ -234,6 +253,8 @@ try {
   gate(off.ethena[1] !== null && off.ethena[0] === off.ethena[1] && off.susde[0] === off.susde[1],
     `2c. off-chain source links: ethena ${off.ethena[0]}/${off.ethena[1]}, susde ${off.susde[0]}/${off.susde[1]}`);
   gate(off.usdeOpensEthena, "2c. the usde drawer links to Ethena's off-chain relations");
+  gate(off.quoteBad.length === 0,
+    `2c. quote wording by quote_found (true ${off.quoteN.true}, null ${off.quoteN.null}, false ${off.quoteN.false})${off.quoteBad.length ? ": " + off.quoteBad.join("; ") : ""}`);
   gate(off.offIds.length === 0, `2c. "Contracts behind it" lists on-chain members only${off.offIds.length ? ": " + off.offIds.join(", ") : ""}`);
 
   /* 3. every preset x every failure of every node, through the page's own controls */
