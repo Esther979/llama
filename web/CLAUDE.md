@@ -107,11 +107,11 @@ Not started. The guide and its acceptance table (9 decision rows and a 3-row liq
 - **Same UX rules as the PT view.** First screen: badge, the sentence (guide section 4), loss if staying versus
   cost of exiting. Dependency chain (6 layers), markets, exit tranches, sensitivity and timeline open on demand.
 - **Use `vaultDecideAt` everywhere.** `vaultDecide` is the old probability-based function. The vault guide named
-  it in two places; the backend fixed that in `556828c` (on `main`, not merged yet).
+  it in two places; the backend fixed that in `556828c` (merged).
 - **The amount default exceeds the Belem vault.** 10,000,000 is above its total assets (about 4.7M EURCV); the
   guide has a message for that case. Show it; do not silently cap the input.
 
-## Current state (`frontend` at `17c31e1`; page code last changed in `8baf37b`)
+## Current state (`frontend` at `5cda215`; page code last changed in `098d44c`)
 
 What is on the branch:
 
@@ -128,34 +128,32 @@ What is on the branch:
 - Edges come from `ui.edges` only (data id `position` drawn as the page's `pos`).
 - Carry comes from `RiskModel.carryOf(d, S.alt / 100)`; the "cash earns" field is a text field
   (`inputmode="decimal"`) that accepts "4,5" as well as "4.5".
-- `main` was merged at `9fd615e` (in `a4d9f9e`), which brought `d.offchain` (off-chain dependencies of USDe and
-  sUSDe), `RiskModel.decisionText` and `RiskModel.sizeCurve`. At 22:30 on 10 Oct the branch was 1 commit behind
-  (`556828c`, a wording fix in the vault guide). The backend pushes often, so run
+- The exit panel, chart, sale table, tooltip and layer-4 fact use the selected preset's own curve,
+  `RiskModel.sizeCurve(d, P.collateral_usd)`; "Today" is the model's `sellable_now`. The two real borrowers can
+  sell 100% today, so their chart has no "Pendle refuses" band.
+- `main` was merged at `556828c` (in `5cda215`); the `9fd615e` merge before it brought `d.offchain` (off-chain
+  dependencies of USDe and sUSDe), `RiskModel.decisionText` and `RiskModel.sizeCurve`. The backend pushes often, so
+  run
   `git log HEAD..origin/main --oneline` before starting and merge first.
 
-Checked at `8baf37b`: `python3 check_js_port.py` passes all 21 gates; `node web/check_demo.mjs` passes: no console errors,
-banner hidden, 18/18 drawers, 48 preset x failure combinations, 15/15 of the guide's 10M acceptance rows (model and
-on-screen verdict), no horizontal scroll at 390px, dark background in dark mode. Not checked: the guide's 1M / 7M /
-50M rows (no size input yet; reported as SKIPPED), layout by eye in dark mode and at phone width, and whether the
-decision card and the exit panel agree (gap 1 below; the script has no check for it yet). The carry change was
-also compared old vs new on 564 cases (every preset, failure and four severities at cash 0 / 2 / 4%): no verdict
-changed, 9 REDUCE sizes moved by 1-3 points.
+Checked at `098d44c`: `node web/check_demo.mjs` passes: no console errors, banner hidden, 18/18 drawers, 48 preset x
+failure combinations, 15/15 of the guide's 10M acceptance rows (model and on-screen verdict), gate 4b (exit panel
+agrees with the decision card) 192/192, no horizontal scroll at 390px, dark background in dark mode.
+`python3 check_js_port.py` passes all 21 gates at the `9fd615e` merge (`556828c` changed docs only). Gate 4b failed
+on the page before the fix (114/192, every failure with a real-borrower preset). Screenshots checked: the closest
+borrower at a 2% and a 0.5% USDe depeg, and the $10M position. Not checked: the guide's 1M / 7M / 50M rows (no size
+input yet; reported as SKIPPED), layout by eye in dark mode and at phone width. Earlier: the carry change was
+compared old vs new on 564 cases: no verdict changed, 9 REDUCE sizes moved by 1-3 points.
 
 Gaps, most visible first:
 
-1. **The exit panel contradicts the decision card for the two real-borrower presets.** With
-   `lev_closest_to_liquidation` ($3.25M) and a 2% USDe depeg the card says "Selling $3.25M now" while the exit
-   panel says "Today: up to $1.46M (45%)". With a 0.5% depeg the panel says "If this plays out: up to $3.25M
-   (100%) … after liquidators sell first": more than "today", and no liquidation happens. Cause: `MAXX`, `CURVE`,
-   the "All sale sizes" table, the chart and the layer-4 fact use `d.max_exit_fraction` and `d.exit_curve`, which
-   describe the $10M size input; the model returns `sellable_now = 1` for the real borrowers.
-2. "What would change the answer" is built by the page, not by `sensitivity`. Its numbers come from `decideAt`, and
+1. "What would change the answer" is built by the page, not by `sensitivity`. Its numbers come from `decideAt`, and
    it has no "cash earns 1% less" row, so it cannot carry that bug; what is missing is the content: the duration,
    must-sell and carry alternatives and the weakest assumption.
-3. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
-   assumed $10M.
-4. The page's wording still describes a detector (UX section above).
-5. Off-chain dependencies are in the data but not on the page. The layer-2 Ethena card still says "Off-chain part
+2. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
+   assumed $10M; the header's "position size $10.00M" stays even when a real-borrower preset is selected.
+3. The page's wording still describes a detector (UX section above).
+4. Off-chain dependencies are in the data but not on the page. The layer-2 Ethena card still says "Off-chain part
    not verified", which the data now contradicts, and "Contracts behind it" in the `ethena` and `susde` drawers
    lists the off-chain entities as bare names with no source (29 of 30 members for `ethena`, 5 of 7 for `susde`).
 
@@ -166,7 +164,7 @@ Answered by the backend (guide section 0b, merged):
   page's choice. Pass the page's slider range to `breakEvenSeverity`.
 - Exit curve per position: `RiskModel.sizeCurve(d, P.collateral_usd)`. `decideAt` and `inject` already use it.
   `d.exit_curve` and `d.max_exit_fraction` belong to the size input's position only and must not be used for the
-  real-borrower or wallet presets. This is the fix for gap 1.
+  real-borrower or wallet presets. Applied in `098d44c`.
 - New on `main`: `RiskModel.decisionText(...)` returns the headline, reasons, break-even and the assumption the
   answer hinges on, in the backend's wording (guide section 0, priority 4).
 
@@ -177,12 +175,10 @@ This file loads when a file in `web/` is opened; otherwise read it at the start 
 Done: `main` merged (repeat after every backend push, then `python3 check_js_port.py`); page moved to
 `web/demo.html`; position edges from the data; probability removed, verdict from `decideAt`, zones from
 `breakEvenSeverity`; split into `demo.html`, `demo.css`, `demo.js`; `check_demo.mjs` written; `main` merged at
-`9fd615e` (`a4d9f9e`); carry from `RiskModel.carryOf`, decimal comma accepted (`8baf37b`).
+`9fd615e` (`a4d9f9e`); carry from `RiskModel.carryOf`, decimal comma accepted (`8baf37b`); exit panel from each
+position's own curve, with gate 4b in `check_demo.mjs` (`8291329`, `098d44c`); `main` merged at `556828c`
+(`5cda215`).
 
-2. Fix gap 1. First add a gate to `check_demo.mjs`: for every preset and failure, the "today" amount in the exit
-   panel is at least the amount the card says to sell, and "If this plays out" names liquidators only when
-   `sellable_later < sellable_now`. It should fail on the current page. Then take the sellable share and amounts
-   from the `decideAt` result, and the curve, table and chart from `RiskModel.sizeCurve(d, P.collateral_usd)`.
 3. Wording: no detector. Rename the sample feed to example incidents (invented), remove "Detector feed",
    "detected now", "the detector is not connected yet" and the "Detected" tag. Ask the user before removing the two
    samples themselves.
@@ -258,6 +254,6 @@ Checking against the data files is not enough; the drawer crash was missed that 
 `CHROME=` to override). It reads the acceptance table from `../FRONTEND_GUIDE.md` at run time, prints one
 `GATE PASS` / `GATE FAIL` line per check and exits 1 on any failure or console error. Run it before each commit;
 for a refactor, run it on the old and the new page and compare the output. It runs from disk: no server and no
-deployment. It does not judge layout by eye, and until to-do 2 it does not check that two parts of the screen
-agree with each other, so a full pass is not proof that the page is consistent.
+deployment. It does not judge layout by eye. Gate 4b checks one pair of screen parts (exit panel against the
+decision card); other parts are not cross-checked, so a full pass is not proof that the page is consistent.
 State plainly what was checked and what was not.
