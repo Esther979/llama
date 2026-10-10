@@ -278,7 +278,7 @@
 
       .steps {
         display: grid;
-        grid-template-columns: 1fr 1.25fr 1.25fr;
+        grid-template-columns: 1fr 1.5fr;
         gap: 0;
         padding: 0;
       }
@@ -1148,23 +1148,11 @@
             <input
               type="range"
               id="sev"
-              aria-label="Severity of the severe case"
+              aria-label="Severity"
             /><output id="sevOut" for="sev"></output>
           </div>
-          <span class="note" id="sevNote"></span>
-        </div>
-        <div class="step">
-          <label class="q" for="prob"
-            ><i>3</i>How likely is that severe case?</label
-          >
-          <div class="slide">
-            <input type="range" id="prob" min="0" max="1000" step="1" /><output
-              id="probOut"
-              for="prob"
-            ></output>
-          </div>
           <div id="zoneBox"></div>
-          <span class="note" id="probNote"></span>
+          <span class="note" id="sevNote"></span>
         </div>
       </section>
 
@@ -1229,22 +1217,6 @@
               max="50"
               step="0.01"
           /></label>
-          <label for="pk"
-            >Partial case is this many times as likely as the severe case<input
-              type="number"
-              id="pk"
-              min="0"
-              max="20"
-              step="0.5"
-          /></label>
-          <label for="ps"
-            >Partial case severity, % of the severe case<input
-              type="number"
-              id="ps"
-              min="0"
-              max="100"
-              step="5"
-          /></label>
           <p class="note" id="advNote"></p>
         </div>
       </details>
@@ -1269,24 +1241,13 @@
               : "$" + Math.round(v);
       };
       const pc = (v, d = 1) => (v * 100).toFixed(d) + "%";
-      const pp = (p) => {
-        const x = p * 100;
-        return (
-          (x === 0
-            ? "0"
-            : x < 0.1
-              ? x.toFixed(3)
-              : x < 1
-                ? x.toFixed(2)
-                : x < 10
-                  ? x.toFixed(1)
-                  : x.toFixed(0)) + "%"
-        );
-      };
       const short = (a) =>
         a.length > 14 ? a.slice(0, 6) + "…" + a.slice(-4) : a;
       const trim = (x) => String(+(+x).toFixed(2));
       const cap1 = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+      /* Lower-case the first letter of a label, except acronyms ("NAV falls"). */
+      const lc = (t) =>
+        /^[A-Z][a-z]/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t;
 
       /* Data and model come from the backend (FRONTEND_GUIDE.md): dashboard.sample.js sets window.DASHBOARD,
    risk_model.js sets window.RiskModel. The page holds no snapshot numbers and no loss formulas. */
@@ -1336,11 +1297,8 @@
           ? `<span class="gr ${g}" title="${d.evidence.grades[g] || ""}">${g}</span>`
           : "";
       const src = (e) => (e ? `${gr(e.grade)} ${e.source}` : "");
-      const pOf = (v) => Math.pow(v / 1000, 3),
-        vOf = (p) => Math.round(Math.cbrt(p) * 1000);
-
-      /* The page's own table, kept as the guide asks: label, unit, range, starting value and a sample probability
-   for failures that have no historical default. No loss functions here. */
+      /* The page's own table, kept as the guide asks: label, unit, range and starting value. No loss functions and
+   no probabilities here: the decision assumes the incident has happened (guide, rule 5). */
       const FAIL = {
         shortfall: {
           label: "Issuer cannot back the asset",
@@ -1349,7 +1307,6 @@
           min: 1,
           max: 100,
           def: 50,
-          prob: 0.02,
           phrase: (s) => `a ${s} reserve shortfall`,
         },
         depeg: {
@@ -1359,7 +1316,6 @@
           min: 1,
           max: 60,
           def: 10,
-          prob: 0.03,
           phrase: (s) => `a ${s} fall in value`,
         },
         oracleLow: {
@@ -1369,7 +1325,6 @@
           min: 1,
           max: 40,
           def: 15,
-          prob: 0.05,
           phrase: (s) => `a price understated by ${s}`,
         },
         stale: {
@@ -1379,7 +1334,6 @@
           min: 1,
           max: 48,
           def: 6,
-          prob: 0.02,
           phrase: (s) => `${s} without a price update`,
         },
         cascade: {
@@ -1389,7 +1343,6 @@
           min: 1,
           max: 40,
           def: 8,
-          prob: 0.1,
           phrase: (s) => `a ${s} oracle drop that liquidates other borrowers`,
         },
         drain: {
@@ -1399,7 +1352,6 @@
           min: 10,
           max: 90,
           def: 50,
-          prob: 0.3,
           phrase: (s) => `${s} of liquidity leaving`,
         },
         halt: {
@@ -1409,13 +1361,11 @@
           min: 1,
           max: 48,
           def: 6,
-          prob: 0.01,
           phrase: (s) => `a ${s} halt`,
         },
       };
       /* Failure keys this table does not know are read from the backend (failure_types.types), so a new failure type
-   shows up as one more option instead of breaking the page. Its probability starts from a sample value unless
-   the backend gives a historical one. */
+   shows up as one more option instead of breaking the page. */
       Object.keys(FT).forEach((k) => {
         if (FAIL[k]) return;
         const t = FT[k],
@@ -1427,8 +1377,7 @@
           min: t.min ?? 1,
           max: t.max ?? 100,
           def: t.default_severity ?? t.min ?? 1,
-          prob: 0.02,
-          phrase: (s) => `${lab.charAt(0).toLowerCase() + lab.slice(1)} (${s})`,
+          phrase: (s) => `${lc(lab)} (${s})`,
         };
       });
       /* Display names follow the backend, so a rename there shows up here without a page change. */
@@ -1462,25 +1411,11 @@
             : "",
         },
       };
-      /* Edges to the position are the page's own: the position is assumed, not read from a wallet. */
-      const EDGES = d.ui.edges.concat([
-        {
-          from: "pt",
-          to: "pos",
-          type: "holding",
-          lev: false,
-          grade: "D",
-          evidence: "assumed position, not read from a wallet",
-        },
-        {
-          from: "lending",
-          to: "pos",
-          type: "liquidation",
-          lev: true,
-          grade: "D",
-          evidence: "assumed position, not read from a wallet",
-        },
-      ]);
+      /* Edges come from the data only, including the two to the position (pt -> holding, lending -> liquidation for
+   the presets in applies_to). The data names the position "position"; the page draws it as "pos". */
+      const EDGES = d.ui.edges.map((e) =>
+        e.to === "position" ? Object.assign({}, e, { to: "pos" }) : e,
+      );
 
       /* Detector feed. Real entries (d.detected) name a dependency-graph node; map it to one of the 9 UI nodes.
    The two sample entries are invented and stay labelled as such. */
@@ -1522,132 +1457,63 @@
         node: "susde",
         fail: "depeg",
         sev: 10,
-        p: 0.03,
         alt: d.position.implied_apy * 100,
         book: 10,
-        pk: 2,
-        ps: 30,
         replay: "",
         open: {},
         more: {},
-        touched: false,
       };
       const isPct = () => FAIL[S.fail].unit === "%";
       const sevText = (v = S.sev) => trim(v) + (isPct() ? "%" : " h");
       const carry = () =>
         (Math.max(0, d.position.implied_apy - S.alt / 100) * DAYS) / 365;
       const isLev = () => PRE[S.pos].debt_usd > 0;
-      const edgeOn = (e) => e.lev === undefined || e.lev === isLev();
-      const pDefault = (k) => {
-        const pr = (FT[k] || {}).probabilities;
-        return pr && pr.p_severe != null ? pr.p_severe : FAIL[k].prob;
-      };
+      const edgeOn = (e) => !e.applies_to || e.applies_to.includes(S.pos);
 
-      /* One call per outcome to RiskModel.inject; expected loss, verdict and thresholds built on it (guide, section 4). */
+      /* The decision given the incident at the chosen severity, no probability (guide, section 4):
+   RiskModel.decideAt for the verdict, RiskModel.breakEvenSeverity for the severity zones on step 2. */
       function model(posKey = S.pos, light = false) {
         const P = PRE[posKey],
           C = P.collateral_usd,
           equity = C - P.debt_usd,
-          f = FAIL[S.fail];
-        const pr = (FT[S.fail] || {}).probabilities || {};
-        const hist =
-          pr.partial_severity_share != null &&
-          pr.partial_to_severe_prob != null;
-        const share = hist ? pr.partial_severity_share : S.ps / 100,
-          ratio = hist ? pr.partial_to_severe_prob : S.pk;
-        const sev = RM.inject(d, posKey, S.node, S.fail, S.sev),
-          par = RM.inject(d, posKey, S.node, S.fail, S.sev * share);
-        const pS = S.p,
-          pP = Math.min(ratio * pS, 1 - pS),
-          p0 = Math.max(0, 1 - pS - pP);
-        const el = pS * sev.L_high + pP * par.L_high,
-          scale = C / equity,
+          f = FAIL[S.fail],
           cy = carry();
-        const curve = CURVE.map(([x, s]) => [x, s * scale]);
-        const dec = RM.decide(1, el, curve, cy * scale),
-          x = dec.exitFraction,
-          slip = x ? RM.slippageAt(x, CURVE) : 0;
-        const hasLoss = sev.L_high > 0,
-          verdict = !hasLoss || x === 0 ? "stay" : dec.atCap ? "cap" : "reduce";
+        const r = RM.decideAt(d, posKey, S.node, S.fail, S.sev, cy),
+          x = r.sell_fraction;
         const m = {
           P,
           C,
           equity,
           f,
-          u: f.unit === "%",
-          pr,
-          hist,
-          share,
-          ratio,
-          sev,
-          par,
-          pS,
-          pP,
-          p0,
-          el,
-          scale,
+          sev: r,
+          L: r.L_high,
           cy,
-          dec,
           x,
-          slip,
-          hasLoss,
-          verdict,
+          slip: x ? RM.slippageAt(x, CURVE) : 0,
+          hasLoss: r.L_high > 0,
+          verdict: r.verdict,
         };
         if (light) return m;
-        const elAt = (p, a, b) => p * a + Math.min(ratio * p, 1 - p) * b;
-        m.zs = null;
-        m.zc = null;
-        if (hasLoss)
-          for (let v = 0; v <= 1000; v++) {
-            const dd = RM.decide(
-              1,
-              elAt(pOf(v), sev.L_high, par.L_high),
-              curve,
-              cy * scale,
-            );
-            if (m.zs === null && dd.exitFraction > 0) m.zs = v;
-            if (dd.atCap) {
-              m.zc = v;
-              break;
-            }
-          }
-        m.flip = null;
-        if (m.u && hasLoss)
-          for (let q = f.min; q <= f.max; q++) {
-            const a = RM.inject(d, posKey, S.node, S.fail, q).L_high,
-              b = RM.inject(d, posKey, S.node, S.fail, q * share).L_high;
-            if (
-              RM.decide(1, elAt(pS, a, b), curve, cy * scale).exitFraction > 0
-            ) {
-              m.flip = q;
-              break;
-            }
-          }
-        m.be = RM.breakEven(CURVE, sev.L_high, scale, cy);
-        const xa = x || MAXX,
-          sa = RM.slippageAt(xa, CURVE);
-        Object.assign(m, {
-          xa,
-          elUsd: el * equity,
-          sellUsd: x * C,
-          altCost: xa * (sa + cy) * C,
-          altKept: (1 - xa) * el * equity,
-          stuck: dec.stuckFraction * C,
-          keptStuck: (1 - x) * el * equity,
-          others: Object.keys(PRE)
-            .filter((k) => k !== posKey)
-            .map((k) => ({ k, m: model(k, true) })),
-        });
+        m.be = RM.breakEvenSeverity(d, posKey, S.node, S.fail, cy, f.min, f.max);
+        m.others = Object.keys(PRE)
+          .filter((k) => k !== posKey)
+          .map((k) => ({ k, m: model(k, true) }));
         return m;
       }
+      const VCLASS = {
+        STAY: "stay",
+        REDUCE: "reduce",
+        SELL_TO_CAP: "cap",
+        EXIT: "cap",
+      };
       const word = (m) =>
-        m.verdict === "stay"
+        m.verdict === "STAY"
           ? "Stay"
-          : m.verdict === "cap"
-            ? `Exit ${pc(m.x, 0)}`
-            : `Reduce, sell ${pc(m.x, 0)}`;
+          : m.verdict === "EXIT"
+            ? "Exit"
+            : `${m.verdict === "SELL_TO_CAP" ? "Sell to the pool limit" : "Reduce"}, sell ${money(m.sev.sell_usd)}`;
 
-      /* What the severe case does at each step of the path, read from the inject result (guide, section 6). */
+      /* What the incident does at each step of the path, read from the inject result (guide, section 6). */
       function story(m) {
         const s = m.sev,
           f = S.fail,
@@ -1689,7 +1555,7 @@
             : null;
         const pos =
           s.loss_usd > 0
-            ? `Lose ${money(s.loss_usd)} if severe`
+            ? `Lose ${money(s.loss_usd)}`
             : s.type === "not_modelled"
               ? f === "halt"
                 ? "No exit while halted"
@@ -1990,17 +1856,20 @@
       function renderDecision(m) {
         const s = m.sev,
           C = m.C,
+          f = m.f,
+          be = m.be,
           where = NODES[S.node].label,
           hasLoss = m.hasLoss,
-          v = m.verdict;
+          v = m.verdict,
+          stuckUsd = s.stuck_fraction * C;
         const vw =
-          v === "stay" ? "Stay" : v === "cap" ? `Exit ${pc(m.x, 0)}` : "Reduce";
+          v === "STAY" ? "Stay" : v === "EXIT" ? "Exit" : `Sell ${money(s.sell_usd)}`;
         const sub = !hasLoss
           ? "no direct loss"
-          : v === "cap"
-            ? "all the pool will take"
-            : v === "reduce"
-              ? `sell ${pc(m.x, 0)} now`
+          : v === "REDUCE"
+            ? `${pc(m.x, 0)} of the position`
+            : v === "SELL_TO_CAP"
+              ? `all the pool will take${stuckUsd > 0 ? ` · ${money(stuckUsd)} stuck` : ""}`
               : "";
         const L = s.liquidated || [];
         const facts =
@@ -2008,6 +1877,13 @@
             ? ` Oracle follows: ${yn(s.oracle_falls)}.${m.P.debt_usd > 0 ? ` Liquidated: ${L.includes(true) ? (L.includes(false) ? "only if the oracle follows" : "yes") : "no"}.` : ""}`
             : "";
         const rule = `<p class="note">${cap1(s.note)}.${facts}</p>`;
+        const ifTxt = `If ${where} ${lc(f.label)} by ${sevText()}`;
+        const beTxt =
+          be.start === null
+            ? "Selling does not pay at any severity on this slider."
+            : be.start <= f.min + 1e-9
+              ? "Selling pays at every severity on this slider."
+              : `Selling starts to pay once the severity exceeds <b>${sevText(be.start)}</b>.`;
         let why,
           body = "";
         if (!hasLoss) {
@@ -2022,59 +1898,53 @@
             body += `<div class="bars">${bar("Sellable today", [["b-cap", now, money(now)]], money(now), now)}${bar("If this plays out", [["b-cap", later, money(later)]], S.fail === "halt" ? `None for ${sevText()}` : later ? money(later) : "None", now)}</div>`;
           }
         } else {
-          const be =
-            m.zs === null
-              ? "Selling does not pay at any probability."
-              : `Selling starts to pay once you put the severe case above <b>${pp(pOf(m.zs))}</b>. You set ${pp(S.p)}.`;
           why =
-            v === "stay"
-              ? `Any sale costs more than it saves. ${be}`
-              : `Sell <b>${money(m.sellUsd)}</b> now. ${be}`;
-          const max = Math.max(m.elUsd, m.altCost + m.altKept);
-          body += `<div class="bars">${bar("Stay", [["b-loss", m.elUsd, "Expected loss " + money(m.elUsd)]], money(m.elUsd), max)}${bar(
-            `Sell ${pc(m.xa, 0)}`,
+            v === "STAY"
+              ? `${ifTxt}, doing nothing loses <b>${money(s.loss_if_stay_usd)}</b>; selling would cost more than it saves. ${beTxt}`
+              : `${ifTxt}, doing nothing loses <b>${money(s.loss_if_stay_usd)}</b>. Selling <b>${money(s.sell_usd)}</b> now costs ${money(s.sale_cost_usd)} and leaves ${money(s.loss_kept_usd)} at risk on the rest. ${beTxt}`;
+          /* "Act" = the recommended sale; on Stay, show selling to the pool limit so the bar shows why not. */
+          const xa = m.x || MAXX,
+            actCost = m.x
+              ? s.sale_cost_usd
+              : xa * (RM.slippageAt(xa, CURVE) + m.cy) * C,
+            actKept = m.x ? s.loss_kept_usd : (1 - xa) * s.loss_if_stay_usd,
+            max = Math.max(s.loss_if_stay_usd, actCost + actKept);
+          body += `<div class="bars">${bar("Do nothing", [["b-loss", s.loss_if_stay_usd, "Loss if you do nothing " + money(s.loss_if_stay_usd)]], money(s.loss_if_stay_usd), max)}${bar(
+            m.x ? "Act" : `Sell ${pc(xa, 0)}`,
             [
-              ["b-cost", m.altCost, "Cost of selling " + money(m.altCost)],
-              [
-                "b-loss",
-                m.altKept,
-                "Expected loss on the part you keep " + money(m.altKept),
-              ],
+              ["b-cost", actCost, "Cost of selling " + money(actCost)],
+              ["b-loss", actKept, "Loss on the part you keep " + money(actKept)],
             ],
-            money(m.altCost + m.altKept),
+            money(actCost + actKept),
             max,
           )}</div>
-      <div class="bkey"><span><i class="b-loss"></i>Expected loss</span><span><i class="b-cost"></i>Cost of selling</span></div>`;
-          if (v === "cap")
-            body += `<div class="stuck"><b>${money(m.stuck)} cannot be sold through Pendle now.</b> It stays exposed to an expected loss of ${money(m.keptStuck)}.</div>`;
-          body += `<p class="note">If the severe case happens you lose <b>${money(s.loss_usd)}</b>: ${pc(s.L_high, 1)} of your ${m.P.debt_usd > 0 ? "equity" : "position"}, ${pc((s.L_high * S.book) / 100, 1)} of the book.${s.L_low !== s.L_high ? ` Loss is between ${pc(s.L_low, 1)} and ${pc(s.L_high, 1)} depending on the oracle; the decision uses the high end.` : ""}</p>`;
+      <div class="bkey"><span><i class="b-loss"></i>Loss</span><span><i class="b-cost"></i>Cost of selling</span></div>`;
+          if (v === "SELL_TO_CAP" && stuckUsd > 0)
+            body += `<div class="stuck"><b>${money(stuckUsd)} cannot be sold through Pendle now.</b> With the rest you keep, ${money(s.loss_kept_usd)} stays at risk.</div>`;
+          body += `<p class="note">At this severity, doing nothing loses <b>${money(s.loss_usd)}</b>: ${pc(s.L_high, 1)} of your ${m.P.debt_usd > 0 ? "equity" : "position"}, ${pc((s.L_high * S.book) / 100, 1)} of the book.${s.L_low !== s.L_high ? ` Loss is between ${pc(s.L_low, 1)} and ${pc(s.L_high, 1)} depending on the oracle; the decision uses the high end.` : ""}</p>`;
           body += rule;
-          const pe = m.pr.evidence,
-            row = (k, p, l, mark) =>
-              `<tr><td>${k}</td><td>${mark === "asm" ? `<span class="asm">${pp(p)}</span>` : pp(p)}${mark === "C" ? " " + gr("C") : ""}</td><td>${money(l)}</td><td>${money(p * l)}</td></tr>`;
-          const pm = m.hist ? "C" : "asm";
-          body += det(
-            "d-scen",
-            "How the expected loss is built",
-            `<div class="tw"><table><thead><tr><th>Outcome</th><th>Probability</th><th>Loss</th><th>Counts for</th></tr></thead><tbody>
-      ${row("Resolves, no loss", m.p0, 0, pm)}${row(`Partial, ${sevText(S.sev * m.share)}`, m.pP, m.par.L_high * m.equity, pm)}${row(`Severe, ${sevText()}`, m.pS, s.loss_usd, "")}
-      <tr class="sum"><td>Expected loss if you stay</td><td></td><td></td><td>${money(m.elUsd)}</td></tr></tbody></table></div>
-      <p class="note">The severe row is your input from steps 2 and 3. ${m.hist ? `The partial case comes from history: ${trim(m.ratio)}× the severe probability and ${trim(m.share * 100)}% of its severity. Source: ${src(pe)}.` : `The partial case is assumed (${gr("D")}): ${trim(m.ratio)}× the severe probability and ${trim(m.share * 100)}% of its severity. Change it under Assumptions.`}</p>
-      <p class="note">Losses come from the backend model (RiskModel.inject). ${src(d.evidence.mechanism)}</p>`,
-          );
-          const be2 = m.be;
+          body += `<p class="note">Losses and the decision come from the backend model (RiskModel.decideAt). ${src(d.evidence.mechanism)}</p>`;
+          const sevFlip =
+            be.start === null
+              ? `Stay at every severity up to ${sevText(f.max)}.`
+              : (be.start <= f.min + 1e-9
+                  ? "Selling pays from the smallest severity on the slider. "
+                  : `Stay below ${sevText(be.start)}. `) +
+                (be.cap === null
+                  ? "The pool limit is not reached on this slider."
+                  : `Sell up to the ${pc(MAXX, 0)} pool limit from ${sevText(be.cap)}.`);
           body += det(
             "d-flip",
             "What would change the answer",
             `<dl>
-      <dt>Probability</dt><dd>${m.zs === null ? "Selling never pays at this severity." : "Stay below " + pp(pOf(m.zs)) + ". " + (m.zc === null ? "The pool limit is not reached at any probability." : "Sell up to the " + pc(MAXX, 0) + " pool limit from " + pp(pOf(m.zc)) + ".")}${be2.p_exit_sellable != null ? ` Exit cost ÷ loss for the sellable ${pc(be2.sellable_fraction, 0)}: ${pp(Math.min(1, be2.p_exit_sellable))} (severe case alone).` : ""}</dd>
-      <dt>Severity</dt><dd>${!m.u ? "Not applicable." : m.flip === null ? `At your ${pp(S.p)}, the answer is Stay at every severity.` : m.flip <= m.f.min ? `At your ${pp(S.p)}, selling pays at every severity on the slider.` : `At your ${pp(S.p)}, the answer turns to Stay if the severe case is milder than ${m.flip}%.`}</dd>
-      <dt>Position preset</dt><dd>${m.others.map((o) => `${o.m.P.label}: <b>${word(o.m)}</b>${o.m.hasLoss ? ` (lose ${money(o.m.sev.loss_usd)} if severe)` : ""}`).join("<br>")}</dd>
-      <dt>Rule</dt><dd>Pick the share x that minimises x × (slippage + yield given up) + (1 − x) × expected loss. Never beyond the largest size Pendle quoted.</dd></dl>`,
+      <dt>Severity</dt><dd>${sevFlip}</dd>
+      <dt>Position preset</dt><dd>${m.others.map((o) => `${o.m.P.label}: <b>${word(o.m)}</b>${o.m.hasLoss ? ` (doing nothing loses ${money(o.m.sev.loss_if_stay_usd)})` : ""}`).join("<br>")}</dd>
+      <dt>Cash earns</dt><dd>You assume cash earns <span class="asm">${trim(S.alt)}%</span> a year after selling; the PT yields ${pc(d.position.implied_apy, 2)}. Each sale gives up ${pc(m.cy, 2)} of the amount sold until ${EXPIRY}. Change it under Assumptions.</dd>
+      <dt>Rule</dt><dd>Assume the incident has happened at this severity. Pick the share x that minimises x × (slippage + yield given up) + (1 − x) × loss. Never beyond the largest size Pendle quoted.</dd></dl>`,
           );
         }
         $("#decision").innerHTML =
-          `<div class="vband ${v}"><span class="lbl">${S.det !== null ? "Detected" : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
+          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.det !== null ? "Detected" : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
     <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${body}</div>`;
       }
 
@@ -2153,8 +2023,8 @@
         const row = (f) => {
           const sl = f ? RM.slippageAt(f, CURVE) : 0,
             cost = f * (sl + m.cy) * C,
-            kept = (1 - f) * m.el * m.equity;
-          return `<tr class="${m.el > 0 && Math.abs(f - m.x) < 1e-9 ? "best" : ""}"><td>${f ? pc(f, 0) + " · " + money(f * C) : "Stay"}${isQ(f) ? "" : " *"}</td><td>${f ? pc(sl, 2) : "–"}</td><td>${money(cost)}</td><td>${money(kept)}</td><td>${money(cost + kept)}</td></tr>`;
+            kept = (1 - f) * m.L * m.equity;
+          return `<tr class="${m.hasLoss && Math.abs(f - m.x) < 1e-9 ? "best" : ""}"><td>${f ? pc(f, 0) + " · " + money(f * C) : "Stay"}${isQ(f) ? "" : " *"}</td><td>${f ? pc(sl, 2) : "–"}</td><td>${money(cost)}</td><td>${money(kept)}</td><td>${money(cost + kept)}</td></tr>`;
         };
         const refused = [
           ...(d.evidence.max_exit_fraction.source || "").matchAll(
@@ -2175,29 +2045,42 @@
      "d-sizes",
      "All sale sizes",
      `<div class="tw"><table><thead><tr><th>Sell</th><th>Slippage</th><th>Sale cost</th><th>Loss kept</th><th>Total</th></tr></thead><tbody>${fr.map(row).join("")}${refused}</tbody></table></div>
-     <p class="note">${m.el > 0 ? "The highlighted row has the lowest total. " : ""}${fr.some((f) => !isQ(f)) ? "* Interpolated between two quotes. " : ""}Sale cost includes yield given up (${pc(m.cy, 2)} of the amount sold). Counts only the Pendle swap route: no limit orders, OTC, or holding to expiry.</p>
+     <p class="note">${m.hasLoss ? "The highlighted row has the lowest total. " : ""}${fr.some((f) => !isQ(f)) ? "* Interpolated between two quotes. " : ""}Sale cost includes yield given up (${pc(m.cy, 2)} of the amount sold). Counts only the Pendle swap route: no limit orders, OTC, or holding to expiry.</p>
      <p class="note">Quotes: ${src(d.evidence.exit_curve)}</p>`,
    )}`;
       }
 
       function renderSteps(m) {
+        const be = m.be,
+          f = m.f,
+          S0 = be.start === null ? null : sevText(be.start),
+          K0 = be.cap === null ? null : sevText(be.cap);
         $("#sevOut").textContent = sevText();
-        $("#probOut").textContent = pp(S.p);
+        const zt =
+          be.start === null
+            ? m.hasLoss
+              ? " Stay at every severity on this slider."
+              : ""
+            : " " +
+              cap1(
+                (be.start > f.min + 1e-9 ? `stay below ${S0}, ` : "") +
+                  (be.cap === null
+                    ? `sell part from ${S0}.`
+                    : be.cap > be.start + 1e-9
+                      ? `sell part from ${S0}, to the pool limit from ${K0}.`
+                      : `sell to the pool limit from ${S0}.`),
+              );
         $("#sevNote").textContent =
-          S.det !== null
+          (S.det !== null
             ? `Observed now: ${sevText(dets()[S.det].sev)}. Move right to test it getting worse.`
-            : FAIL[S.fail].sev + (isPct() ? ". Sets the severe case." : ".");
-        const pr = (FT[S.fail] || {}).probabilities;
-        $("#probNote").textContent = S.touched
-          ? "Your estimate."
-          : pr && pr.p_severe != null
-            ? "Historical default (C): " + pr.evidence.source
-            : "Sample starting value, not calibrated. Set your own.";
+            : f.sev + ".") + zt;
         let h = "";
-        if (m.hasLoss) {
-          const s = m.zs === null ? 1000 : m.zs,
-            k = m.zc === null ? 1000 : m.zc;
-          h = `<div class="zones" role="img" aria-label="Probability ranges for stay, partial sale and selling to the pool limit"><i class="zs" style="width:${s / 10}%"></i><i class="zp" style="width:${(k - s) / 10}%"></i><i class="zc" style="width:${(1000 - k) / 10}%"></i></div>`;
+        if (be.start !== null || m.hasLoss) {
+          const w = (v) =>
+              v === null ? 100 : ((v - f.min) / (f.max - f.min)) * 100,
+            a = w(be.start),
+            b = w(be.cap);
+          h = `<div class="zones" role="img" aria-label="Severity ranges for stay, partial sale and selling to the pool limit"><i class="zs" style="width:${a}%"></i><i class="zp" style="width:${b - a}%"></i><i class="zc" style="width:${100 - b}%"></i></div>`;
         }
         $("#zoneBox").innerHTML = h;
       }
@@ -2234,7 +2117,6 @@
         sv.min = f.min;
         sv.max = f.max;
         sv.value = S.sev;
-        $("#prob").value = vOf(S.p);
       }
       function render() {
         const m = model();
@@ -2258,8 +2140,6 @@
         S.det = null;
         S.fail = k;
         S.sev = sev != null ? sev : FAIL[k].def;
-        S.p = pDefault(k);
-        S.touched = false;
         apply();
       }
       function setDet(i) {
@@ -2269,8 +2149,6 @@
         S.node = x.node;
         S.fail = x.fail;
         S.sev = x.sev;
-        S.p = pDefault(x.fail);
-        S.touched = false;
         apply();
       }
       /* Most severe detection = largest loss at the observed value; ties keep feed order. */
@@ -2498,11 +2376,6 @@
       });
       document.addEventListener("input", (ev) => {
         const t = ev.target;
-        if (t.id === "prob") {
-          S.p = pOf(+t.value);
-          S.touched = true;
-          render();
-        }
         if (t.id === "sev") {
           S.sev = +t.value;
           render();
@@ -2553,14 +2426,6 @@
         }
         if (t.id === "book") {
           S.book = num(1, 100, 10);
-          render();
-        }
-        if (t.id === "pk") {
-          S.pk = num(0, 20, 2);
-          render();
-        }
-        if (t.id === "ps") {
-          S.ps = num(0, 100, 30);
           render();
         }
       });
@@ -2644,8 +2509,8 @@
       $("#stamp").innerHTML =
         `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""} · position size <span class="asm">${money(N)}</span>`;
       $("#advNote").innerHTML =
-        `Position size: ${src(d.position.evidence && d.position.evidence.notional_usd)}. The two partial-case inputs apply only to failures without a historical default. Every loss comes from the backend model.`;
-      ["alt", "book", "pk", "ps"].forEach((k) => {
+        `Position size: ${src(d.position.evidence && d.position.evidence.notional_usd)}. Every loss and decision comes from the backend model.`;
+      ["alt", "book"].forEach((k) => {
         $("#" + k).value = k === "alt" ? S.alt.toFixed(2) : S[k];
       });
       try {
@@ -2657,7 +2522,6 @@
         S.node = k;
         S.fail = fails(k)[0];
         S.sev = FAIL[S.fail].def;
-        S.p = pDefault(S.fail);
       }
       {
         const i = pickTop();
