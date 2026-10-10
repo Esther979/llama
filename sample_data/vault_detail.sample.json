@@ -2,7 +2,7 @@
  "vault_name": "RockawayX Confidential RWA USDC",
  "vault_address": "0xc207d3f66537d7f66456808379a0e560cf20da36",
  "coverage": "full",
- "block": 26162910,
+ "block": 26162983,
  "input": {
   "token_name": "USDC",
   "chain": "ethereum",
@@ -13,7 +13,7 @@
  },
  "asset": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
  "asset_symbol": "USDC",
- "total_assets": 26444912.02042,
+ "total_assets": 26444963.941243,
  "idle": 0.0,
  "liquidity_market": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
  "dependency_graph": {
@@ -32,7 +32,7 @@
    "key": "morpho_market:0x002278ea",
    "market_id": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 21868225.738789,
+   "allocation": 21868268.923622,
    "lltv": 0.86,
    "analyzed": true,
    "collateral": "0x22ae3d9a738471f405169af055d31c687087d4c7",
@@ -54,7 +54,7 @@
       "last_update": {
        "answer": 1138192,
        "updated_at": 1791644207,
-       "age_seconds": 1668
+       "age_seconds": 2544
       },
       "prices": null,
       "tracks_market": false,
@@ -62,7 +62,7 @@
       "rule": "reported exchange rate / NAV: does not follow the market; whether it falls on an issuer failure depends on who reports it",
       "evidence": {
        "grade": "C",
-       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162910; classified from description 'PST-USDC Exchange Rate (Calculated)'"
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162983; classified from description 'PST-USDC Exchange Rate (Calculated)'"
       }
      }
     },
@@ -71,13 +71,13 @@
     "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
     "evidence": {
      "grade": "C",
-     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162910"
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162983"
     }
    },
    "supply": 37967578.700906,
    "borrow": 34390296.483806,
    "liquidity": 3577282.2171,
-   "share_of_market": 0.5759710386342642,
+   "share_of_market": 0.5759721760476701,
    "n_borrowers": 12,
    "max_ltv": 0.8375884879320176,
    "debt_within_1pct_of_liquidation": 0
@@ -86,7 +86,7 @@
    "key": "morpho_market:0x2bbdd815",
    "market_id": "0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 600030.92359,
+   "allocation": 600031.909381,
    "lltv": 0.77,
    "analyzed": true,
    "collateral": "0x997e2efbce91d170b00ea402e35a66c887ee1da9",
@@ -108,7 +108,7 @@
       "last_update": {
        "answer": 1023499658613285960,
        "updated_at": 1791561335,
-       "age_seconds": 84540
+       "age_seconds": 85416
       },
       "prices": "hastra auto",
       "tracks_market": false,
@@ -116,7 +116,7 @@
       "rule": "reported exchange rate / NAV: does not follow the market; whether it falls on an issuer failure depends on who reports it",
       "evidence": {
        "grade": "C",
-       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162910; classified from description 'Hastra Auto / WYLDS Exchange Rate'"
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162983; classified from description 'Hastra Auto / WYLDS Exchange Rate'"
       }
      },
      "QUOTE_FEED_1": {
@@ -127,7 +127,7 @@
       "last_update": {
        "answer": 99988047,
        "updated_at": 1791639575,
-       "age_seconds": 6300
+       "age_seconds": 7176
       },
       "prices": "usdc",
       "tracks_market": true,
@@ -135,7 +135,7 @@
       "rule": "Chainlink price feed of the described pair: follows its market price",
       "evidence": {
        "grade": "C",
-       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162910; classified from description 'USDC / USD'"
+       "source": "Etherscan verified source (EACAggregatorProxy); eth_call @ block 26162983; classified from description 'USDC / USD'"
       }
      }
     },
@@ -146,13 +146,13 @@
     "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
     "evidence": {
      "grade": "C",
-     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162910"
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162983"
     }
    },
    "supply": 600005.055635,
    "borrow": 539657.779268,
    "liquidity": 60347.276367,
-   "share_of_market": 1.0000431128950615,
+   "share_of_market": 1.0000447558662178,
    "n_borrowers": 3,
    "max_ltv": 0.7278919024616067,
    "debt_within_1pct_of_liquidation": 0
@@ -161,7 +161,7 @@
    "key": "morpho_market:0x1e9d6146",
    "market_id": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 3976654.305497,
+   "allocation": 3976662.055695,
    "lltv": 0.915,
    "analyzed": true,
    "collateral": "0xecfafdc7741323a945a163ed068b5a3c43483957",
@@ -182,14 +182,14 @@
       "tracks_market": null,
       "tracks_underlying": null,
       "last_update": {
-       "answer": 981738524302040560,
-       "updated_at": 1791645875,
+       "answer": 981741563677491487,
+       "updated_at": 1791646751,
        "age_seconds": 0
       },
       "rule": "type not in the table: both branches computed",
       "evidence": {
        "grade": "D",
-       "source": "Etherscan verified source (OjoPTFeed); eth_call @ block 26162910; not classified"
+       "source": "Etherscan verified source (OjoPTFeed); eth_call @ block 26162983; not classified"
       }
      }
     },
@@ -198,22 +198,22 @@
     "rule": "base side prices the collateral (quote side prices the loan token): tracks what any base part tracks",
     "evidence": {
      "grade": "D",
-     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162910"
+     "source": "Etherscan verified source (MorphoChainlinkOracleV2); eth_call @ block 26162983"
     }
    },
    "supply": 120727483.446635,
    "borrow": 106332203.138631,
    "liquidity": 14395280.308004,
-   "share_of_market": 0.03293909714646537,
+   "share_of_market": 0.03293916134227049,
    "n_borrowers": 231,
-   "max_ltv": 0.9125759203511293,
+   "max_ltv": 0.9125730951057165,
    "debt_within_1pct_of_liquidation": 7991.835903
   },
   {
    "key": "morpho_market:0xf8697bec",
    "market_id": "0xf8697bec3140fb8e046af586a1cda4f95e980bb7bc7551cad6e81cf701bc176d",
    "holder": "0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65",
-   "allocation": 1.052544,
+   "allocation": 1.052545,
    "lltv": 0.915,
    "analyzed": false,
    "note": "allocation below 1,000: not analyzed"
@@ -261,21 +261,21 @@
     {
      "label": "PST / USDC (LLTV 0.86)",
      "market_id": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
-     "allocation": 21868225.738789,
+     "allocation": 21868268.923622,
      "detail": "12 borrowers",
      "evidence": "A"
     },
     {
      "label": "AUTO / USDC (LLTV 0.77)",
      "market_id": "0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
-     "allocation": 600030.92359,
+     "allocation": 600031.909381,
      "detail": "3 borrowers",
      "evidence": "A"
     },
     {
      "label": "PT-reUSD-10DEC2026 / USDC (LLTV 0.915)",
      "market_id": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
-     "allocation": 3976654.305497,
+     "allocation": 3976662.055695,
      "detail": "231 borrowers",
      "evidence": "A"
     }
@@ -343,10 +343,136 @@
    "token": "0x22ae3d9a738471f405169af055d31c687087d4c7",
    "symbol": "PST",
    "layer": 2,
+   "severity_grid": [
+    {
+     "severity": 0.005,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.01,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.02,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.03,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.05,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.075,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.1,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.15,
+     "L_low": 0.0,
+     "L_high": 0.0064469800871946314
+    },
+    {
+     "severity": 0.2,
+     "L_low": 0.014866086526509718,
+     "L_high": 0.04048262540881564
+    },
+    {
+     "severity": 0.3,
+     "L_low": 0.09699470012930325,
+     "L_high": 0.1238194721959158
+    },
+    {
+     "severity": 0.4,
+     "L_low": 0.188235446455172,
+     "L_high": 0.21122811799391872
+    },
+    {
+     "severity": 0.5,
+     "L_low": 0.2804230030192305,
+     "L_high": 0.30010415071156193
+    },
+    {
+     "severity": 0.6,
+     "L_low": 0.3741427541370687,
+     "L_high": 0.3898876731238732
+    },
+    {
+     "severity": 0.7,
+     "L_low": 0.46786251001090384,
+     "L_high": 0.4796711992510071
+    },
+    {
+     "severity": 0.8,
+     "L_low": 0.5615822658847391,
+     "L_high": 0.569454725378141
+    },
+    {
+     "severity": 0.9,
+     "L_low": 0.6553020217585741,
+     "L_high": 0.6592382515052753
+    },
+    {
+     "severity": 0.95,
+     "L_low": 0.7021618996954914,
+     "L_high": 0.704130014568842
+    },
+    {
+     "severity": 0.99,
+     "L_low": 0.7396498020450256,
+     "L_high": 0.7400434250196958
+    },
+    {
+     "severity": 1.0,
+     "L_low": 0.749021777632823,
+     "L_high": 0.749021777632823
+    }
+   ],
+   "permanent": 1.0,
+   "default_severity": 0.841444408559261,
+   "severity_anchors": [
+    {
+     "severity": 0.016185490170549488,
+     "label": "USDe daily low, Feb 2026 (recovered)",
+     "grade": "C"
+    },
+    {
+     "severity": 0.022665999999999964,
+     "label": "median day-30 loss, partial depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.5,
+     "label": "Stream xUSD, Nov 2025",
+     "grade": "C"
+    },
+    {
+     "severity": 0.841444408559261,
+     "label": "median day-30 loss, severe depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.9987447088831541,
+     "label": "Elixir deUSD, Nov 2025",
+     "grade": "C"
+    }
+   ],
    "affected_markets": [
     "morpho_market:0x002278ea"
    ],
-   "affected_allocation": 21868225.738789,
+   "affected_allocation": 21868268.923622,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[0]] Morpho Blue market -> [marketParams.collateralToken] PST"
    ],
@@ -374,7 +500,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.5759710386342642,
+       "vault_share_of_market": 0.5759721760476701,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -387,8 +513,8 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.747845313323619,
-     "L_high": 0.747894724465404,
+     "L_low": 0.7478453218621954,
+     "L_high": 0.7478947330045443,
      "per_market": [
       {
        "market": "morpho_market:0x002278ea",
@@ -396,19 +522,19 @@
        "oracle_falls": null,
        "market_bad_debt_low": 34336281.148129985,
        "market_bad_debt_high": 34338549.792227834,
-       "vault_share_of_market": 0.5759710386342642,
-       "vault_loss_low": 19776703.515726533,
-       "vault_loss_high": 19778010.189023864
+       "vault_share_of_market": 0.5759721760476701,
+       "vault_loss_low": 19776742.570273023,
+       "vault_loss_high": 19778049.246150736
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.03441233394779466,
-   "tail_loss_95": 0.6882466789558925,
+   "expected_loss": 0.034412334340699895,
+   "tail_loss_95": 0.6882466868139973,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.747894724465404,
+   "L_worst": 0.7478947330045443,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -426,43 +552,37 @@
      "source": "loss_model per real borrower x vault share of each affected market"
     }
    },
-   "break_even": {
-    "p_worst": 0.0065938516317789455,
-    "exit_cost": 0.004931506849315068,
-    "L_worst": 0.747894724465404
-   },
-   "decision_text": {
-    "text": "Given issuer_default:PST, if you think the probability of the severe outcome (vault loss 74.79%) is above 0.659%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
-    "numbers": [
-     "74.79%",
-     "0.659%",
-     "100.00%",
-     "0.493%",
-     "13.53%"
-    ],
-    "unchecked": []
-   },
    "decision": {
     "amount": 1000000.0,
-    "p_worst": 0.046012269938650305,
-    "p_other": 0.2668711656441718,
-    "worst_outcome": "severe",
-    "L_worst": 0.747894724465404,
-    "L_other": 0.0,
-    "expected_loss": 0.03441233394779466,
-    "stay_loss_usd": 34412.33394779466,
+    "severity": 0.841444408559261,
+    "L": 0.6066649767651813,
+    "loss_if_stay_usd": 606664.9767651813,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "p_break_even": 0.0065938516317789455,
-    "p_break_even_worst_alone": 0.0065938516317789455,
+    "severity_break_even_free": 0.13824664247924634,
+    "severity_break_even_forced": 0.16246417789635778,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
-    "loss_if_exit_usd": 4931.506849315068,
-    "text": "Exiting 1,000,000 now costs 4,932 (yield given up), while staying has an expected loss of 34,412."
+    "loss_kept_usd": 0.0,
+    "total_if_act_usd": 4931.506849315068,
+    "avoided_usd": 601733.4699158663
+   },
+   "decision_text": {
+    "text": "If PST loses 84.14%, staying loses 606,665 USD (60.67% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once PST loses more than 13.82%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+    "numbers": [
+     "84.14%",
+     "606,665",
+     "60.67%",
+     "1,000,000",
+     "4,932",
+     "13.82%",
+     "13.53%"
+    ],
+    "unchecked": []
    }
   },
   {
@@ -471,10 +591,136 @@
    "token": "0x997e2efbce91d170b00ea402e35a66c887ee1da9",
    "symbol": "AUTO",
    "layer": 2,
+   "severity_grid": [
+    {
+     "severity": 0.005,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.01,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.02,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.03,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.05,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.075,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.1,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.15,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.2,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.3,
+     "L_low": 0.00015953208954116448,
+     "L_high": 0.0006057035802990058
+    },
+    {
+     "severity": 0.4,
+     "L_low": 0.0010948209526721096,
+     "L_high": 0.001486493277938
+    },
+    {
+     "severity": 0.5,
+     "L_low": 0.002040889371188752,
+     "L_high": 0.0025943221703572453
+    },
+    {
+     "severity": 0.6,
+     "L_low": 0.0051008287814515345,
+     "L_high": 0.006157005612996611
+    },
+    {
+     "severity": 0.7,
+     "L_low": 0.00892755643197717,
+     "L_high": 0.009719689055635979
+    },
+    {
+     "severity": 0.8,
+     "L_low": 0.012754284082502811,
+     "L_high": 0.01328237249827535
+    },
+    {
+     "severity": 0.9,
+     "L_low": 0.016581011733028447,
+     "L_high": 0.016845055940914715
+    },
+    {
+     "severity": 0.95,
+     "L_low": 0.01849437555829126,
+     "L_high": 0.018626397662234395
+    },
+    {
+     "severity": 0.99,
+     "L_low": 0.020025066618501515,
+     "L_high": 0.020051471039290145
+    },
+    {
+     "severity": 1.0,
+     "L_low": 0.020407739383554085,
+     "L_high": 0.020407739383554085
+    }
+   ],
+   "permanent": 1.0,
+   "default_severity": 0.841444408559261,
+   "severity_anchors": [
+    {
+     "severity": 0.016185490170549488,
+     "label": "USDe daily low, Feb 2026 (recovered)",
+     "grade": "C"
+    },
+    {
+     "severity": 0.022665999999999964,
+     "label": "median day-30 loss, partial depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.5,
+     "label": "Stream xUSD, Nov 2025",
+     "grade": "C"
+    },
+    {
+     "severity": 0.841444408559261,
+     "label": "median day-30 loss, severe depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.9987447088831541,
+     "label": "Elixir deUSD, Nov 2025",
+     "grade": "C"
+    }
+   ],
    "affected_markets": [
     "morpho_market:0x2bbdd815"
    ],
-   "affected_allocation": 600030.92359,
+   "affected_allocation": 600031.909381,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[1]] Morpho Blue market -> [marketParams.collateralToken] AUTO"
    ],
@@ -502,7 +748,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 1.0000431128950615,
+       "vault_share_of_market": 1.0000447558662178,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -515,8 +761,8 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.020359709335698372,
-     "L_high": 0.02036302386024668,
+     "L_low": 0.02035970281129115,
+     "L_high": 0.02036301733477729,
      "per_market": [
       {
        "market": "morpho_market:0x2bbdd815",
@@ -524,19 +770,19 @@
        "oracle_falls": null,
        "market_bad_debt_low": 538387.5106996159,
        "market_bad_debt_high": 538475.1592309035,
-       "vault_share_of_market": 1.0000431128950615,
-       "vault_loss_low": 538410.7221438672,
-       "vault_loss_high": 538498.3744539367
+       "vault_share_of_market": 1.0000447558662178,
+       "vault_loss_low": 538411.6066990182,
+       "vault_loss_high": 538499.2591530916
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.0009369489506248472,
-   "tail_loss_95": 0.018738979012496926,
+   "expected_loss": 0.0009369486503731882,
+   "tail_loss_95": 0.018738973007463747,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.02036302386024668,
+   "L_worst": 0.02036301733477729,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -554,43 +800,37 @@
      "source": "loss_model per real borrower x vault share of each affected market"
     }
    },
-   "break_even": {
-    "p_worst": 0.24217949569575015,
-    "exit_cost": 0.004931506849315068,
-    "L_worst": 0.02036302386024668
-   },
-   "decision_text": {
-    "text": "Given issuer_default:AUTO, if you think the probability of the severe outcome (vault loss 2.04%) is above 24.22%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
-    "numbers": [
-     "2.04%",
-     "24.22%",
-     "100.00%",
-     "0.493%",
-     "13.53%"
-    ],
-    "unchecked": []
-   },
    "decision": {
     "amount": 1000000.0,
-    "p_worst": 0.046012269938650305,
-    "p_other": 0.2668711656441718,
-    "worst_outcome": "severe",
-    "L_worst": 0.02036302386024668,
-    "L_other": 0.0,
-    "expected_loss": 0.0009369489506248472,
-    "stay_loss_usd": 936.9489506248473,
+    "severity": 0.841444408559261,
+    "L": 0.014758905579915951,
+    "loss_if_stay_usd": 14758.90557991595,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "p_break_even": 0.24217949569575015,
-    "p_break_even_worst_alone": 0.24217949569575015,
-    "verdict": "STAY",
-    "exit_usd": 0.0,
-    "exit_cost_usd": 0.0,
-    "loss_if_exit_usd": 936.9489506248473,
-    "text": "Staying has an expected loss of 937, below the cost of exiting (0.493% of the amount withdrawn: yield given up)."
+    "severity_break_even_free": 0.5656018059585544,
+    "severity_break_even_forced": 0.8462891070057569,
+    "verdict": "EXIT",
+    "exit_usd": 1000000.0,
+    "exit_cost_usd": 4931.506849315068,
+    "loss_kept_usd": 0.0,
+    "total_if_act_usd": 4931.506849315068,
+    "avoided_usd": 9827.398730600882
+   },
+   "decision_text": {
+    "text": "If AUTO loses 84.14%, staying loses 14,759 USD (1.48% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once AUTO loses more than 56.56%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+    "numbers": [
+     "84.14%",
+     "14,759",
+     "1.48%",
+     "1,000,000",
+     "4,932",
+     "56.56%",
+     "13.53%"
+    ],
+    "unchecked": []
    }
   },
   {
@@ -599,10 +839,116 @@
    "token": "0xecfafdc7741323a945a163ed068b5a3c43483957",
    "symbol": "PT-reUSD-10DEC2026",
    "layer": 3,
+   "severity_grid": [
+    {
+     "severity": 0.005,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.01,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.02,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.03,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.05,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.075,
+     "L_low": 0.0,
+     "L_high": 1.218363227144797e-07
+    },
+    {
+     "severity": 0.1,
+     "L_low": 0.0,
+     "L_high": 0.000424428118221627
+    },
+    {
+     "severity": 0.15,
+     "L_low": 0.0,
+     "L_high": 0.004506361193717125
+    },
+    {
+     "severity": 0.2,
+     "L_low": 0.0,
+     "L_high": 0.009988220251622278
+    },
+    {
+     "severity": 0.3,
+     "L_low": 0.0,
+     "L_high": 0.02424291683502069
+    },
+    {
+     "severity": 0.4,
+     "L_low": 0.0,
+     "L_high": 0.03934097768934356
+    },
+    {
+     "severity": 0.5,
+     "L_low": 0.0,
+     "L_high": 0.05458897869303541
+    },
+    {
+     "severity": 0.6,
+     "L_low": 0.0,
+     "L_high": 0.06985567016509046
+    },
+    {
+     "severity": 0.7,
+     "L_low": 0.0,
+     "L_high": 0.08513955122401867
+    },
+    {
+     "severity": 0.8,
+     "L_low": 0.0,
+     "L_high": 0.10074430304194358
+    },
+    {
+     "severity": 0.9,
+     "L_low": 0.0,
+     "L_high": 0.11640114577476174
+    },
+    {
+     "severity": 0.95,
+     "L_low": 0.0,
+     "L_high": 0.12442289028454441
+    },
+    {
+     "severity": 0.99,
+     "L_low": 0.0,
+     "L_high": 0.13084028592846392
+    },
+    {
+     "severity": 1.0,
+     "L_low": 0.0,
+     "L_high": 0.1324446349349747
+    }
+   ],
+   "permanent": 0.0,
+   "default_severity": 0.02966625463535233,
+   "severity_anchors": [
+    {
+     "severity": 0.02966625463535233,
+     "label": "PT-reUSD market dip, 25 Aug 2026",
+     "grade": "C"
+    }
+   ],
    "affected_markets": [
     "morpho_market:0x1e9d6146"
    ],
-   "affected_allocation": 3976654.305497,
+   "affected_allocation": 3976662.055695,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026"
    ],
@@ -630,7 +976,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293909714646537,
+       "vault_share_of_market": 0.03293916134227049,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -668,37 +1014,35 @@
      "source": "loss_model per real borrower x vault share of each affected market"
     }
    },
-   "break_even": {
-    "p_worst": null,
-    "exit_cost": 0.004931506849315068,
-    "L_worst": 0.0
-   },
-   "decision_text": {
-    "text": "Given pt_market_dip:PT-reUSD-10DEC2026, the partial outcome costs this vault nothing (no borrower is left with bad debt), so staying is free whatever its probability.",
-    "numbers": [],
-    "unchecked": []
-   },
    "decision": {
     "amount": 1000000.0,
-    "p_worst": 0.5,
-    "p_other": 0.0,
-    "worst_outcome": "partial",
-    "L_worst": 0.0,
-    "L_other": 0.0,
-    "expected_loss": 0.0,
-    "stay_loss_usd": 0.0,
+    "severity": 0.02966625463535233,
+    "L": 0.0,
+    "loss_if_stay_usd": 0.0,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "p_break_even": null,
-    "p_break_even_worst_alone": null,
+    "severity_break_even_free": 0.15387775069649828,
+    "severity_break_even_forced": 0.23467830106920648,
     "verdict": "STAY",
     "exit_usd": 0.0,
     "exit_cost_usd": 0.0,
-    "loss_if_exit_usd": 0.0,
-    "text": "Staying has an expected loss of 0, below the cost of exiting (0.493% of the amount withdrawn: yield given up)."
+    "loss_kept_usd": 0.0,
+    "total_if_act_usd": 0.0,
+    "avoided_usd": 0.0
+   },
+   "decision_text": {
+    "text": "If PT-reUSD-10DEC2026 loses 2.97%, staying loses 0 USD (0.00% of the deposit), less than the cost of exiting (0.493% of the amount withdrawn: yield given up). Exiting pays once PT-reUSD-10DEC2026 loses more than 15.39%.",
+    "numbers": [
+     "2.97%",
+     "0",
+     "0.00%",
+     "0.493%",
+     "15.39%"
+    ],
+    "unchecked": []
    }
   },
   {
@@ -707,10 +1051,136 @@
    "token": "0xecfafdc7741323a945a163ed068b5a3c43483957",
    "symbol": "PT-reUSD-10DEC2026",
    "layer": 2,
+   "severity_grid": [
+    {
+     "severity": 0.005,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.01,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.02,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.03,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.05,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.075,
+     "L_low": 0.0,
+     "L_high": 1.218363227144797e-07
+    },
+    {
+     "severity": 0.1,
+     "L_low": 1.4011936094637019e-07,
+     "L_high": 0.000424428118221627
+    },
+    {
+     "severity": 0.15,
+     "L_low": 0.0023917120364848987,
+     "L_high": 0.004506361193717125
+    },
+    {
+     "severity": 0.2,
+     "L_low": 0.007562589535674681,
+     "L_high": 0.009988220251622278
+    },
+    {
+     "severity": 0.3,
+     "L_low": 0.02155622381642493,
+     "L_high": 0.02424291683502069
+    },
+    {
+     "severity": 0.4,
+     "L_low": 0.03694699157533773,
+     "L_high": 0.03934097768934356
+    },
+    {
+     "severity": 0.5,
+     "L_low": 0.05259395968956381,
+     "L_high": 0.05458897869303541
+    },
+    {
+     "severity": 0.6,
+     "L_low": 0.06825620057528647,
+     "L_high": 0.06985567016509046
+    },
+    {
+     "severity": 0.7,
+     "L_low": 0.08393727650605551,
+     "L_high": 0.08513955122401867
+    },
+    {
+     "severity": 0.8,
+     "L_low": 0.0999265081346132,
+     "L_high": 0.10074430304194358
+    },
+    {
+     "severity": 0.9,
+     "L_low": 0.11598133154254875,
+     "L_high": 0.11640114577476174
+    },
+    {
+     "severity": 0.95,
+     "L_low": 0.12421298316758471,
+     "L_high": 0.12442289028454441
+    },
+    {
+     "severity": 0.99,
+     "L_low": 0.13079830450479388,
+     "L_high": 0.13084028592846392
+    },
+    {
+     "severity": 1.0,
+     "L_low": 0.1324446349349747,
+     "L_high": 0.1324446349349747
+    }
+   ],
+   "permanent": 1.0,
+   "default_severity": 0.841444408559261,
+   "severity_anchors": [
+    {
+     "severity": 0.016185490170549488,
+     "label": "USDe daily low, Feb 2026 (recovered)",
+     "grade": "C"
+    },
+    {
+     "severity": 0.022665999999999964,
+     "label": "median day-30 loss, partial depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.5,
+     "label": "Stream xUSD, Nov 2025",
+     "grade": "C"
+    },
+    {
+     "severity": 0.841444408559261,
+     "label": "median day-30 loss, severe depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.9987447088831541,
+     "label": "Elixir deUSD, Nov 2025",
+     "grade": "C"
+    }
+   ],
    "affected_markets": [
     "morpho_market:0x1e9d6146"
    ],
-   "affected_allocation": 3976654.305497,
+   "affected_allocation": 3976662.055695,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026"
    ],
@@ -738,7 +1208,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293909714646537,
+       "vault_share_of_market": 0.03293916134227049,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -751,28 +1221,28 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.13223797508122065,
-     "L_high": 0.13224324495619377,
+     "L_low": 0.13223797253276062,
+     "L_high": 0.13224324242397284,
      "per_market": [
       {
        "market": "morpho_market:0x1e9d6146",
        "collateral": "PT-reUSD-10DEC2026",
        "oracle_falls": null,
-       "market_bad_debt_low": 106166286.25950761,
-       "market_bad_debt_high": 106170517.1398928,
-       "vault_share_of_market": 0.03293909714646537,
-       "vault_loss_low": 3497021.6167813726,
-       "vault_loss_high": 3497160.9781613955
+       "market_bad_debt_low": 106166285.7458437,
+       "market_bad_debt_high": 106170516.63932738,
+       "vault_share_of_market": 0.03293916134227049,
+       "vault_loss_low": 3497028.415291937,
+       "vault_loss_high": 3497167.777375018
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.006084811884487443,
-   "tail_loss_95": 0.12169623768974876,
+   "expected_loss": 0.00608481176797421,
+   "tail_loss_95": 0.1216962353594841,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.13224324495619377,
+   "L_worst": 0.13224324242397284,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -790,43 +1260,37 @@
      "source": "loss_model per real borrower x vault share of each affected market"
     }
    },
-   "break_even": {
-    "p_worst": 0.03729118149625453,
-    "exit_cost": 0.004931506849315068,
-    "L_worst": 0.13224324495619377
-   },
-   "decision_text": {
-    "text": "Given issuer_default:PT-reUSD-10DEC2026, if you think the probability of the severe outcome (vault loss 13.22%) is above 3.73%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
-    "numbers": [
-     "13.22%",
-     "3.73%",
-     "100.00%",
-     "0.493%",
-     "13.53%"
-    ],
-    "unchecked": []
-   },
    "decision": {
     "amount": 1000000.0,
-    "p_worst": 0.046012269938650305,
-    "p_other": 0.2668711656441718,
-    "worst_outcome": "severe",
-    "L_worst": 0.13224324495619377,
-    "L_other": 0.0,
-    "expected_loss": 0.006084811884487443,
-    "stay_loss_usd": 6084.811884487443,
+    "severity": 0.841444408559261,
+    "L": 0.1072331889116137,
+    "loss_if_stay_usd": 107233.18891161369,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "p_break_even": 0.03729118149625453,
-    "p_break_even_worst_alone": 0.03729118149625453,
+    "severity_break_even_free": 0.15387775069649828,
+    "severity_break_even_forced": 0.23467830106920648,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
-    "loss_if_exit_usd": 4931.506849315068,
-    "text": "Exiting 1,000,000 now costs 4,932 (yield given up), while staying has an expected loss of 6,085."
+    "loss_kept_usd": 0.0,
+    "total_if_act_usd": 4931.506849315068,
+    "avoided_usd": 102301.68206229861
+   },
+   "decision_text": {
+    "text": "If PT-reUSD-10DEC2026 loses 84.14%, staying loses 107,233 USD (10.72% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once PT-reUSD-10DEC2026 loses more than 15.39%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+    "numbers": [
+     "84.14%",
+     "107,233",
+     "10.72%",
+     "1,000,000",
+     "4,932",
+     "15.39%",
+     "13.53%"
+    ],
+    "unchecked": []
    }
   },
   {
@@ -835,10 +1299,136 @@
    "token": "0x5086bf358635b81d8c47c66d1c8b9e567db70c72",
    "symbol": "reUSD",
    "layer": 2,
+   "severity_grid": [
+    {
+     "severity": 0.005,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.01,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.02,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.03,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.05,
+     "L_low": 0.0,
+     "L_high": 0.0
+    },
+    {
+     "severity": 0.075,
+     "L_low": 0.0,
+     "L_high": 1.218363227144797e-07
+    },
+    {
+     "severity": 0.1,
+     "L_low": 1.4011936094637019e-07,
+     "L_high": 0.000424428118221627
+    },
+    {
+     "severity": 0.15,
+     "L_low": 0.0023917120364848987,
+     "L_high": 0.004506361193717125
+    },
+    {
+     "severity": 0.2,
+     "L_low": 0.007562589535674681,
+     "L_high": 0.009988220251622278
+    },
+    {
+     "severity": 0.3,
+     "L_low": 0.02155622381642493,
+     "L_high": 0.02424291683502069
+    },
+    {
+     "severity": 0.4,
+     "L_low": 0.03694699157533773,
+     "L_high": 0.03934097768934356
+    },
+    {
+     "severity": 0.5,
+     "L_low": 0.05259395968956381,
+     "L_high": 0.05458897869303541
+    },
+    {
+     "severity": 0.6,
+     "L_low": 0.06825620057528647,
+     "L_high": 0.06985567016509046
+    },
+    {
+     "severity": 0.7,
+     "L_low": 0.08393727650605551,
+     "L_high": 0.08513955122401867
+    },
+    {
+     "severity": 0.8,
+     "L_low": 0.0999265081346132,
+     "L_high": 0.10074430304194358
+    },
+    {
+     "severity": 0.9,
+     "L_low": 0.11598133154254875,
+     "L_high": 0.11640114577476174
+    },
+    {
+     "severity": 0.95,
+     "L_low": 0.12421298316758471,
+     "L_high": 0.12442289028454441
+    },
+    {
+     "severity": 0.99,
+     "L_low": 0.13079830450479388,
+     "L_high": 0.13084028592846392
+    },
+    {
+     "severity": 1.0,
+     "L_low": 0.1324446349349747,
+     "L_high": 0.1324446349349747
+    }
+   ],
+   "permanent": 1.0,
+   "default_severity": 0.841444408559261,
+   "severity_anchors": [
+    {
+     "severity": 0.016185490170549488,
+     "label": "USDe daily low, Feb 2026 (recovered)",
+     "grade": "C"
+    },
+    {
+     "severity": 0.022665999999999964,
+     "label": "median day-30 loss, partial depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.5,
+     "label": "Stream xUSD, Nov 2025",
+     "grade": "C"
+    },
+    {
+     "severity": 0.841444408559261,
+     "label": "median day-30 loss, severe depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.9987447088831541,
+     "label": "Elixir deUSD, Nov 2025",
+     "grade": "C"
+    }
+   ],
    "affected_markets": [
     "morpho_market:0x1e9d6146"
    ],
-   "affected_allocation": 3976654.305497,
+   "affected_allocation": 3976662.055695,
    "propagation_paths": [
     "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026 -> [SY] PendleREUSDSY -> [REUSD] ShareToken"
    ],
@@ -858,7 +1448,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293909714646537,
+       "vault_share_of_market": 0.03293916134227049,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -880,7 +1470,7 @@
        "oracle_falls": null,
        "market_bad_debt_low": 0.0,
        "market_bad_debt_high": 0.0,
-       "vault_share_of_market": 0.03293909714646537,
+       "vault_share_of_market": 0.03293916134227049,
        "vault_loss_low": 0.0,
        "vault_loss_high": 0.0
       }
@@ -893,28 +1483,28 @@
      "shock": 0.9987447088831541,
      "hours": null,
      "probability": 0.046012269938650305,
-     "L_low": 0.13223797508122065,
-     "L_high": 0.13224324495619377,
+     "L_low": 0.13223797253276062,
+     "L_high": 0.13224324242397284,
      "per_market": [
       {
        "market": "morpho_market:0x1e9d6146",
        "collateral": "PT-reUSD-10DEC2026",
        "oracle_falls": null,
-       "market_bad_debt_low": 106166286.25950761,
-       "market_bad_debt_high": 106170517.1398928,
-       "vault_share_of_market": 0.03293909714646537,
-       "vault_loss_low": 3497021.6167813726,
-       "vault_loss_high": 3497160.9781613955
+       "market_bad_debt_low": 106166285.7458437,
+       "market_bad_debt_high": 106170516.63932738,
+       "vault_share_of_market": 0.03293916134227049,
+       "vault_loss_low": 3497028.415291937,
+       "vault_loss_high": 3497167.777375018
       }
      ],
      "source": "Elixir deUSD 0.00126 by 2025-11-20 (DeFiLlama elixir-deusd); no recovery assumed"
     }
    ],
-   "expected_loss": 0.006084811884487443,
-   "tail_loss_95": 0.12169623768974876,
+   "expected_loss": 0.00608481176797421,
+   "tail_loss_95": 0.1216962353594841,
    "var_95": 0.0,
    "worst_outcome": "severe",
-   "L_worst": 0.13224324495619377,
+   "L_worst": 0.13224324242397284,
    "evidence": {
     "probabilities": {
      "grade": "C",
@@ -932,43 +1522,37 @@
      "source": "loss_model per real borrower x vault share of each affected market"
     }
    },
-   "break_even": {
-    "p_worst": 0.03729118149625453,
-    "exit_cost": 0.004931506849315068,
-    "L_worst": 0.13224324495619377
-   },
-   "decision_text": {
-    "text": "Given depeg:reUSD, if you think the probability of the severe outcome (vault loss 13.22%) is above 3.73%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
-    "numbers": [
-     "13.22%",
-     "3.73%",
-     "100.00%",
-     "0.493%",
-     "13.53%"
-    ],
-    "unchecked": []
-   },
    "decision": {
     "amount": 1000000.0,
-    "p_worst": 0.046012269938650305,
-    "p_other": 0.2668711656441718,
-    "worst_outcome": "severe",
-    "L_worst": 0.13224324495619377,
-    "L_other": 0.0,
-    "expected_loss": 0.006084811884487443,
-    "stay_loss_usd": 6084.811884487443,
+    "severity": 0.841444408559261,
+    "L": 0.1072331889116137,
+    "loss_if_stay_usd": 107233.18891161369,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "p_break_even": 0.03729118149625453,
-    "p_break_even_worst_alone": 0.03729118149625453,
+    "severity_break_even_free": 0.15387775069649828,
+    "severity_break_even_forced": 0.23467830106920648,
     "verdict": "EXIT",
     "exit_usd": 1000000.0,
     "exit_cost_usd": 4931.506849315068,
-    "loss_if_exit_usd": 4931.506849315068,
-    "text": "Exiting 1,000,000 now costs 4,932 (yield given up), while staying has an expected loss of 6,085."
+    "loss_kept_usd": 0.0,
+    "total_if_act_usd": 4931.506849315068,
+    "avoided_usd": 102301.68206229861
+   },
+   "decision_text": {
+    "text": "If reUSD loses 84.14%, staying loses 107,233 USD (10.72% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once reUSD loses more than 15.39%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+    "numbers": [
+     "84.14%",
+     "107,233",
+     "10.72%",
+     "1,000,000",
+     "4,932",
+     "15.39%",
+     "13.53%"
+    ],
+    "unchecked": []
    }
   },
   {
@@ -977,6 +1561,132 @@
    "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
    "symbol": "USDC",
    "layer": 2,
+   "severity_grid": [
+    {
+     "severity": 0.005,
+     "L_low": 0.005,
+     "L_high": 0.005
+    },
+    {
+     "severity": 0.01,
+     "L_low": 0.01,
+     "L_high": 0.01
+    },
+    {
+     "severity": 0.02,
+     "L_low": 0.02,
+     "L_high": 0.02
+    },
+    {
+     "severity": 0.03,
+     "L_low": 0.03,
+     "L_high": 0.03
+    },
+    {
+     "severity": 0.05,
+     "L_low": 0.05,
+     "L_high": 0.05
+    },
+    {
+     "severity": 0.075,
+     "L_low": 0.075,
+     "L_high": 0.075
+    },
+    {
+     "severity": 0.1,
+     "L_low": 0.1,
+     "L_high": 0.1
+    },
+    {
+     "severity": 0.15,
+     "L_low": 0.15,
+     "L_high": 0.15
+    },
+    {
+     "severity": 0.2,
+     "L_low": 0.2,
+     "L_high": 0.2
+    },
+    {
+     "severity": 0.3,
+     "L_low": 0.3,
+     "L_high": 0.3
+    },
+    {
+     "severity": 0.4,
+     "L_low": 0.4,
+     "L_high": 0.4
+    },
+    {
+     "severity": 0.5,
+     "L_low": 0.5,
+     "L_high": 0.5
+    },
+    {
+     "severity": 0.6,
+     "L_low": 0.6,
+     "L_high": 0.6
+    },
+    {
+     "severity": 0.7,
+     "L_low": 0.7,
+     "L_high": 0.7
+    },
+    {
+     "severity": 0.8,
+     "L_low": 0.8,
+     "L_high": 0.8
+    },
+    {
+     "severity": 0.9,
+     "L_low": 0.9,
+     "L_high": 0.9
+    },
+    {
+     "severity": 0.95,
+     "L_low": 0.95,
+     "L_high": 0.95
+    },
+    {
+     "severity": 0.99,
+     "L_low": 0.99,
+     "L_high": 0.99
+    },
+    {
+     "severity": 1.0,
+     "L_low": 1.0,
+     "L_high": 1.0
+    }
+   ],
+   "permanent": 1.0,
+   "default_severity": 0.841444408559261,
+   "severity_anchors": [
+    {
+     "severity": 0.016185490170549488,
+     "label": "USDe daily low, Feb 2026 (recovered)",
+     "grade": "C"
+    },
+    {
+     "severity": 0.022665999999999964,
+     "label": "median day-30 loss, partial depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.5,
+     "label": "Stream xUSD, Nov 2025",
+     "grade": "C"
+    },
+    {
+     "severity": 0.841444408559261,
+     "label": "median day-30 loss, severe depegs",
+     "grade": "C"
+    },
+    {
+     "severity": 0.9987447088831541,
+     "label": "Elixir deUSD, Nov 2025",
+     "grade": "C"
+    }
+   ],
    "affected_markets": [],
    "affected_allocation": null,
    "propagation_paths": [
@@ -1039,29 +1749,29 @@
    },
    "decision": {
     "amount": 1000000.0,
-    "p_worst": 0.046012269938650305,
-    "p_other": 0.2668711656441718,
-    "worst_outcome": "severe",
-    "L_worst": 0.9987447088831541,
-    "L_other": 0.022665999999999964,
-    "expected_loss": 0.052003412985421195,
-    "stay_loss_usd": 52003.41298542119,
+    "severity": 0.841444408559261,
+    "L": 0.841444408559261,
+    "loss_if_stay_usd": 841444.4085592609,
     "carry_cost": 0.004931506849315068,
     "penalty": 0.01,
     "free_usd": 1000000.0,
     "forced_usd": 0.0,
     "locked_usd": 0.0,
-    "p_break_even": 0.004363364081865173,
-    "p_break_even_worst_alone": 0.00493770510667308,
+    "severity_break_even_free": 0.004931506849315068,
+    "severity_break_even_forced": 0.014931506849315069,
     "verdict": "REVIEW",
     "exit_usd": 0.0,
     "exit_cost_usd": 0.0,
-    "loss_if_exit_usd": 52003.41298542119,
-    "text": "Given asset_issuer:USDC: withdrawing returns USDC, so it does not remove this risk (expected loss 5.20% of the deposit). Only swapping out of USDC does, at a cost not measured here."
+    "loss_kept_usd": 841444.4085592609,
+    "total_if_act_usd": 841444.4085592609,
+    "avoided_usd": 0.0
    },
    "decision_text": {
-    "text": "Given asset_issuer:USDC: withdrawing returns USDC, so it does not remove this risk (expected loss 5.20% of the deposit). Only swapping out of USDC does, at a cost not measured here.",
-    "numbers": [],
+    "text": "If USDC loses 84.14%, every depositor loses 841,444 USD. Withdrawing returns USDC, so it does not remove this risk; only swapping out of USDC does, at a cost not measured here.",
+    "numbers": [
+     "84.14%",
+     "841,444"
+    ],
     "unchecked": []
    }
   },
@@ -1092,19 +1802,20 @@
       "free_usd": 0.0,
       "forced_usd": 0.0,
       "locked_usd": 1000000.0,
-      "expected_loss_on_locked_usd": 34412.33394779466
+      "expected_loss_on_locked_usd": 606664.9767651813
      }
     ],
     "worst_credit_incident": "issuer_default:PST",
-    "worst_expected_loss": 0.03441233394779466,
-    "text": "If other depositors withdraw first and take the free liquidity, 1,000,000 of 1,000,000 stays locked, carrying an expected loss of 34,412 from issuer_default:PST. Today 1,000,000 can still leave without penalty.",
+    "worst_expected_loss": 0.6066649767651813,
+    "worst_loss_at_default_severity": 0.6066649767651813,
+    "text": "If other depositors withdraw first and take the free liquidity, 1,000,000 of 1,000,000 stays locked, losing 606,665 if issuer_default:PST hits at its default severity. Today 1,000,000 can still leave without penalty.",
     "evidence": {
      "grade": "D",
      "source": "share taken by other depositors is a scenario; free liquidity A"
     }
    },
    "decision_text": {
-    "text": "If other depositors withdraw first and take the free liquidity, 1,000,000 of 1,000,000 stays locked, carrying an expected loss of 34,412 from issuer_default:PST. Today 1,000,000 can still leave without penalty.",
+    "text": "If other depositors withdraw first and take the free liquidity, 1,000,000 of 1,000,000 stays locked, losing 606,665 if issuer_default:PST hits at its default severity. Today 1,000,000 can still leave without penalty.",
     "numbers": [],
     "unchecked": []
    },
@@ -1114,13 +1825,13 @@
  "exit": {
   "deposit": 1000000.0,
   "free_usd": 3577282.2171,
-  "forced_usd": 4037001.581864,
+  "forced_usd": 4037009.332062,
   "free_fraction": 1.0,
   "forced_fraction": 0.0,
   "currency": "USD",
   "currency_source": "DeFiLlama pegType peggedUSD",
-  "vault_free_fraction": 0.13527298613577257,
-  "vault_forced_fraction": 0.1526570244872338,
+  "vault_free_fraction": 0.13527272054702813,
+  "vault_forced_fraction": 0.15265701783642693,
   "locked_fraction": 0.0,
   "force_deallocate_penalty": 0.01,
   "carry_cost": 0.004931506849315068,
@@ -1133,7 +1844,7 @@
   "evidence": {
    "tranches": {
     "grade": "A",
-    "source": "idle balance, liquidityAdapter/liquidityData, market liquidity and forceDeallocatePenalty @ block 26162910"
+    "source": "idle balance, liquidityAdapter/liquidityData, market liquidity and forceDeallocatePenalty @ block 26162983"
    },
    "carry_cost": {
     "grade": "D",
@@ -1142,34 +1853,31 @@
   }
  },
  "worst_incident": "issuer_default:PST",
- "decision_text": "Given issuer_default:PST, if you think the probability of the severe outcome (vault loss 74.79%) is above 0.659%, withdraw the 100.00% you can take out now (cost 0.493%: yield given up). Exit early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
+ "decision_text": "If PST loses 84.14%, staying loses 606,665 USD (60.67% of the deposit); exiting 1,000,000 now costs 4,932 USD. Exiting pays once PST loses more than 13.82%. Act early: if all depositors withdrew, only 13.53% of the vault could leave without penalty.",
  "default_decision": {
   "amount": 1000000.0,
-  "p_worst": 0.046012269938650305,
-  "p_other": 0.2668711656441718,
-  "worst_outcome": "severe",
-  "L_worst": 0.747894724465404,
-  "L_other": 0.0,
-  "expected_loss": 0.03441233394779466,
-  "stay_loss_usd": 34412.33394779466,
+  "severity": 0.841444408559261,
+  "L": 0.6066649767651813,
+  "loss_if_stay_usd": 606664.9767651813,
   "carry_cost": 0.004931506849315068,
   "penalty": 0.01,
   "free_usd": 1000000.0,
   "forced_usd": 0.0,
   "locked_usd": 0.0,
-  "p_break_even": 0.0065938516317789455,
-  "p_break_even_worst_alone": 0.0065938516317789455,
+  "severity_break_even_free": 0.13824664247924634,
+  "severity_break_even_forced": 0.16246417789635778,
   "verdict": "EXIT",
   "exit_usd": 1000000.0,
   "exit_cost_usd": 4931.506849315068,
-  "loss_if_exit_usd": 4931.506849315068,
-  "text": "Exiting 1,000,000 now costs 4,932 (yield given up), while staying has an expected loss of 34,412."
+  "loss_kept_usd": 0.0,
+  "total_if_act_usd": 4931.506849315068,
+  "avoided_usd": 601733.4699158663
  },
  "notes": [],
  "gates": [
   {
    "pass": true,
-   "check": "allocations 26,444,912 + idle 0 within 1% of totalAssets 26,444,912 USDC"
+   "check": "allocations 26,444,964 + idle 0 within 1% of totalAssets 26,444,964 USDC"
   },
   {
    "pass": true,

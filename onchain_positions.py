@@ -64,7 +64,7 @@ SIG = {
 T_SUPPLY_COLL = "0x" + SIG["SupplyCollateral(bytes32,address,address,uint256)"]
 T_BORROW = "0x" + SIG["Borrow(bytes32,address,address,address,uint256,uint256)"]
 VIRTUAL_SHARES, VIRTUAL_ASSETS = 10 ** 6, 1
-DROPS = [round(0.005 * i, 3) for i in range(1, 21)]          # 0.5% .. 10%
+DROPS = [round(0.005 * i, 3) for i in range(1, 21)] + [round(0.01 * i, 2) for i in range(11, 41)]   # 0.5%..10%, 11%..40%
 
 GATES = []
 

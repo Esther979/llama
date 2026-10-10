@@ -145,6 +145,41 @@
     return out;
   }
 
+  /* Decision without a probability (port of frontend_contract.decide_at): given the incident at severity sev,
+     sell x minimising x*(slippage+carry) + (1-x)*L(sev); costs per unit of equity (x collateral / equity). */
+  function decideAt(d, presetKey, node, fail, sev, carry = 0) {
+    const r = inject(d, presetKey, node, fail, sev), p = d.position_presets[presetKey];
+    const C = p.collateral_usd, E = C - p.debt_usd, scale = C / E, L = r.L_high;
+    const raw = d.exit_curve.map(x => [x.fraction, x.loss]);
+    const dec = decide(1, L, raw.map(([x, s]) => [x, s * scale]), carry * scale), x = dec.exitFraction;
+    const sale = x * ((x > 0 ? slippageAt(x, raw) : 0) + carry) * C, kept = (1 - x) * L * E;
+    const verdict = x <= 0 ? 'STAY' : dec.stuckFraction > 0 ? 'SELL_TO_CAP' : x >= 1 - 1e-12 ? 'EXIT' : 'REDUCE';
+    return Object.assign({}, r, {verdict, sell_fraction: x, sell_usd: x * C, sale_cost_usd: sale, loss_if_stay_usd: L * E,
+      loss_kept_usd: kept, total_if_act_usd: sale + kept, avoided_usd: L * E - sale - kept, stuck_fraction: dec.stuckFraction});
+  }
+
+  /* Smallest severity at which selling starts / reaches the cap (port of frontend_contract.break_even_severity). */
+  function breakEvenSeverity(d, presetKey, node, fail, carry = 0, lo = null, hi = null, steps = 400) {
+    const ft = d.failure_types.types[fail];
+    lo = lo === null ? ft.min : lo; hi = hi === null ? ft.max : hi;
+    if (d.ui.injections[node + ':' + fail].type !== 'loss_model') return {start: null, cap: null, lo, hi};
+    const first = pred => {
+      if (pred(lo)) return lo;
+      let prev = lo;
+      for (let i = 1; i <= steps; i++) {
+        const s = lo + (hi - lo) * i / steps;
+        if (pred(s)) { let a = prev, b = s;
+          for (let k = 0; k < 40; k++) { const m = (a + b) / 2; if (pred(m)) b = m; else a = m; }
+          return b; }
+        prev = s;
+      }
+      return null;
+    };
+    const sells = s => decideAt(d, presetKey, node, fail, s, carry).sell_fraction > 0;
+    const full = s => ['SELL_TO_CAP', 'EXIT'].includes(decideAt(d, presetKey, node, fail, s, carry).verdict);
+    return {start: first(sells), cap: first(full), lo, hi};
+  }
+
   /* ---- second view: vaults (port of vault_pipeline.vault_decide / liquidity_run). v = a vault detail
      (window.VAULTS.details[address]); inc = one of v.incidents; amount in the vault asset (~USD / EUR). */
   function vaultDecide(inc, ex, amount, pWorst = null, altApy = null, horizonDays = null) {
@@ -183,7 +218,49 @@
             expected_loss_on_locked_usd: locked * worstExpectedLoss};
   }
 
-  const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, inject, vaultDecide, vaultRun};
+  /* Vault decision without a probability (port of vault_pipeline.vault_decide_at): given the incident at severity
+     sev, withdraw each tranche whose unit cost is below L(sev); L from inc.severity_grid (linear, 0 at 0). */
+  function vaultLossAt(grid, sev) {
+    const pts = [[0, 0]].concat(grid.map(g => [g.severity, g.L_high]));
+    if (sev >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
+    for (let i = 1; i < pts.length; i++) {
+      const [s0, l0] = pts[i - 1], [s1, l1] = pts[i];
+      if (sev <= s1) return l0 + (l1 - l0) * (sev - s0) / (s1 - s0);
+    }
+    return pts[pts.length - 1][1];
+  }
+  function severityCrossing(grid, c) {
+    const pts = [[0, 0]].concat(grid.map(g => [g.severity, g.L_high]));
+    for (let i = 1; i < pts.length; i++) {
+      const [s0, l0] = pts[i - 1], [s1, l1] = pts[i];
+      if (l1 > c) return l0 > c ? s0 : s0 + (c - l0) * (s1 - s0) / (l1 - l0);
+    }
+    return null;
+  }
+  function vaultDecideAt(inc, ex, amount, sev = null, altApy = null, horizonDays = null) {
+    sev = sev === null ? inc.default_severity : sev;
+    const alt = altApy === null ? ex.alt_apy : altApy, h = horizonDays === null ? ex.horizon_days : horizonDays;
+    const carry = Math.max(0, (ex.vault_apy || 0) - alt) * h / 365, pen = ex.force_deallocate_penalty;
+    const L = vaultLossAt(inc.severity_grid, sev);
+    const freeAmt = Math.min(amount, ex.free_usd), forcedAmt = Math.min(amount - freeAmt, ex.forced_usd);
+    const locked = amount - freeAmt - forcedAmt;
+    const out = {amount, severity: sev, L, loss_if_stay_usd: L * amount, carry_cost: carry, penalty: pen,
+                 free_usd: freeAmt, forced_usd: forcedAmt, locked_usd: locked,
+                 severity_break_even_free: severityCrossing(inc.severity_grid, carry),
+                 severity_break_even_forced: severityCrossing(inc.severity_grid, carry + pen)};
+    if (inc.type === 'asset_issuer')
+      return Object.assign(out, {verdict: 'REVIEW', exit_usd: 0, exit_cost_usd: 0, loss_kept_usd: L * amount,
+                                 total_if_act_usd: L * amount, avoided_usd: 0});
+    const takeFree = L > carry, takeForced = L > carry + pen;
+    const exitAmt = freeAmt * takeFree + forcedAmt * takeForced;
+    const cost = freeAmt * carry * takeFree + forcedAmt * (carry + pen) * takeForced, kept = L * (amount - exitAmt);
+    return Object.assign(out, {verdict: exitAmt <= 0 ? 'STAY' : exitAmt >= amount - 1e-9 ? 'EXIT' : 'EXIT_PARTIAL',
+      exit_usd: exitAmt, exit_cost_usd: cost, loss_kept_usd: kept, total_if_act_usd: cost + kept,
+      avoided_usd: L * amount - cost - kept});
+  }
+
+  const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, inject, decideAt, breakEvenSeverity,
+               vaultDecide, vaultRun, vaultLossAt, vaultDecideAt};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;
 })(typeof window !== 'undefined' ? window : this);

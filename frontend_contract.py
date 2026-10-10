@@ -295,6 +295,11 @@ def ui_view(graph, oracle, position, lending, onc):
         {"from": "pt", "to": "lending", "type": "collateral", "grade": "A", "evidence": e_of("marketParams.collateralToken")},
         {"from": "lending", "to": "market", "type": "forced selling", "grade": "B",
          "evidence": "liquidators sell seized PT into the pool: borrowers.exit_later"},
+        {"from": "pt", "to": "position", "type": "holding", "grade": "D",
+         "evidence": "the position holds the PT; its size is assumed (position_presets)"},
+        {"from": "lending", "to": "position", "type": "liquidation", "grade": "B",
+         "evidence": "Morpho liquidation rule (source, back-tested 9/9); only for levered presets",
+         "applies_to": [k for k in ("lev_market_avg", "lev_largest_borrower", "lev_closest_to_liquidation")]},
     ]
     return {"nodes": nodes, "layers": lay, "edges": edges, "injections": INJECTIONS}
 
@@ -340,3 +345,54 @@ def inject(d, preset_key, node, fail, sev):
         # the remaining capacity cap x (1 - d) costs what a sale of size cap costs today
         out.update(sellable_later=cap * (1 - dd), avg_cost_later=slippage_at(cap, curve))
     return out
+
+
+# ------------------------------------------------------------------ decision without a probability
+def decide_at(d, preset_key, node, fail, sev, carry=0.0):
+    """Given the incident has happened at severity `sev`: sell the share x of the position that minimises
+    x * (slippage + carry) + (1 - x) * L(sev), never beyond the largest quote (decision_core.decide with p = 1).
+    Costs per unit of equity: slippage and carry x collateral / equity. Mirrored by RiskModel.decideAt."""
+    from decision_core import Scenario as DS, decide, slippage_at
+    r = inject(d, preset_key, node, fail, sev)
+    p = d["position_presets"][preset_key]
+    C, E = p["collateral_usd"], p["collateral_usd"] - p["debt_usd"]
+    scale = C / E
+    raw = [(x["fraction"], x["loss"]) for x in d["exit_curve"]]
+    L = r["L_high"]
+    res = decide([DS("incident", 1.0, L)], [(x, s * scale) for x, s in raw], carry_lost=carry * scale)
+    x = res["best_exit_fraction"]
+    sale = x * ((slippage_at(x, raw) if x > 0 else 0.0) + carry) * C
+    kept = (1 - x) * L * E
+    verdict = ("STAY" if x <= 0 else "SELL_TO_CAP" if res["stuck_fraction"] > 0 else
+               "EXIT" if x >= 1 - 1e-12 else "REDUCE")
+    return dict(r, verdict=verdict, sell_fraction=x, sell_usd=x * C, sale_cost_usd=sale, loss_if_stay_usd=L * E,
+                loss_kept_usd=kept, total_if_act_usd=sale + kept, avoided_usd=L * E - sale - kept,
+                stuck_fraction=res["stuck_fraction"])
+
+
+def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, steps=400):
+    """Smallest severity (failure's unit) at which selling starts, and at which it reaches the cap or full exit:
+    scan + bisection on decide_at. None = not within [lo, hi]. Mirrored by RiskModel.breakEvenSeverity."""
+    ft = d["failure_types"]["types"][fail]
+    lo = ft["min"] if lo is None else lo
+    hi = ft["max"] if hi is None else hi
+    if INJECTIONS[f"{node}:{fail}"]["type"] != "loss_model":
+        return {"start": None, "cap": None, "lo": lo, "hi": hi}
+
+    def first(pred):
+        if pred(lo):
+            return lo
+        prev = lo
+        for i in range(1, steps + 1):
+            s = lo + (hi - lo) * i / steps
+            if pred(s):
+                a, b = prev, s
+                for _ in range(40):
+                    m = (a + b) / 2
+                    a, b = (a, m) if pred(m) else (m, b)
+                return b
+            prev = s
+        return None
+    sells = lambda s: decide_at(d, preset_key, node, fail, s, carry)["sell_fraction"] > 0
+    full = lambda s: decide_at(d, preset_key, node, fail, s, carry)["verdict"] in ("SELL_TO_CAP", "EXIT")
+    return {"start": first(sells), "cap": first(full), "lo": lo, "hi": hi}

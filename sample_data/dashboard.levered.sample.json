@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T15:24:18+00:00",
+ "generated_at": "2026-10-10T15:48:32+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -10957,6 +10957,246 @@
     "pt_seized": 7888654.895908642,
     "bad_debt_usdc": 95683.53596026098,
     "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.11,
+    "n_liquidatable": 8,
+    "debt_liquidatable_usdc": 6961703.830926,
+    "pt_seized": 7931672.085863802,
+    "bad_debt_usdc": 134947.94083956745,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.12,
+    "n_liquidatable": 9,
+    "debt_liquidatable_usdc": 6972031.803787,
+    "pt_seized": 7945427.32869713,
+    "bad_debt_usdc": 210274.98134245607,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.13,
+    "n_liquidatable": 9,
+    "debt_liquidatable_usdc": 6972031.803787,
+    "pt_seized": 7947145.757608498,
+    "bad_debt_usdc": 285667.319665111,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.14,
+    "n_liquidatable": 9,
+    "debt_liquidatable_usdc": 6972031.803787,
+    "pt_seized": 7948695.832928646,
+    "bad_debt_usdc": 361232.9118372687,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.15,
+    "n_liquidatable": 9,
+    "debt_liquidatable_usdc": 6972031.803787,
+    "pt_seized": 7949444.54290014,
+    "bad_debt_usdc": 437487.21726945305,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.16,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7964395.028810763,
+    "bad_debt_usdc": 514242.7068418836,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.17,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7964653.449669976,
+    "bad_debt_usdc": 591056.8572147054,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.18,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7964836.1232766695,
+    "bad_debt_usdc": 667936.0734384676,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.19,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965023.307342787,
+    "bad_debt_usdc": 744815.2896622306,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.2,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965215.171010558,
+    "bad_debt_usdc": 821694.5058859923,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.21,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 898673.9046881308,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.22,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 975704.0477387237,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.23,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 1052734.1907893177,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.24,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 1129764.333839911,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.25,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 1206794.4768905037,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.26,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 1283824.619941098,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.27,
+    "n_liquidatable": 10,
+    "debt_liquidatable_usdc": 6984055.205685,
+    "pt_seized": 7965280.760948786,
+    "bad_debt_usdc": 1360854.7629916905,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.28,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966112.543449859,
+    "bad_debt_usdc": 1437884.9060422843,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.29,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966124.258696353,
+    "bad_debt_usdc": 1514915.0490928774,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.3,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966136.308664176,
+    "bad_debt_usdc": 1591945.1921434714,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.31,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966148.707906428,
+    "bad_debt_usdc": 1668975.335194064,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.32,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 1746007.5163611346,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.33,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 1823046.1465636017,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.34,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 1900084.7767660716,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.35,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 1977123.406968539,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.36,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 2054162.0371710076,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.37,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 2131200.667373476,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.38,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 2208239.297575945,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.39,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 2285277.9277784135,
+    "seized_exceeds_capacity": true
+   },
+   {
+    "oracle_drop": 0.4,
+    "n_liquidatable": 11,
+    "debt_liquidatable_usdc": 6984634.370129,
+    "pt_seized": 7966158.372554719,
+    "bad_debt_usdc": 2362316.5579808834,
+    "seized_exceeds_capacity": true
    }
   ],
   "first_drop_seized_exceeds_capacity": 0.055,
@@ -11174,6 +11414,336 @@
     "oracle_drop": 0.1,
     "pt_seized": 7888654.895908642,
     "seized_in_position_units": 0.7833420996253879,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.11,
+    "pt_seized": 7931672.085863802,
+    "seized_in_position_units": 0.7876136993269968,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.12,
+    "pt_seized": 7945427.32869713,
+    "seized_in_position_units": 0.7889795926185775,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.13,
+    "pt_seized": 7947145.757608498,
+    "seized_in_position_units": 0.78915023231942,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.14,
+    "pt_seized": 7948695.832928646,
+    "seized_in_position_units": 0.7893041545370711,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.15,
+    "pt_seized": 7949444.54290014,
+    "seized_in_position_units": 0.7893785013108645,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.16,
+    "pt_seized": 7964395.028810763,
+    "seized_in_position_units": 0.7908630820382736,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.17,
+    "pt_seized": 7964653.449669976,
+    "seized_in_position_units": 0.7908887431859741,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.18,
+    "pt_seized": 7964836.1232766695,
+    "seized_in_position_units": 0.7909068826442851,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.19,
+    "pt_seized": 7965023.307342787,
+    "seized_in_position_units": 0.7909254699904555,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.2,
+    "pt_seized": 7965215.171010558,
+    "seized_in_position_units": 0.7909445220202801,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.21,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.22,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.23,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.24,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.25,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.26,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.27,
+    "pt_seized": 7965280.760948786,
+    "seized_in_position_units": 0.7909510350900751,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.28,
+    "pt_seized": 7966112.543449859,
+    "seized_in_position_units": 0.7910336309520338,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.29,
+    "pt_seized": 7966124.258696353,
+    "seized_in_position_units": 0.7910347942740333,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.3,
+    "pt_seized": 7966136.308664176,
+    "seized_in_position_units": 0.7910359908338042,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.31,
+    "pt_seized": 7966148.707906428,
+    "seized_in_position_units": 0.7910372220764669,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.32,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.33,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.34,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.35,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.36,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.37,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.38,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.39,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
+    "sellable_now": 0.45,
+    "avg_cost_now": 0.004908630021583751,
+    "sellable_later": 0.0,
+    "avg_cost_later": null,
+    "market_impact_of_liquidations": null,
+    "note": "liquidations alone use up the pool's quoted capacity"
+   },
+   {
+    "oracle_drop": 0.4,
+    "pt_seized": 7966158.372554719,
+    "seized_in_position_units": 0.791038181774411,
     "sellable_now": 0.45,
     "avg_cost_now": 0.004908630021583751,
     "sellable_later": 0.0,
@@ -13140,6 +13710,25 @@
     "type": "forced selling",
     "grade": "B",
     "evidence": "liquidators sell seized PT into the pool: borrowers.exit_later"
+   },
+   {
+    "from": "pt",
+    "to": "position",
+    "type": "holding",
+    "grade": "D",
+    "evidence": "the position holds the PT; its size is assumed (position_presets)"
+   },
+   {
+    "from": "lending",
+    "to": "position",
+    "type": "liquidation",
+    "grade": "B",
+    "evidence": "Morpho liquidation rule (source, back-tested 9/9); only for levered presets",
+    "applies_to": [
+     "lev_market_avg",
+     "lev_largest_borrower",
+     "lev_closest_to_liquidation"
+    ]
    }
   ],
   "injections": {

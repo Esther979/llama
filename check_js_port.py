@@ -135,9 +135,35 @@ def main():
     bad = [(c, k, inject(d, *c)[k], j.get(k)) for c, j in zip(combos, jout) for k in keys if not same(inject(d, *c)[k], j.get(k))]
     print(f"GATE {'PASS' if not bad else 'FAIL'}  inject: {len(combos)} (preset, node, failure, severity) combinations "
           f"equal on {', '.join(keys)}" + (f"  first mismatch {bad[0]}" if bad else ""))
+    # decision without a probability (PT view): decideAt and breakEvenSeverity on the sample dashboard
+    from frontend_contract import break_even_severity, decide_at
+    dcombos = [(pk, k.split(":")[0], k.split(":")[1], sev, carry) for pk in d["position_presets"]
+               for k in d["ui"]["injections"] for sev in (0.5, 2, 10, 50) for carry in (0.0, 0.002)]
+    bcombos = [(pk, k.split(":")[0], k.split(":")[1], carry) for pk in d["position_presets"]
+               for k in d["ui"]["injections"] for carry in (0.0, 0.002)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, bf, sf = os.path.join(tmp, "d.json"), os.path.join(tmp, "b.json"), os.path.join(tmp, "d.js")
+        json.dump(dcombos, open(cf, "w"))
+        json.dump(bcombos, open(bf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);const fs=require('fs');"
+                            "const a=JSON.parse(fs.readFileSync(process.argv[4])),b=JSON.parse(fs.readFileSync(process.argv[5]));"
+                            "console.log(JSON.stringify([a.map(c=>M.decideAt(d,c[0],c[1],c[2],c[3],c[4])),"
+                            "b.map(c=>M.breakEvenSeverity(d,c[0],c[1],c[2],c[3]))]));")
+        jd, jb = json.loads(subprocess.run(["node", sf, JS, dpath, cf, bf], check=True, capture_output=True, text=True).stdout)
+    dk = ("verdict", "sell_fraction", "sale_cost_usd", "loss_if_stay_usd", "loss_kept_usd", "stuck_fraction")
+    dbad = [(c, k) for c, j in zip(dcombos, jd) for k in dk
+            if not (decide_at(d, *c)[k] == j[k] if k == "verdict" else same(decide_at(d, *c)[k], j[k]))]
+    bbad = [(c, k) for c, j in zip(bcombos, jb) for k in ("start", "cap")
+            if not same(break_even_severity(d, *c)[k], j[k], 1e-7)]
+    print(f"GATE {'PASS' if not dbad else 'FAIL'}  decideAt: {len(dcombos)} combinations equal on {', '.join(dk)}"
+          + (f"  first mismatch {dbad[0]}" if dbad else ""))
+    print(f"GATE {'PASS' if not bbad else 'FAIL'}  breakEvenSeverity: {len(bcombos)} combinations equal"
+          + (f"  first mismatch {bbad[0]}" if bbad else ""))
+    bad = bad + dbad + bbad
+
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob
-    from vault_pipeline import liquidity_run, vault_decide
+    from vault_pipeline import liquidity_run, vault_decide, vault_decide_at
     vcases, vfiles = [], sorted(glob.glob(os.path.join(HERE, "data", "vaults", "0x*.json")))
     for vf in vfiles:
         v = json.load(open(vf))
@@ -170,6 +196,27 @@ def main():
                 vbad += 1
         print(f"GATE {'PASS' if not vbad else 'FAIL'}  vaultDecide / vaultRun: {len(vcases) - vbad}/{len(vcases)} cases "
               f"equal ({len(vfiles)} vault files)")
+        # severity-based vault decision
+        scases = [(vf, inc["key"], amount, sev, alt) for vf in vfiles for inc in json.load(open(vf))["incidents"]
+                  if inc.get("severity_grid") for amount in (1e4, 1e6, 5e7) for sev in (None, 0.0, 0.004, 0.05, 0.2, 0.84, 1.0)
+                  for alt in (None, 0.0)]
+        with tempfile.TemporaryDirectory() as tmp:
+            cf, sf = os.path.join(tmp, "s.json"), os.path.join(tmp, "s.js")
+            json.dump(scases, open(cf, "w"))
+            open(sf, "w").write("const M=require(process.argv[2]);const fs=require('fs');"
+                                "const cs=JSON.parse(fs.readFileSync(process.argv[3]));const cache={};"
+                                "console.log(JSON.stringify(cs.map(c=>{const v=cache[c[0]]||(cache[c[0]]=JSON.parse(fs.readFileSync(c[0])));"
+                                "return M.vaultDecideAt(v.incidents.find(i=>i.key===c[1]),v.exit,c[2],c[3],c[4],null);})));")
+            js_s = json.loads(subprocess.run(["node", sf, JS, cf], check=True, capture_output=True, text=True).stdout)
+        sk = ("verdict", "L", "loss_if_stay_usd", "exit_usd", "exit_cost_usd", "locked_usd", "severity_break_even_free",
+              "severity_break_even_forced")
+        sbad = 0
+        for c, j in zip(scases, js_s):
+            v = cache.setdefault(c[0], json.load(open(c[0])))
+            pd = vault_decide_at(next(i for i in v["incidents"] if i["key"] == c[1]), v["exit"], c[2], c[3], c[4], None)
+            sbad += not all(pd[k] == j[k] if isinstance(pd[k], str) else same(pd[k], j[k]) for k in sk)
+        print(f"GATE {'PASS' if not sbad else 'FAIL'}  vaultDecideAt: {len(scases) - sbad}/{len(scases)} cases equal")
+        vbad += sbad
     sys.exit(1 if fails or bad or vbad else 0)
 
 

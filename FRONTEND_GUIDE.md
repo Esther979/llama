@@ -1,10 +1,11 @@
 # Risk Desk v2: connecting the front end to the backend
 
 > 给前端同事：把这份文件和 `Dependency_Risk_Desk_v2.html` 一起交给 Claude，说"按 FRONTEND_GUIDE.md 修改这个页面"。
-> 布局和交互保持不变：第 1 步选节点（固定 9 个节点 + 检测到的事故），第 2 步手动拖严重程度，第 3 步经理设概率。
-> 改的是：数据从后端文件读取，损失从后端的模型计算，并删掉已经过时的文字。
+> 布局保持不变，但**去掉第 3 步（概率）**：主办方认为突发事件的概率 p 无法预测，核心算法改为"假设事故已经发生，按严重程度决定"。
+> 第 1 步选节点（固定 9 个节点 + 检测到的事故），第 2 步手动拖严重程度，结论直接由严重程度给出，并显示"跌幅超过多少就该走"（盈亏平衡严重程度）。
+> 改的是：数据从后端文件读取，损失和结论从后端的模型计算，并删掉已经过时的文字。
 
-Instructions for Claude. Edit `Dependency_Risk_Desk_v2.html` so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the three steps, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls.
+Instructions for Claude. Edit `Dependency_Risk_Desk_v2.html` so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls. Remove step 3 (the probability slider) and everything that uses a probability: the decision is made given the incident, at the severity chosen in step 2.
 
 ## 1. Files
 
@@ -30,7 +31,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
 3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), plus the detected incidents (`d.detected`, empty today; keep the prototype sample feed, still labelled as invented).
 4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
-5. Step 3 stays the manager's probability. Start it at `d.failure_types.types[fail].probabilities.p_severe` when that is not null, with the note "historical default (C): " + `evidence.source`. When it is null, keep the page's sample value and its "not calibrated" note.
+5. No probability anywhere: delete step 3, `S.p`, `pOf` / `vOf`, the partial-case assumptions (`pk`, `ps`) and the probability zones. The decision assumes the incident has happened; the severity slider is the only "how bad" input. Show on that slider the zones from `RiskModel.breakEvenSeverity` (stay / sell part / sell to the pool limit). The backend still has probability-based fields (`decision_grid`, `thresholds`, `incidents[].probabilities`...) for compatibility: do not use them.
 6. Show evidence grades: A = read from chain / API, B = contract rule back-tested, C = analogy from history, D = assumption. Dashed style = D.
 7. Keep the field names of `dashboard.json`. If something is missing, ask the backend (do not invent it).
 
@@ -43,11 +44,11 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 | `LD` | `d.lending[0]` (`lltv`, `collateral_usd`, `borrow_usd`, `liquidity_usd`, `aggregate_ltv`, `oracle_address`; `market_id` is now the full id) |
 | `NODES` | `d.ui.nodes`: same 9 keys (`eth`, `ethena`, `usde`, `susde`, `feeds`, `oracle`, `market`, `pt`, `lending`) with `label`, `kind`, `layer`, `address`, `contract_name`, `members` (ids in `d.dependency_graph.nodes`), `evidence {grade, source}`, `note`, `failures` |
 | `LAY` | `d.ui.layers` (`n`, `name`, `nodes`); facts per layer: see section 6 |
-| `EDGES` | `d.ui.edges` (`from`, `to`, `type`, `grade`, `evidence`) |
+| `EDGES` | `d.ui.edges` (`from`, `to`, `type`, `grade`, `evidence`), including the two edges to the position: `pt -> position` "holding" (D: the size is assumed) and `lending -> position` "liquidation" (B: Morpho rule, back-tested; `applies_to` = the levered presets). Draw only those, do not add page-made edges |
 | `FBN` | `d.ui.nodes[k].failures` (sUSDe now has `navLoss` and `discount` instead of `depeg`) |
 | `POS` | `d.position_presets`: `spot`, `lev_market_avg`, `lev_largest_borrower`, `lev_closest_to_liquidation` (`label`, `collateral_usd`, `debt_usd`, `lltv`, `ltv`, `evidence`). Fill the header position `<select>` from it |
 | `FAIL[k].loss` | delete; `RiskModel.inject` |
-| `FAIL[k].prob` | `d.failure_types.types[k].probabilities.p_severe` when not null |
+| `FAIL[k].prob` | delete (no probability) |
 | `stress()` | the `sellable_later` / `avg_cost_later` returned by `inject` (drain keeps its own curve, section 7) |
 | `DETECTED` | `d.detected` when it is not empty; otherwise the prototype sample list (keep it labelled as invented) |
 | `REPLAYS` | oracle: node `oracle`, failure `oracleLow`, severity 2.77 (`d.failure_types.types.oracleLow.anchors[0]`), and show `d.validation` ("back-test of the liquidation rules on PT-reUSD: 9/9 checks pass"); issuer: node `ethena`, failure `shortfall`, severity 50 (Stream xUSD) or 99.87 (Elixir deUSD) from `anchors` |
@@ -78,37 +79,44 @@ How each node and failure is modelled (`d.ui.injections`):
 | `market:drain` | — | severity = pool liquidity removed (assumption, grade D) |
 | `eth:halt`, `feeds:stale`, `oracle:stale` | — | no direct loss modelled |
 
-Rewrite `model()` around it:
+Rewrite `model()` around the two decision functions (no probability):
 
 ```js
 const d = window.DASHBOARD;
 function model() {
   const P = d.position_presets[S.pos], equity = P.collateral_usd - P.debt_usd;
-  const pr = d.failure_types.types[S.fail].probabilities || {};
-  const share = pr.partial_severity_share ?? S.ps / 100;   // partial case severity, share of the severe one
-  const ratio = pr.partial_to_severe_prob ?? S.pk;          // partial case probability, multiple of the severe one
-  const sev = RiskModel.inject(d, S.pos, S.node, S.fail, S.sev);
-  const par = RiskModel.inject(d, S.pos, S.node, S.fail, S.sev * share);
-  const pS = S.p, pP = Math.min(ratio * pS, 1 - pS), p0 = Math.max(0, 1 - pS - pP);
-  const el = pS * sev.L_high + pP * par.L_high;             // expected loss, fraction of equity
-  const scale = P.collateral_usd / equity;                  // exit cost per unit of equity
-  const curve = d.exit_curve.map(x => [x.fraction, x.loss * scale]);
-  const dec = RiskModel.decide(1, el, curve, carry());      // same call shape as today
-  const be = RiskModel.breakEven(d.exit_curve.map(x => [x.fraction, x.loss]), sev.L_high, scale, carry());
-  return {P, equity, sev, par, pS, pP, p0, el, dec, be};
+  const f = FAIL[S.fail];                                   // page's own slider range (step 2)
+  const r = RiskModel.decideAt(d, S.pos, S.node, S.fail, S.sev, carry());
+  const be = RiskModel.breakEvenSeverity(d, S.pos, S.node, S.fail, carry(), f.min, f.max);
+  return {P, equity, r, be};
 }
 ```
 
-- Money: loss in USD = `L x equity`; sale cost in USD = `x x slippage x collateral`.
-- The probability zones on the slider: `be.p_start` (start selling), `be.p_exit_sellable` (brief's "exit cost / loss": exiting the sellable part pays), `be.p_sell_to_cap` (sell all that can be sold). Exact values, no grid. They use the severe case alone; with the partial case included the page's existing scan over the slider stays valid.
-- Keep `carry()` (implied APY minus the "cash earns" assumption).
+`RiskModel.decideAt(d, preset, node, fail, sev, carry)` = `inject` plus the decision: it sells the share x of the position that minimises x x (slippage + carry) + (1 - x) x L(sev), never beyond the largest Pendle quote (the same `decide()` as before, with the incident certain). It returns everything `inject` returns, plus:
+
+| Field | Meaning |
+|---|---|
+| `verdict` | `STAY`, `REDUCE` (sell part), `SELL_TO_CAP` (sell all the pool takes; the rest is stuck), `EXIT` (sell everything) |
+| `sell_fraction`, `sell_usd` | How much to sell now |
+| `sale_cost_usd` | Slippage + yield given up on what is sold |
+| `loss_if_stay_usd` | Loss if you do nothing (L x equity) |
+| `loss_kept_usd` | Loss on the part you keep |
+| `total_if_act_usd`, `avoided_usd` | Sale cost + loss kept; loss avoided by acting |
+| `stuck_fraction` | Share that cannot be sold through the pool now |
+
+`RiskModel.breakEvenSeverity(d, preset, node, fail, carry, lo, hi)` returns `{start, cap}`: the smallest severity (in the failure's unit) at which selling starts, and at which it reaches the pool limit (or a full exit); `null` = not within `[lo, hi]`. Pass the page's slider range as `lo`, `hi`.
+
+- `carry()`: pass it as today (implied APY minus the "cash earns" assumption, unscaled). `decideAt` and `breakEvenSeverity` multiply it by collateral / equity for levered presets, like the slippage (yield given up per unit of collateral sold, per unit of equity).
+- Severity zones on the step-2 slider: `[lo, be.start)` stay, `[be.start, be.cap)` sell part, `[be.cap, hi]` sell to the pool limit.
+- Money: everything is already in USD in the result.
 
 ## 5. Decision card
 
-- Verdict and bars as today, from `dec`.
-- Under the verdict, one line from `sev.note`, and: oracle follows = `sev.oracle_falls`, liquidated = `sev.liquidated`.
-- If `sev.L_low !== sev.L_high`: "loss between L_low and L_high depending on the oracle; the decision uses the high end".
-- "What would change the answer": keep the probability and severity rows; add "position preset" (try the other presets: the closest-to-liquidation borrower flips most answers).
+- Badge: `r.verdict` (`STAY` green, `REDUCE` amber "Sell `sell_usd`", `SELL_TO_CAP` red "Sell `sell_usd`, `stuck_fraction` stuck", `EXIT` red).
+- Sentence (numbers from `r` and `be` only): "If {node label} {failure label lowercased} by {sev}, doing nothing loses {loss_if_stay_usd}. Selling {sell_usd} now costs {sale_cost_usd} and leaves {loss_kept_usd} at risk on the rest." For `STAY`: "If ..., doing nothing loses {loss_if_stay_usd}; selling would cost more than it saves." Then: "Selling starts to pay once the severity exceeds {be.start}" (or "Selling does not pay at any severity on this slider").
+- Bars: "Do nothing" = `loss_if_stay_usd`; "Act" = `sale_cost_usd` + `loss_kept_usd`.
+- Under the verdict, one line from `r.note`, and: oracle follows = `r.oracle_falls`, liquidated = `r.liquidated`. If `r.L_low !== r.L_high`: "loss between L_low and L_high depending on the oracle; the decision uses the high end".
+- "What would change the answer": severity (`be.start`, `be.cap`), the position preset (the closest-to-liquidation borrower flips most answers), and the "cash earns" assumption.
 
 ## 6. Five-layer chain
 
@@ -122,7 +130,7 @@ Layer facts (replace the old texts, numbers from the data):
 | 4 | `d.ui.nodes.market.label` | "You can sell `max_exit_fraction x notional` today" |
 | 5 | `d.ui.nodes.lending.label` | "`d.borrowers.distribution.n_borrowers` borrowers; Morpho liquidations would exceed the pool from a `d.borrowers.first_drop_seized_exceeds_capacity` oracle drop" |
 
-Effects shown on the red path, from the `inject` result of the severe case:
+Effects shown on the red path, from `r` (the `decideAt` result):
 
 - origin layer: the failure and severity, e.g. "USDe down 2%".
 - layer 3: `oracle_falls === true` -> "Oracle follows (after the 16 h switch)" for `usde` / `ethena`, "Oracle reports the low price" for `oracleLow`; `false` -> "Oracle does not move (linear discount, no market input)".
@@ -135,7 +143,7 @@ Remove these old texts, the backend now contradicts them: "Type unknown", "Upstr
 ## 7. Exit panel
 
 - Today: `max_exit_fraction`, cost `slippageAt(max_exit_fraction)`; optional gas per size in `d.exit_curve[i].gas_usd`.
-- If this plays out: `sev.sellable_later` and `sev.avg_cost_later` (null -> "No room left"). For `lending:cascade` and for failures where the oracle follows, these come from the real liquidation curve (`d.borrowers.exit_later`), replacing the "pool liquidity leaves" assumption.
+- If this plays out: `r.sellable_later` and `r.avg_cost_later` (null -> "No room left"). For `lending:cascade` and for failures where the oracle follows, these come from the real liquidation curve (`d.borrowers.exit_later`, oracle drops 0.5% to 40%, so the page's cascade slider range up to 40% is covered), replacing the "pool liquidity leaves" assumption.
 - Dashed curve: only for `market:drain` (the page's existing `stressCurve(sev / 100)`).
 - The refused row: `d.evidence.max_exit_fraction.source` names the refused sizes.
 
@@ -145,33 +153,33 @@ For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan l
 
 ## 9. Acceptance tests
 
-After the change, these inputs must give these numbers (from `RiskModel.inject`; check in the browser console with `RiskModel.inject(window.DASHBOARD, preset, node, fail, sev)` and on screen):
+`RiskModel.decideAt(window.DASHBOARD, preset, node, fail, sev, 0)` (carry 0) and `RiskModel.breakEvenSeverity(..., 0, min, max)` with the failure_types range; check in the console and on screen:
 
-| Position preset | Node · failure | Severity | L_low - L_high (of equity) | Loss USD | Oracle falls | Liquidated | Sellable later | Avg cost later |
-|---|---|---|---|---|---|---|---|---|
-| `spot` | `susde:navLoss` | 10% | 0.1000 - 0.1000 | $1,000,000 | False | [False] | 0.4500 | 0.491% |
-| `spot` | `susde:discount` | 3% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
-| `spot` | `pt:depeg` | 10% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
-| `spot` | `usde:depeg` | 10% | 0.1000 - 0.1000 | $1,000,000 | True | [False] | 0.0000 | - |
-| `lev_closest_to_liquidation` | `usde:depeg` | 0.5% | 0.0531 - 0.0531 | $50,000 | False | [False] | 0.4500 | 0.491% |
-| `lev_closest_to_liquidation` | `usde:depeg` | 2% | 0.4646 - 0.4646 | $437,054 | True | [True] | 0.1418 | 1.232% |
-| `lev_closest_to_liquidation` | `susde:navLoss` | 2% | 0.2126 - 0.2126 | $200,000 | False | [False] | 0.4500 | 0.491% |
-| `lev_closest_to_liquidation` | `susde:discount` | 2% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
-| `lev_closest_to_liquidation` | `pt:depeg` | 10% | 0.0000 - 0.0000 | $0 | False | [False] | 0.4500 | 0.491% |
-| `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | 0.5335 - 0.5335 | $501,897 | True | [True] | 0.1264 | 1.305% |
-| `lev_market_avg` | `ethena:shortfall` | 50% | 1.0000 - 1.0000 | $1,179,163 | True | [True] | 0.0000 | - |
-| `spot` | `market:drain` | 60% | 0.0000 - 0.0000 | $0 | None | None | 0.1800 | 0.491% |
-| `spot` | `lending:cascade` | 1% | 0.0000 - 0.0000 | $0 | None | None | 0.1449 | 1.219% |
-| `spot` | `lending:cascade` | 6% | 0.0000 - 0.0000 | $0 | None | None | 0.0000 | - |
-| `lev_market_avg` | `eth:halt` | 6h | 0.0000 - 0.0000 | $0 | None | None | 0.4500 | 0.491% |
+| Preset | Node · failure | Severity | Verdict | Sell | Sale cost | Loss if stay | Loss kept | Oracle falls | Sellable later | Break-even severity (start / cap) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `spot` | `susde:navLoss` | 10% | SELL_TO_CAP | 45% | $22,089 | $1,000,000 | $550,000 | False | 0.4500 | 0.500% / 2.052% |
+| `spot` | `susde:discount` | 3% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
+| `spot` | `pt:depeg` | 10% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
+| `spot` | `usde:depeg` | 10% | SELL_TO_CAP | 45% | $22,089 | $1,000,000 | $550,000 | True | 0.0000 | 1.000% / 2.052% |
+| `lev_closest_to_liquidation` | `usde:depeg` | 0.5% | REDUCE | 30% | $4,126 | $50,000 | $35,000 | False | 0.4500 | 1.000% / 1.000% |
+| `lev_closest_to_liquidation` | `usde:depeg` | 2% | SELL_TO_CAP | 45% | $22,089 | $437,054 | $240,380 | True | 0.1418 | 1.000% / 1.000% |
+| `lev_closest_to_liquidation` | `susde:navLoss` | 2% | REDUCE | 44% | $20,037 | $200,000 | $112,000 | False | 0.4500 | 0.500% / 2.052% |
+| `lev_closest_to_liquidation` | `pt:depeg` | 10% | STAY | 0% | $0 | $0 | $0 | False | 0.4500 | - / - |
+| `lev_closest_to_liquidation` | `oracle:oracleLow` | 2.77% | SELL_TO_CAP | 45% | $22,089 | $501,897 | $276,043 | True | 0.1264 | 1.000% / 1.000% |
+| `lev_market_avg` | `ethena:shortfall` | 50% | SELL_TO_CAP | 45% | $22,089 | $1,179,163 | $648,540 | True | 0.0000 | 1.000% / 2.052% |
+| `spot` | `lending:cascade` | 1% | STAY | 0% | $0 | $0 | $0 | None | 0.1449 | - / - |
+| `spot` | `lending:cascade` | 20% | STAY | 0% | $0 | $0 | $0 | None | 0.0000 | - / - |
+| `spot` | `market:drain` | 60% | STAY | 0% | $0 | $0 | $0 | None | 0.1800 | - / - |
+| `lev_market_avg` | `eth:halt` | 6h | STAY | 0% | $0 | $0 | $0 | None | 0.4500 | - / - |
 
-What the table shows (good demo points): the same 2% fall liquidates the closest borrower if it is USDe against USD (the oracle follows after its 16 h switch) but not if it is sUSDe's NAV (no feed sees it: the loss is real but nobody is liquidated) or a sUSDe market discount (no loss if held to expiry); a 10% PT price fall costs nothing because the oracle ignores the PT market price and the PT redeems at expiry; when other borrowers are liquidated at a 1% oracle drop, only 14.5% of the position can still be sold.
+What it shows: a 10% sUSDe NAV loss makes an unlevered holder sell up to the pool limit (45%), while a 10% PT market fall needs no action (the PT redeems at expiry and the oracle ignores the market price); for the closest-to-liquidation borrower a 0.5% USDe depeg is below the meta-oracle's 0.75% threshold, so nobody is liquidated, but the value loss on a levered position (5.3% of equity) already makes it sell 30%, while at 2% the oracle switches, the position is liquidated and it sells to the pool limit; a cascade at 20% leaves nothing sellable.
 
 ## 10. Do not
 
 - Do not change `dashboard.json` field names or meanings.
 - Do not add loss formulas to the page; extend `web/risk_model.js` only together with the backend (and rerun `python3 check_js_port.py`).
 - Do not present the prototype's sample detections as real.
+- Do not reintroduce a probability input; the backend's probability-based fields are kept only for compatibility.
 - Do not show a number without its source when the drawer is opened.
 
 ## 11. Refreshing the data (backend side)

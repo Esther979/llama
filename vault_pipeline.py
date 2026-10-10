@@ -33,7 +33,7 @@ from Crypto.Hash import keccak
 import crawl as crawl_mod
 import etherscan
 import incidents as inc_mod
-from loss_model import PRESETS, Position, position_loss
+from loss_model import PRESETS, Position, Scenario, position_loss
 from oracle_types import classify, oracle_falls
 from onchain_positions import RPC, read_market, words
 from reasoning import NUM, fmt
@@ -237,6 +237,7 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
     if cal:
         presets["depeg_partial"] = inc_mod.depeg_partial(cal)
     types = {t["key"]: t for t in inc_mod.incident_types(cal)}
+    cfg["severe_default"] = cal["median_loss_at_horizon"]["severe"] if cal else 0.5
 
     # ---- markets: borrowers, collateral, oracle
     for m in markets:
@@ -304,7 +305,7 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
     # ---- the vault's own asset (EURCV, USDC, ...): its issuer can fail too; withdrawing does not remove that risk
     cur, cur_src = currency_of(asset_sym)
     if asset_sym and asset_sym.lower() in stables:
-        incidents.append(asset_incident(asset, asset_sym, presets, types, addr, name_of))
+        incidents.append(asset_incident(asset, asset_sym, presets, types, addr, name_of, cfg))
     else:
         incidents.append({"key": f"asset_issuer:{asset_sym}", "token": asset, "symbol": asset_sym, "type": "asset_issuer",
                           "analyzed": False, "expected_loss": None,
@@ -336,15 +337,12 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
                                                                  f"alternative {cur or 'USD'} APY {alt:.2%} assumed) x "
                                                                  f"{cfg['horizon_days']} days / 365"}}}
     for inc in incidents:
-        if inc.get("analyzed", True) and inc["type"] != "asset_issuer":
-            decide(inc, exit_)
         if inc.get("analyzed", True):
-            inc["decision"] = vault_decide(inc, exit_, dep)
-            if inc["type"] == "asset_issuer":
-                inc["decision_text"] = {"text": inc["decision"]["text"], "numbers": [], "unchecked": []}
+            inc["decision"] = vault_decide_at(inc, exit_, dep)
+            sentence(inc, exit_)
     credit = [i for i in incidents if i.get("analyzed", True) and i["type"] != "asset_issuer"]
-    worst_el = max([i["decision"]["expected_loss"] for i in credit] + [0.0])
-    run = liquidity_run(exit_, dep, worst_el, next((i["key"] for i in credit if i["decision"]["expected_loss"] == worst_el), None))
+    worst_L = max([i["decision"]["L"] for i in credit] + [0.0])
+    run = liquidity_run(exit_, dep, worst_L, next((i["key"] for i in credit if i["decision"]["L"] == worst_L), None))
     incidents.append({"key": "liquidity_run:Morpho", "type": "liquidity_run", "analyzed": True, "expected_loss": 0.0,
                       "layer": 5, "run": run, "decision_text": {"text": run["text"], "numbers": [], "unchecked": []},
                       "note": "other depositors withdraw first and take the free liquidity: no direct loss, but more of "
@@ -352,8 +350,9 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
     unchecked = [n for i in incidents for n in (i.get("decision_text") or {}).get("unchecked", [])]
     g(not unchecked, "every number in the decision texts comes from the computed values"
       + (f": unchecked {unchecked}" if unchecked else ""))
+    # worst incident: largest vault loss at its default severity, then the smallest break-even severity
     ranked = sorted([i for i in incidents if i.get("analyzed", True) and i["type"] not in ("liquidity_run", "asset_issuer")],
-                    key=lambda i: -i["expected_loss"])
+                    key=lambda i: (-i["decision"]["L"], i["decision"]["severity_break_even_free"] or 9))
     top = ranked[0] if ranked else None
     summary = (top["decision_text"]["text"] if top else "No analyzable incident for this vault.")
     return {
@@ -395,21 +394,14 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
             pev = {"grade": pev["grade"], "source": "stablecoin depeg outcome frequencies used by analogy for an issuer "
                                                     "failure of " + (t["symbol"] or tok) + ": " + pev["source"]}
     affected = [m for m in live if m["key"] in t["markets"]]
-    rows, dist = [], []
-    for o in ("resolved", "partial", "severe"):
-        key, p = outcomes[o], probs[o]
-        if key is None:
-            L = 0.0 if o == "resolved" else None
-            rows.append({"outcome": o, "preset": None, "probability": p, "L_low": L, "L_high": L, "per_market": []})
-            if L is not None:
-                dist.append((p, L))
-            continue
-        sc = presets[key]
+    token = t["symbol"] if kind == "depeg" and t["type"] == "underlying_stablecoin" else None
+
+    def vault_loss(sc):
+        """(L_low, L_high, per-market rows): bad debt of every real borrower x the vault's share of each market."""
         per, lo_sum, hi_sum = [], 0.0, 0.0
         for m in affected:
             # the failing asset: for an underlying incident it is the underlying token, not the collateral
-            falls = oracle_falls(m["oracle"], layer, sc.shock, sc.hours,
-                                 t["symbol"] if kind == "depeg" and t["type"] == "underlying_stablecoin" else None)
+            falls = oracle_falls(m["oracle"], layer, sc.shock, sc.hours, token)
             br = {}
             for b in m["read"]["borrowers"]:
                 if b["borrow_usdc"] <= 0:
@@ -424,7 +416,19 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
             per.append({"market": m["key"], "collateral": m["collateral_symbol"], "oracle_falls": falls,
                         "market_bad_debt_low": min(bd), "market_bad_debt_high": max(bd),
                         "vault_share_of_market": m["share_of_market"], "vault_loss_low": v_lo, "vault_loss_high": v_hi})
-        L_lo, L_hi = (lo_sum / total, hi_sum / total) if total else (0.0, 0.0)
+        return (lo_sum / total, hi_sum / total, per) if total else (0.0, 0.0, per)
+
+    rows, dist = [], []
+    for o in ("resolved", "partial", "severe"):
+        key, p = outcomes[o], probs[o]
+        if key is None:
+            L = 0.0 if o == "resolved" else None
+            rows.append({"outcome": o, "preset": None, "probability": p, "L_low": L, "L_high": L, "per_market": []})
+            if L is not None:
+                dist.append((p, L))
+            continue
+        sc = presets[key]
+        L_lo, L_hi, per = vault_loss(sc)
         rows.append({"outcome": o, "preset": key, "shock": sc.shock, "hours": sc.hours, "probability": p,
                      "L_low": L_lo, "L_high": L_hi, "per_market": per, "source": sc.source})
         dist.append((p, L_hi))
@@ -437,7 +441,14 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
             paths.append(" -> ".join([name_of(vault)] + [f"[{t_}] {name_of(d)}" for _, t_, d in pth]))
     g_or = worst(*[m["oracle"]["evidence"]["grade"] for m in affected]) if affected else "D"
     sev = next(r for r in rows if r["outcome"] == ("severe" if outcomes["severe"] else "partial"))
+    # vault loss at any severity (no probability): L(s) on a grid, from every real borrower
+    perm = 0.0 if kind == "pt_market_dip" else 1.0
+    grid = []
+    for sv in SEVERITY_GRID:
+        lo, hi, _ = vault_loss(Scenario("grid", layer, sv, perm, None, "", True))
+        grid.append({"severity": sv, "L_low": lo, "L_high": hi})
     return {"key": f"{kind}:{(t['symbol'] or tok)}", "type": kind, "token": tok, "symbol": t["symbol"], "layer": layer,
+            "severity_grid": grid, "permanent": perm, **severity_defaults(kind, presets, cfg),
             "affected_markets": [m["key"] for m in affected],
             "affected_allocation": sum(m["allocation"] for m in affected), "propagation_paths": paths,
             "outcomes": rows, "expected_loss": exp, "tail_loss_95": cv, "var_95": var,
@@ -449,7 +460,76 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
                                "source": "loss_model per real borrower x vault share of each affected market"}}}
 
 
-def asset_incident(asset, sym, presets, types, vault, name_of):
+SEVERITY_GRID = [0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]
+
+
+def severity_defaults(kind, presets, cfg):
+    """Default severity of an incident (historical anchor) and the anchors shown on the slider."""
+    if kind == "pt_market_dip":
+        o = presets["oracle_dip"]
+        return {"default_severity": o.shock,
+                "severity_anchors": [{"severity": o.shock, "label": "PT-reUSD market dip, 25 Aug 2026", "grade": "C"}]}
+    anchors = [{"severity": presets["usde_mild"].shock, "label": "USDe daily low, Feb 2026 (recovered)", "grade": "C"}]
+    if "depeg_partial" in presets:
+        anchors.append({"severity": presets["depeg_partial"].shock, "label": "median day-30 loss, partial depegs", "grade": "C"})
+    anchors += [{"severity": presets["issuer_half"].shock, "label": "Stream xUSD, Nov 2025", "grade": "C"},
+                {"severity": cfg["severe_default"], "label": "median day-30 loss, severe depegs", "grade": "C"},
+                {"severity": presets["issuer_total"].shock, "label": "Elixir deUSD, Nov 2025", "grade": "C"}]
+    return {"default_severity": cfg["severe_default"], "severity_anchors": anchors}
+
+
+def L_at(grid, sev):
+    """L_high at severity sev, linear between grid points, 0 at severity 0."""
+    pts = [(0.0, 0.0)] + [(g["severity"], g["L_high"]) for g in grid]
+    if sev >= pts[-1][0]:
+        return pts[-1][1]
+    for (s0, l0), (s1, l1) in zip(pts, pts[1:]):
+        if sev <= s1:
+            return l0 + (l1 - l0) * (sev - s0) / (s1 - s0)
+    return pts[-1][1]
+
+
+def severity_crossing(grid, c):
+    """Smallest severity with L(s) > c (linear between grid points); None if never."""
+    pts = [(0.0, 0.0)] + [(g["severity"], g["L_high"]) for g in grid]
+    for (s0, l0), (s1, l1) in zip(pts, pts[1:]):
+        if l1 > c:
+            return s0 if l0 > c else s0 + (c - l0) * (s1 - s0) / (l1 - l0)
+    return None
+
+
+def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None):
+    """Stay / exit for a depositor of `amount` given the incident at severity `sev` (no probability): withdraw
+    each tranche whose unit cost (yield given up; + force-deallocation penalty) is below L(sev). Mirrored by
+    RiskModel.vaultDecideAt."""
+    sev = inc["default_severity"] if sev is None else sev
+    alt = ex["alt_apy"] if alt_apy is None else alt_apy
+    h = ex["horizon_days"] if horizon_days is None else horizon_days
+    carry = max(0.0, (ex["vault_apy"] or 0.0) - alt) * h / 365
+    pen = ex["force_deallocate_penalty"]
+    L = L_at(inc["severity_grid"], sev)
+    free_amt = min(amount, ex["free_usd"])
+    forced_amt = min(amount - free_amt, ex["forced_usd"])
+    locked = amount - free_amt - forced_amt
+    out = {"amount": amount, "severity": sev, "L": L, "loss_if_stay_usd": L * amount, "carry_cost": carry,
+           "penalty": pen, "free_usd": free_amt, "forced_usd": forced_amt, "locked_usd": locked,
+           "severity_break_even_free": severity_crossing(inc["severity_grid"], carry),
+           "severity_break_even_forced": severity_crossing(inc["severity_grid"], carry + pen)}
+    if inc["type"] == "asset_issuer":
+        out.update(verdict="REVIEW", exit_usd=0.0, exit_cost_usd=0.0, loss_kept_usd=L * amount,
+                   total_if_act_usd=L * amount, avoided_usd=0.0)
+        return out
+    take_free, take_forced = L > carry, L > carry + pen
+    exit_amt = free_amt * take_free + forced_amt * take_forced
+    cost = free_amt * carry * take_free + forced_amt * (carry + pen) * take_forced
+    kept = L * (amount - exit_amt)
+    out.update(verdict="STAY" if exit_amt <= 0 else ("EXIT" if exit_amt >= amount - 1e-9 else "EXIT_PARTIAL"),
+               exit_usd=exit_amt, exit_cost_usd=cost, loss_kept_usd=kept, total_if_act_usd=cost + kept,
+               avoided_usd=L * amount - cost - kept)
+    return out
+
+
+def asset_incident(asset, sym, presets, types, vault, name_of, cfg=None):
     """The vault's own asset fails (e.g. EURCV, USDC). Every depositor loses the asset's fall: L = shock x permanent
     (the vault holds and lends that asset). Withdrawing returns the same asset, so it does not remove the risk."""
     base = types["underlying_depeg"]
@@ -463,6 +543,8 @@ def asset_incident(asset, sym, presets, types, vault, name_of):
         dist.append((p, L))
     cv, var = inc_mod.tail(dist)
     return {"key": f"asset_issuer:{sym}", "type": "asset_issuer", "token": asset, "symbol": sym, "layer": 2,
+            "severity_grid": [{"severity": sv, "L_low": sv, "L_high": sv} for sv in SEVERITY_GRID], "permanent": 1.0,
+            **severity_defaults("asset_issuer", presets, cfg),
             "affected_markets": [], "affected_allocation": None,
             "propagation_paths": [f"Ethereum -> {name_of(vault)} -> [asset] {sym} -> [issued by] {sym} issuer (off-chain)"],
             "outcomes": rows, "expected_loss": sum(p * L for p, L in dist), "tail_loss_95": cv, "var_95": var,
@@ -533,10 +615,11 @@ def liquidity_run(ex, amount, worst_el, worst_key):
                      "expected_loss_on_locked_usd": locked * worst_el})
     r = rows[-1]
     text = (f"If other depositors withdraw first and take the free liquidity, {r['locked_usd']:,.0f} of "
-            f"{amount:,.0f} stays locked" + (f", carrying an expected loss of {r['expected_loss_on_locked_usd']:,.0f} "
-                                              f"from {worst_key}" if worst_key else "") +
+            f"{amount:,.0f} stays locked" + (f", losing {r['expected_loss_on_locked_usd']:,.0f} if {worst_key} hits "
+                                              f"at its default severity" if worst_key else "") +
             f". Today {rows[0]['free_usd']:,.0f} can still leave without penalty.")
-    return {"rows": rows, "worst_credit_incident": worst_key, "worst_expected_loss": worst_el, "text": text,
+    return {"rows": rows, "worst_credit_incident": worst_key, "worst_expected_loss": worst_el,
+            "worst_loss_at_default_severity": worst_el, "text": text,
             "evidence": {"grade": "D", "source": "share taken by other depositors is a scenario; free liquidity A"}}
 
 
@@ -565,6 +648,42 @@ def dependency_chain(vault, nodes, edges, live, incidents, asset, asset_sym, nam
             + [{"label": f"{m['collateral_symbol']} issuer", "detail": "off-chain, not verified", "evidence": "D"}
                for m in live if m["collateral_type"] in ("rwa_or_credit", "yield_wrapper", "pt")]},
     ]
+
+
+def sentence(inc, ex):
+    """Manager sentence at the incident's default severity; numbers only from the decision (checked)."""
+    d, nums = inc["decision"], []
+
+    def f(v, unit="fraction"):
+        out = fmt(v, unit) if unit != "money" else f"{v:,.0f}"
+        nums.append(out)
+        return out
+    cur = ex.get("currency") or ""
+    name = inc["symbol"] or inc["key"]
+    if inc["type"] == "asset_issuer":
+        txt = (f"If {name} loses {f(d['severity'])}, every depositor loses {f(d['loss_if_stay_usd'], 'money')} {cur}. "
+               f"Withdrawing returns {name}, so it does not remove this risk; only swapping out of {name} does, at a "
+               f"cost not measured here.")
+    elif d["verdict"] == "STAY":
+        be = d["severity_break_even_free"]
+        txt = (f"If {name} loses {f(d['severity'])}, staying loses {f(d['loss_if_stay_usd'], 'money')} {cur} "
+               f"({f(d['L'])} of the deposit), less than the cost of exiting ({f(d['carry_cost'])} of the amount "
+               f"withdrawn: yield given up). " + (f"Exiting pays once {name} loses more than {f(be)}." if be is not None
+                                                  else "Exiting does not pay at any severity."))
+    else:
+        txt = (f"If {name} loses {f(d['severity'])}, staying loses {f(d['loss_if_stay_usd'], 'money')} {cur} "
+               f"({f(d['L'])} of the deposit); exiting {f(d['exit_usd'], 'money')} now costs "
+               f"{f(d['exit_cost_usd'], 'money')} {cur}"
+               + (" including the force-deallocation penalty" if d["exit_usd"] > d["free_usd"] + 1e-9 and d["penalty"] > 0
+                  else "") + "."
+               + (f" {f(d['locked_usd'], 'money')} {cur} cannot be withdrawn now." if d["locked_usd"] > 1e-9 else "")
+               + (f" Exiting pays once {name} loses more than {f(d['severity_break_even_free'])}."
+                  if d["severity_break_even_free"] is not None else ""))
+        if ex["vault_free_fraction"] < 0.999:
+            txt += (f" Act early: if all depositors withdrew, only {f(ex['vault_free_fraction'])} of the vault could "
+                    f"leave without penalty.")
+    bad = [n for n in NUM.findall(txt.replace(inc["key"], "").replace(name, "")) if n not in nums]
+    inc["decision_text"] = {"text": txt, "numbers": nums, "unchecked": bad}
 
 
 def decide(inc, ex):
@@ -684,7 +803,9 @@ def main():
                             free_fraction=res["exit"]["free_fraction"], locked_fraction=res["exit"]["locked_fraction"],
                             decision_text=res["decision_text"], all_gates_pass=res["all_gates_pass"],
                             verdict=(res["default_decision"] or {}).get("verdict"),
-                            stay_loss_usd=(res["default_decision"] or {}).get("stay_loss_usd"),
+                            loss_if_stay_usd=(res["default_decision"] or {}).get("loss_if_stay_usd"),
+                            severity=(res["default_decision"] or {}).get("severity"),
+                            severity_break_even=(res["default_decision"] or {}).get("severity_break_even_free"),
                             exit_cost_usd=(res["default_decision"] or {}).get("exit_cost_usd"),
                             currency=res["exit"]["currency"],
                             detail=os.path.relpath(os.path.join(OUT, f"{r['vault_address'].lower()}.json"), HERE))

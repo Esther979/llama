@@ -40,6 +40,13 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |
 
+## Decision method
+
+No probability (organisers' request, 11 Oct 2026): decide given the incident at a chosen / observed severity. PT view:
+decide() with p = 1 (`decide_at`, `RiskModel.decideAt`) + break-even severity; vault view: withdraw tranches whose unit
+cost (carry; + forceDeallocate penalty) is below L(severity) (`vault_decide_at`, `RiskModel.vaultDecideAt`).
+Probability-based fields stay in the JSON for compatibility only.
+
 ## Current position under test
 
 PT-sUSDe-26NOV2026, Ethereum (chain 1)
