@@ -204,7 +204,7 @@ Remove these old texts, the backend now contradicts them: "Type unknown", "Upstr
 
 ## 8. Evidence drawer
 
-For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan link, `contract_name`, `evidence`, `note`), its `members` looked up in `d.dependency_graph.nodes` (label, contract name, address, grade), and the edges of `d.ui.edges` touching `k` with their `evidence`. For `oracle`, add the oracle tree `d.oracle` (primary, backup, threshold, timelock, deviation now). For `feeds`, the count of Chainlink transmitters is in the note.
+For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan link, `contract_name`, `evidence`, `note`), its `members` looked up in `d.dependency_graph.nodes` (label, contract name, address, grade), and the edges of `d.ui.edges` touching `k` with their `evidence`. Off-chain dependencies: for `ethena` and `usde` show `d.offchain.USDe`, for `susde` also `d.offchain.sUSDe`: the issuer, the `summary`, then `relations` grouped by `kind` (custodians, hedging exchanges, reserve assets, attestations, ...), each with `entity`, `relation`, a link to `evidence.url` and the `evidence.quote` in quotation marks, dashed (grade D: stated by the issuer, not verifiable on chain), "third-party source" when `evidence.official` is false, and "quote re-checked {checked_at}" when `evidence.quote_found` is true. For `oracle`, add the oracle tree `d.oracle` (primary, backup, threshold, timelock, deviation now). For `feeds`, the count of Chainlink transmitters is in the note.
 
 ## 9. Acceptance tests
 

@@ -3,6 +3,7 @@ Fields of dashboard.json that the Risk Desk front end reads (dependency graph by
 position presets, detector feed). Used by export_dashboard.py; contract in README "Frontend integration".
 """
 import csv
+from collections import Counter
 import json
 import os
 
@@ -17,9 +18,10 @@ LAYER_OF = {  # contract name (Etherscan) -> layer
 }
 
 
-def dependency_graph(edges_csv, nodes_json, position, lending):
+def dependency_graph(edges_csv, nodes_json, position, lending, offchain_blocks=None):
     """Crawl output (crawl.py) arranged in the brief's five layers, plus the chain, the Pendle market (Pendle API)
-    and the off-chain issuer (not verified). Returns None if the crawl files are missing."""
+    and the off-chain dependencies of USDe / sUSDe (offchain_deps.json: issuer documents with quotes, grade D).
+    Returns None if the crawl files are missing."""
     if not (os.path.exists(edges_csv) and os.path.exists(nodes_json)):
         return None
     with open(edges_csv) as f:
@@ -50,9 +52,15 @@ def dependency_graph(edges_csv, nodes_json, position, lending):
     nodes[pm] = {"id": pm, "label": f"Pendle {position['name']} market", "kind": "amm_market", "layer": 4,
                  "address": position["market"], "contract_name": None,
                  "evidence": {"grade": "A", "source": "Pendle API markets list (fetch_data.py step1)"}}
+    import offchain
+    blocks = offchain_blocks or {}
     off = "offchain:ethena"
-    nodes[off] = {"id": off, "label": "Ethena: issuer, exchanges, custodians", "kind": "offchain_issuer", "layer": 2,
-                  "address": None, "evidence": {"grade": "D", "source": "not verified: off-chain, needs documents"}}
+    ub = blocks.get("USDe")
+    nodes[off] = {"id": off, "label": f"Ethena: {ub['issuer']}" if ub else "Ethena: issuer, exchanges, custodians",
+                  "kind": "offchain_issuer", "layer": 2, "address": None,
+                  "evidence": {"grade": "D", "source": (f"{ub['counts']['relations']} relations from the issuer's documents, "
+                                                        f"each with its URL and quote (offchain_deps.json)") if ub else
+                               "not verified: off-chain, needs documents"}}
     out_edges = [{"from": e["src"], "to": e["dst"], "type": e["type"], "kind": e["kind"], "evidence": e["evidence"]}
                  for e in edges]
     usde = next((k for k, n in nodes.items() if n.get("contract_name") == "USDe"), None)
@@ -60,11 +68,24 @@ def dependency_graph(edges_csv, nodes_json, position, lending):
                    "evidence": "Pendle API market.pt, details.liquidity"}]
     if usde:
         out_edges.append({"from": off, "to": usde, "type": "backing", "kind": "data",
-                          "evidence": "not verified (off-chain)"})
+                          "evidence": f"issuer documents: {ub['summary']}" if ub else "not verified (off-chain)"})
+    for sym, parent, target in (("USDe", off, None), ("sUSDe", "offchain:susde", position["underlying"])):
+        b = blocks.get(sym)
+        if not b:
+            continue
+        if parent not in nodes:
+            nodes[parent] = {"id": parent, "label": f"{sym}: {b['issuer']}", "kind": "offchain_operator", "layer": 2,
+                             "address": None, "evidence": {"grade": "D", "source": f"{b['counts']['relations']} relations "
+                                                           f"from the issuer's documents (offchain_deps.json)"}}
+            out_edges.append({"from": parent, "to": target, "type": "operator", "kind": "offchain",
+                              "evidence": f"issuer documents: {b['summary']}"})
+        n_, e_ = offchain.graph_parts(b, parent, 2)
+        nodes.update(n_)
+        out_edges += e_
     by_layer = [{"n": n, "name": nm, "nodes": [k for k, v in nodes.items() if v["layer"] == n]} for n, nm in LAYERS]
     return {"block": block, "source": os.path.basename(edges_csv), "layers": by_layer, "nodes": nodes,
             "edges": out_edges,
-            "counts": {k: sum(e["kind"] == k for e in out_edges) for k in ("data", "role", "operator", "infra")}}
+            "counts": {k: sum(e["kind"] == k for e in out_edges) for k in ("data", "role", "operator", "infra", "offchain")}}
 
 
 def failure_types(cal, graph):
@@ -404,12 +425,19 @@ def ui_view(graph, oracle, position, lending, onc):
     nodes = {
         "eth": {"label": "Ethereum mainnet", "kind": "Chain", "layer": 1, "members": ["chain:1"], "address": None},
         "ethena": {"label": "Ethena: issuer, exchanges, custodians", "kind": "Issuer", "layer": 2,
-                   "members": ["offchain:ethena"] + by_name.get("EthenaMinting", []) + by_name.get("USDeSilo", []),
+                   "members": ["offchain:ethena"] + [k for k in g if k.startswith("offchain:ethena:")]
+                   + by_name.get("EthenaMinting", []) + by_name.get("USDeSilo", []),
                    "address": one("EthenaMinting"),
-                   "note": "minting and silo contracts read on chain; exchanges and custodians off-chain (not verified)"},
+                   "note": ("minting and silo contracts read on chain; off-chain: " + ", ".join(
+                       f"{n} {k}" for k, n in sorted(Counter(g[m]['role'] for m in g
+                                                             if m.startswith('offchain:ethena:')).items()))
+                            + " from Ethena's documents with sources (offchain.USDe)")
+                   if any(k.startswith("offchain:ethena:") for k in g)
+                   else "minting and silo contracts read on chain; exchanges and custodians off-chain (not verified)"},
         "usde": {"label": "USDe", "kind": "Asset", "layer": 2, "members": by_name.get("USDe", []), "address": one("USDe")},
         "susde": {"label": "sUSDe", "kind": "Asset (PT redeems to this)", "layer": 2,
-                  "members": by_name.get("StakedUSDeV2", []) + by_name.get("PendleSUSDESY", []),
+                  "members": by_name.get("StakedUSDeV2", []) + by_name.get("PendleSUSDESY", [])
+                  + [k for k in g if k == "offchain:susde" or k.startswith("offchain:susde:")],
                   "address": position["underlying"]},
         "feeds": {"label": "Upstream price feeds", "kind": "Oracle feeds", "layer": 3, "members": feeds,
                   "address": one("PendleSparkLinearDiscountOracle"),
@@ -439,7 +467,9 @@ def ui_view(graph, oracle, position, lending, onc):
     lay = [{"n": n, "name": nm, "nodes": [k for k, v in nodes.items() if v["layer"] == n]} for n, nm in UI_LAYERS.items()]
     e_of = lambda t: next((e["evidence"] for e in graph["edges"] if e["type"] == t), "not found in the crawl")
     edges = [
-        {"from": "ethena", "to": "usde", "type": "backing", "grade": "D", "evidence": "off-chain backing: not verified"},
+        {"from": "ethena", "to": "usde", "type": "backing", "grade": "D",
+         "evidence": next((e["evidence"] for e in graph["edges"] if e["from"] == "offchain:ethena" and e["type"] == "backing"),
+                          "off-chain backing: not verified")},
         {"from": "usde", "to": "susde", "type": "staking", "grade": "A", "evidence": e_of("asset")},
         {"from": "susde", "to": "pt", "type": "redemption", "grade": "A", "evidence": e_of("SY")},
         {"from": "market", "to": "pt", "type": "liquidity", "grade": "A", "evidence": "Pendle API market.pt, details.liquidity"},
