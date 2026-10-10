@@ -29,9 +29,11 @@
         throw new Error("backend files missing");
       }
       const N = d.position.notional_usd,
-        CURVE = d.exit_curve.map((x) => [x.fraction, x.loss]),
-        MAXX = d.max_exit_fraction,
         LD = d.lending[0];
+      /* Exit curve and largest sellable share of the selected position (guide section 0b): every position has its
+   own curve, RiskModel.sizeCurve(d, collateral). d.exit_curve / d.max_exit_fraction describe only the size
+   input's position. Set for the selected preset by useCurve() at each render. */
+      let [CURVE, MAXX] = RM.sizeCurve(d, N);
       const NODES = d.ui.nodes,
         LAY = d.ui.layers,
         PRE = d.position_presets,
@@ -171,7 +173,10 @@
         },
         4: {
           head: NODES.market.label,
-          fact: `You can sell ${money(MAXX * N)} of ${money(N)} today`,
+          get fact() {
+            const C = PRE[S.pos].collateral_usd;
+            return `You can sell ${money(MAXX * C)} of ${money(C)} today`;
+          },
         },
         5: {
           head: NODES.lending.label,
@@ -271,7 +276,7 @@
           L: r.L_high,
           cy,
           x,
-          slip: x ? RM.slippageAt(x, CURVE) : 0,
+          slip: x ? RM.slippageAt(x, RM.sizeCurve(d, C)[0]) : 0,
           hasLoss: r.L_high > 0,
           verdict: r.verdict,
         };
@@ -736,10 +741,13 @@
     <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${body}</div>`;
       }
 
-      const YMAX =
-        (Math.ceil((Math.max(...CURVE.map((c) => c[1])) * 1000) / 3) * 3) /
-        1000;
-      const CH = { W: 392, H: 190, l: 42, r: 10, t: 10, b: 48, ymax: YMAX };
+      const ymaxOf = (c) =>
+        (Math.ceil((Math.max(...c.map((p) => p[1])) * 1000) / 3) * 3) / 1000;
+      const CH = { W: 392, H: 190, l: 42, r: 10, t: 10, b: 48, ymax: ymaxOf(CURVE) };
+      function useCurve(posKey) {
+        [CURVE, MAXX] = RM.sizeCurve(d, PRE[posKey].collateral_usd);
+        CH.ymax = ymaxOf(CURVE);
+      }
       const CX = (f) => CH.l + f * (CH.W - CH.l - CH.r),
         CY = (v) =>
           CH.H - CH.b - (Math.min(v, CH.ymax) / CH.ymax) * (CH.H - CH.t - CH.b);
@@ -757,10 +765,10 @@
           rec = `<line class="rec" x1="${rx}" y1="${CY(0)}" x2="${rx}" y2="${ry}"/><circle class="recd" cx="${rx}" cy="${ry}" r="5"/><text class="rt" x="${rx}" y="${H - b + 27}" text-anchor="middle">Sell ${pc(m.x, 0)}</text>`;
         }
         const xt = [
-          ...new Set([0, CURVE[Math.floor(CURVE.length / 2) - 1][0], MAXX, 1]),
+          ...new Set([0, Math.round(MAXX * 10) / 20, MAXX, 1]),
         ];
         return `<svg class="chart" id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cost of selling against the share of the position sold. Today Pendle quotes up to ${pc(MAXX, 0)}.">
-   <rect class="no" x="${CX(MAXX)}" y="${t}" width="${CX(1) - CX(MAXX)}" height="${H - t - b}"/>
+   ${MAXX < 1 - 1e-9 ? `<rect class="no" x="${CX(MAXX)}" y="${t}" width="${CX(1) - CX(MAXX)}" height="${H - t - b}"/>` : ""}
    ${[0, 1, 2, 3]
      .map((i) => (CH.ymax * i) / 3)
      .map(
@@ -770,8 +778,8 @@
      .join("")}
    ${xt.map((f) => `<text x="${CX(f)}" y="${H - b + 14}" text-anchor="${f === 1 ? "end" : f === 0 ? "start" : "middle"}">${pc(f, 0)}</text>`).join("")}
    <text x="${l}" y="${H - 5}">Share of the position sold</text>
-   <line class="cliff" x1="${CX(MAXX)}" y1="${t}" x2="${CX(MAXX)}" y2="${H - b}"/>
-   <text x="${CX((1 + MAXX) / 2)}" y="${t + 58}" text-anchor="middle">Pendle refuses</text><text x="${CX((1 + MAXX) / 2)}" y="${t + 72}" text-anchor="middle">sales this large</text>
+   ${MAXX < 1 - 1e-9 ? `<line class="cliff" x1="${CX(MAXX)}" y1="${t}" x2="${CX(MAXX)}" y2="${H - b}"/>
+   <text x="${CX((1 + MAXX) / 2)}" y="${t + 58}" text-anchor="middle">Pendle refuses</text><text x="${CX((1 + MAXX) / 2)}" y="${t + 72}" text-anchor="middle">sales this large</text>` : ""}
    ${sc ? `<polyline class="sv" points="${line(sc)}"/>` : ""}
    <polyline class="cv" points="${line(CURVE)}"/>${CURVE.map(([f, s]) => `<circle class="pt" cx="${CX(f)}" cy="${CY(s)}" r="2.6"/>`).join("")}${rec}
    <line class="cross" id="cross" x1="0" x2="0" y1="${t}" y2="${H - b}" visibility="hidden"/></svg>`;
@@ -779,8 +787,8 @@
       function renderExit(m, idle) {
         const C = m.C,
           s = m.sev,
-          cap = MAXX * C,
-          last = RM.slippageAt(MAXX, CURVE),
+          cap = s.sellable_now * C,
+          last = RM.slippageAt(s.sellable_now, CURVE),
           isDrain = !idle && s.type === "exit_only";
         let later = null;
         CUR = { type: "idle" };
@@ -814,19 +822,22 @@
             kept = (1 - f) * m.L * m.equity;
           return `<tr class="${m.hasLoss && Math.abs(f - m.x) < 1e-9 ? "best" : ""}"><td>${f ? pc(f, 0) + " · " + money(f * C) : "Stay"}${isQ(f) ? "" : " *"}</td><td>${f ? pc(sl, 2) : "–"}</td><td>${money(cost)}</td><td>${money(kept)}</td><td>${money(cost + kept)}</td></tr>`;
         };
+        /* Refused sizes are quoted as shares of the size input's position (N): convert through USD and keep those
+   within this position. */
         const refused = [
           ...(d.evidence.max_exit_fraction.source || "").matchAll(
             /([\d.]+) refused \((\w+)/g,
           ),
         ]
+          .filter((r) => +r[1] * N <= C * (1 + 1e-9))
           .map(
             (r) =>
-              `<tr class="ref"><td>${pc(+r[1], 0)} · ${money(+r[1] * C)}</td><td colspan="4">Refused: ${r[2]}</td></tr>`,
+              `<tr class="ref"><td>${pc((+r[1] * N) / C, 0)} · ${money(+r[1] * N)}</td><td colspan="4">Refused: ${r[2]}</td></tr>`,
           )
           .join("");
         $("#exit").innerHTML =
           `<div class="phead"><h2>Can you get out?</h2><span class="note">Real Pendle quotes, ${DAY}</span></div>
-   <dl><dt>Today</dt><dd>Up to ${money(cap)} (${pc(MAXX, 0)}), costing ${pc(last, 2)} in slippage.</dd>${later ? `<dt>If this plays out</dt><dd>${later}</dd>` : ""}</dl>
+   <dl><dt>Today</dt><dd>Up to ${money(cap)} (${pc(s.sellable_now, 0)}), costing ${pc(last, 2)} in slippage.</dd>${later ? `<dt>If this plays out</dt><dd>${later}</dd>` : ""}</dl>
    <div class="ckey"><span><svg width="22" height="6" aria-hidden="true"><line x1="0" y1="3" x2="22" y2="3" style="stroke:var(--ink);stroke-width:2"/></svg>Today's quotes</span>${isDrain ? '<span><svg width="22" height="6" aria-hidden="true"><line x1="0" y1="3" x2="22" y2="3" style="stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4"/></svg>If this plays out</span>' : ""}${m.x > 0 ? '<span><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="4" style="fill:var(--accent)"/></svg>Recommended sale</span>' : ""}</div>
    <div class="cwrap" id="cwrap">${chart(m, isDrain ? stressCurve(S.sev / 100) : null)}<div class="tip" id="tip" hidden></div></div>
    ${det(
@@ -917,6 +928,7 @@
         }
       }
       function render() {
+        useCurve(S.pos);
         const m = model();
         renderSteps(m);
         renderChain(m);
@@ -1068,7 +1080,7 @@
                   ["Expiry", `${EXPIRY} (${DAYS} days) · ${src(pe.expiry)}`],
                   [
                     "Largest sale quoted",
-                    `${pc(MAXX, 0)} · ${src(d.evidence.max_exit_fraction)}`,
+                    `${money(d.max_exit_fraction * N)} · ${src(d.evidence.max_exit_fraction)}`,
                   ],
                 ]
               : id === "oracle" && ORC
@@ -1274,7 +1286,7 @@
                 : "–";
         else if (CUR.type !== "idle" && CUR.later < MAXX - 1e-9)
           lt = f > CUR.later + 1e-9 ? "no room" : "can still be sold";
-        tip.innerHTML = `<b>Sell ${pc(f, 0)} · ${money(f * N)}</b>Today: ${now}${lt ? "<br>If this plays out: " + lt : ""}`;
+        tip.innerHTML = `<b>Sell ${pc(f, 0)} · ${money(f * PRE[S.pos].collateral_usd)}</b>Today: ${now}${lt ? "<br>If this plays out: " + lt : ""}`;
         tip.hidden = false;
         cross.setAttribute("x1", CX(f));
         cross.setAttribute("x2", CX(f));
