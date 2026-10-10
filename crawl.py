@@ -23,7 +23,6 @@ import os
 import re
 import sys
 
-from Crypto.Hash import keccak
 
 import etherscan
 from onchain_positions import MORPHO, RPC, words
@@ -45,6 +44,7 @@ ZERO = "0x" + "0" * 40
 
 
 def sel(sig):
+    from Crypto.Hash import keccak      # imported here: modules that only import crawl run without pycryptodome
     return keccak.new(digest_bits=256, data=sig.encode()).hexdigest()[:8]
 
 
