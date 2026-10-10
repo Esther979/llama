@@ -140,11 +140,11 @@ def failure_types(cal, graph):
                                            "note": "liquidations use the last price; no direct loss modelled"},
                   "probabilities": nd("no sample")},
         "cascade": {"label": "Other borrowers are liquidated into the pool", "layer": 5, "unit": "%", "min": 1,
-                    "max": 10, "default_severity": 1.0, "anchors": [],
+                    "max": 40, "default_severity": 1.0, "anchors": [],
                     "model": {"type": "exit_later", "source_field": "borrowers.exit_later",
                               "oracle": "oracleFalls(oracle, 3, shock, hours): false for this market, so the PT "
                                         "price fall alone liquidates nobody here",
-                              "note": "severity = oracle drop of the liquidation curve (0.5%..10%)"},
+                              "note": "severity = oracle drop of the liquidation curve (0.5%..40%)"},
                     "probabilities": nd("no sample")},
         "drain": {"label": "Liquidity leaves the pool", "layer": 4, "unit": "%", "min": 10, "max": 90,
                   "default_severity": 50, "anchors": [],

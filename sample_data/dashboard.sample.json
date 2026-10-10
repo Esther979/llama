@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-10T19:20:34+00:00",
+ "generated_at": "2026-10-10T19:55:07+00:00",
  "position": {
   "chain_id": 1,
   "name": "sUSDe",
@@ -14505,9 +14505,9 @@
   }
  },
  "time_model": {
-  "generated_at": "2026-10-10T19:20:34+00:00",
+  "generated_at": "2026-10-10T19:55:07+00:00",
   "expiry": "2026-11-26",
-  "days_to_expiry": 46.19405092592593,
+  "days_to_expiry": 46.17005787037037,
   "implied_apy": 0.05011039832525688,
   "oracle_discount_per_year": 0.06,
   "borrow_apr": 0.03676861568808,
@@ -15121,14 +15121,14 @@
     "layer": 5,
     "unit": "%",
     "min": 1,
-    "max": 10,
+    "max": 40,
     "default_severity": 1.0,
     "anchors": [],
     "model": {
      "type": "exit_later",
      "source_field": "borrowers.exit_later",
      "oracle": "oracleFalls(oracle, 3, shock, hours): false for this market, so the PT price fall alone liquidates nobody here",
-     "note": "severity = oracle drop of the liquidation curve (0.5%..10%)"
+     "note": "severity = oracle drop of the liquidation curve (0.5%..40%)"
     },
     "probabilities": {
      "outcomes": null,

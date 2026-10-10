@@ -29,6 +29,13 @@ Open point: the merge report says the page has no position-size input yet, while
 "Position size (USD)". Check which is true on `frontend`, and which file is the page (`demo.html` or
 `Dependency_Risk_Desk_v2.html`) so that this guide names the right one.
 
+## 0b. Answers from the backend (questions from the front end)
+
+| Question | Answer |
+|---|---|
+| Which slider range is right: the data says cascade up to 10%, the acceptance table tests 20%? | The data was wrong and is fixed: `d.failure_types.types.cascade` is now 1–40%, the range of the liquidation curve (`d.borrowers.liquidation_curve`, oracle drops 0.5%–40%). Rule: `min` / `max` in `d.failure_types.types` are the range the model covers; the page may narrow a range (depeg 1–60% is fine) but not widen it. The starting value is the page's choice. `breakEvenSeverity` takes the page's slider range as `lo`, `hi`; the acceptance table uses the data's range, which gives the same result whenever the thresholds lie inside both |
+| Do the real-borrower presets have their own exit curve? | Yes, computed from their size. Every position's curve is `RiskModel.sizeCurve(d, P.collateral_usd)` (from `d.exit_curve_usd`, the quotes by USD size), and `decideAt` / `inject` already use it: `r.sellable_now` is 1 for the two real borrowers ($3.93M and $3.25M are below the $4.5M pool limit), 0.45 for $10M. `d.exit_curve` and `d.max_exit_fraction` are the curve of the size input's position (after `atSize`) and must not be used for the real-borrower or wallet presets |
+
 ## 1. Files
 
 From the repo (`git pull`):
@@ -52,7 +59,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 1. Do not hard-code numbers from the old snapshot. Read everything from `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` (section 3b), recomputed whenever the size or the wallet input changes.
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
 3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), Incidents are set by hand (node, failure, severity, duration): there is no detector and `d.detected` is always empty. If the prototype's sample feed stays, keep it labelled as invented.
-4. Step 2 stays a manual slider: keep each failure's `label`, `unit`, `min`, `max` and starting value from the page's `FAIL` table (the same keys exist in `d.failure_types.types`). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
+4. Step 2 stays a manual slider. Range: `min` / `max` of `d.failure_types.types[key]` are what the model covers; the page may use a narrower range, never a wider one (section 0b). Starting value and label: the page's own `FAIL` table (the same keys exist in `d.failure_types.types`; show `default_severity` and `anchors` as ticks). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
 5. No probability anywhere: delete step 3, `S.p`, `pOf` / `vOf`, the partial-case assumptions (`pk`, `ps`) and the probability zones. The decision assumes the incident has happened; the severity slider is the only "how bad" input. Show on that slider the zones from `RiskModel.breakEvenSeverity` (stay / sell part / sell to the pool limit). The backend still has probability-based fields (`decision_grid`, `thresholds`, `incidents[].probabilities`...) for compatibility: do not use them.
 6. Show evidence grades: A = read from chain / API, B = contract rule back-tested, C = analogy from history, D = assumption. Dashed style = D.
 7. Keep the field names of `dashboard.json`. If something is missing, ask the backend (do not invent it).
@@ -199,7 +206,7 @@ Remove these old texts, the backend now contradicts them: "Type unknown", "Upstr
 
 ## 7. Exit panel
 
-- Today: `max_exit_fraction`, cost `slippageAt(max_exit_fraction)`; optional gas per size in `d.exit_curve[i].gas_usd`.
+- Today: per position, `const [curve, cap] = RiskModel.sizeCurve(d, P.collateral_usd)`: sellable now `cap` (= `r.sellable_now`), cost `slippageAt(cap, curve)`; the chart draws `curve`. `d.exit_curve` / `d.max_exit_fraction` are for the size input's position only (`spot`, `lev_market_avg`), not for the real-borrower presets (section 0b). Gas per USD size in `d.exit_curve_usd[i].gas_usd`.
 - If this plays out: `r.sellable_later` and `r.avg_cost_later` (null -> "No room left"). For `lending:cascade` and for failures where the oracle follows, these come from the real liquidation curve (`d.borrowers.exit_later`, oracle drops 0.5% to 40%, so the page's cascade slider range up to 40% is covered), replacing the "pool liquidity leaves" assumption.
 - Dashed curve: only for `market:drain` (the page's existing `stressCurve(sev / 100)`).
 - The refused row: `d.evidence.max_exit_fraction.source` names the refused sizes.
