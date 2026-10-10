@@ -50,11 +50,13 @@ Done
 - Live data pipeline for one position (Pendle + Morpho), real exit curve and capacity.
 - Decision maths with capacity cap; dashboard export; JS port in README checked equal to Python (201/201 points).
 
+- `loss_model.py`: L = shock (cited preset) × transmission (Morpho rules checked in morpho-blue source:
+  LIF = min(1.15, 1/(1 − 0.3·(1 − LLTV))), no close factor, bad debt when collateral runs out).
+  Unknown oracle behaviour → both branches, reported as a range. 8 hand-calculated cases pass.
+
 Not done (in priority order)
-1. Per-layer loss model to replace the placeholder L = 0.5:
-   L2 issuer/depeg (PT redeems to sUSDe, so loss ≈ underlying drop) · L3 oracle (min/TWAP manipulation, see
-   PT-reUSD incident) · L5 liquidation for levered holders (Morpho LIF = min(1.15, 1/(1 − 0.3·(1 − LLTV))),
-   ≈1.0262 at LLTV 0.915).
+1. Wire `loss_model.py` into `export_dashboard.py` / `decision_core.py` (per-scenario L instead of 0.5).
+   For levered positions, express exit cost per unit of equity (slippage × collateral / equity).
 2. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`
    (evidence = which API/contract call and block). Today the data sits in separate JSON files.
 3. On-chain crawler over RPC: start from the position, read referenced contracts layer by layer, resolve the
