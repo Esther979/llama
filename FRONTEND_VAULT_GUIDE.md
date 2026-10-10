@@ -1,7 +1,7 @@
 # Second view: vaults
 
-> 给前端同事：这是**第二个视图**（金库），和第一视图（单个 PT 仓位，`FRONTEND_GUIDE.md`）分开。PT 视图仍是主入口，一行都不要改。
-> 把这份文件交给 Claude，说"按 FRONTEND_VAULT_GUIDE.md 在页面里加一个金库视图"。
+> For the front-end colleague: this is the **second view** (vaults), separate from the first view (a single PT position, `FRONTEND_GUIDE.md`). The PT view stays the main entry: do not change a single line of it.
+> Give this file to Claude and say "add a vault view to the page following FRONTEND_VAULT_GUIDE.md".
 
 Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The existing PT view stays the default view and must not change (same data, same code paths). The two views share only `web/risk_model.js` and the page style.
 
@@ -28,8 +28,14 @@ Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The
 ## 3. User path
 
 **1. Input**
-- Vault: dropdown from `VAULTS.report.vaults` (name, chain, protocol, TVL); `full` ones selectable. Default: "Belem RWA EURCV" (`0xd6d4b804014ef27836dbe9f8f6bf6c71251548ec`).
-- Amount: number input, in the vault's asset (`details[a].asset_symbol`, currency `details[a].exit.currency`); default 1,000,000.
+The input is **vault address + amount invested**, as the organisers proposed. The manager knows how much they invested; the vault's risk is read on chain.
+
+- Vault address: a text field (paste an address) plus a dropdown pre-filled from `VAULTS.report.vaults` (name, chain, protocol, TVL). Match the address case-insensitively against `VAULTS.report.vaults[].vault_address`:
+  - found with `coverage: "full"` -> analyse it (`VAULTS.details[address.toLowerCase()]`);
+  - found with another coverage -> show its `note` (e.g. "Solana (Kamino) is outside the prototype"), no numbers;
+  - not found -> "This vault is not in the analysed list. Add it to `sample_data/rockawayx_vaults.csv` and run `vault_pipeline.py`."
+  - Default: "Belem RWA EURCV" (`0xd6d4b804014ef27836dbe9f8f6bf6c71251548ec`).
+- Amount invested: number input in the vault's asset (`details[a].asset_symbol`, currency `details[a].exit.currency`), filled in by the manager (placeholder "e.g. 100,000"), pre-filled with the default **10,000,000** until they type their own. Recompute with `RiskModel.vaultDecideAt(..., amount, ...)` on every change; nothing needs the backend. If the amount is larger than the vault's total assets (`details[a].total_assets`; e.g. Belem RWA EURCV holds about 4.7M EURCV, so the 10,000,000 default is above it), show "Amount above the vault's total assets ({total_assets}): computed for the whole vault" and pass `Math.min(amount, total_assets)`, as the backend does. Alternative entry: "share of my portfolio" (%) x "portfolio size" -> amount; then also show every loss as a share of the portfolio. Label the amount "your input" (it is the manager's fact, not our assumption).
 - Scenario: dropdown of `details[a].incidents` with `analyzed !== false`, grouped:
   - Credit incidents (a collateral or underlying fails): `type` = `issuer_default`, `depeg`, `pt_market_dip`
   - "Vault asset issuer fails": `type` = `asset_issuer` (e.g. EURCV, USDC)
@@ -57,7 +63,10 @@ For `liquidity_run` there is no badge: show the run table (below).
 - Markets: `details[a].markets` (collateral, type, allocation, share of vault and of market, oracle kind and what it follows, borrowers, max LTV, debt within 1% of liquidation).
 - Exit: tranches from `details[a].exit` (free now / with penalty / locked for this amount: `r.free_usd`, `r.forced_usd`, `r.locked_usd`), penalty `exit.force_deallocate_penalty`, and "if all depositors withdrew, only `exit.vault_free_fraction` of the vault could leave".
 - Assumptions (editable, grade D): alternative yield (`exit.alt_apy`, per currency `VAULTS.report.assumptions.alt_apy_by_currency`), horizon (`exit.horizon_days`). Pass them to `vaultDecide`.
+- What would change the answer: `RiskModel.vaultSensitivity(inc, v.exit, amount, severity)` -> `candidates` (`alternative`, `grade`, `verdict`, `flips`; the larger deposit is a `comparison`) and `weakest` (lowest-graded assumption that flips the verdict, or `null` = robust: "No tested assumption changes the answer"). The default result is also stored as `inc.sensitivity`.
 - Break-even severity: `r.severity_break_even_free` ("withdrawing pays once {symbol} loses more than this"), `r.severity_break_even_forced` ("forcing out pays once it loses more than this"); `null` = never.
+
+**Timeline (how long the incident lasts)**: a duration slider (1 hour to 6 months, log scale) and a "recovers / stays" toggle next to the severity slider. Compute with `RiskModel.vaultDecideAt(inc, v.exit, amount, severity, alt, null, false, hours, recovers)`: the vault loss comes from `inc.duration_grids` (one severity grid per duration segment, split at each affected market's meta-oracle challenge timelock, and per recovers / stays), and the yield given up is counted over the incident. Chart: `RiskModel.vaultTimeline(inc, v.exit, amount, severity, recovers, alt)` (1 h .. 180 d plus the switch points): `loss_if_stay_usd` and `verdict` against the duration. With `recovers`, only losses realised during the incident remain (liquidations that exhausted collateral). Describe it with `RiskModel.vaultTimelineSummary(inc, rows)`: `duration_matters` false -> "The duration does not change the answer: {why_flat}"; true -> "From {to_hours} h: {verdict_before} -> {verdict_after} ({reason})".
 
 **Morpho liquidity incident** (`type: liquidity_run`): a slider "share of the free liquidity other depositors take first" (0-100%) -> `RiskModel.vaultRun(v.exit, amount, share, L)` with `L` = `r.L` of the worst credit incident (`v.worst_incident`) at its current severity, gives `free_usd`, `forced_usd`, `locked_usd`, `expected_loss_on_locked_usd` (= loss on the locked part at that severity); show `inc.run.text` as the summary and `inc.run.rows` (0%, 50%, 100%, at the default severity) as reference points.
 

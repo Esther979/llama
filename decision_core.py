@@ -51,6 +51,22 @@ def load_curve(*paths: str) -> List[Tuple[float, float]]:
     return sorted(merged.items())
 
 
+def load_usd_curve(*paths: str) -> List[Tuple[float, float]]:
+    """Same files as load_curve, keyed by the USD size of the sale instead of the fraction, so quotes taken
+    with different --notional can be merged (the AMM's cost depends on the amount sold, not on who sells).
+    Duplicate sizes keep the last file's value."""
+    merged = {}
+    for path in paths:
+        with open(path) as f:
+            for r in csv.DictReader(f):
+                v = r.get("realized_loss_vs_mark") or r.get("price_impact_raw")
+                if v not in (None, ""):
+                    merged[float(r["usd"])] = abs(float(v))
+    if not merged:
+        sys.exit(f"no usable rows in {', '.join(paths)}")
+    return sorted(merged.items())
+
+
 def expected_loss(scens: List[Scenario]) -> float:
     return sum(s.prob * s.loss for s in scens)
 
@@ -79,10 +95,10 @@ def decide(scens: List[Scenario], curve: List[Tuple[float, float]],
     # refused (e.g. Pendle "MarketProportionTooHigh"), so that part cannot be sold now.
     max_x = max(x for x, _ in curve)
     best_x, best_cost = 0.0, el
-    for i in range(steps + 1):
-        x = i / steps
-        if x > max_x + 1e-12:
-            break
+    xs = [i / steps for i in range(steps + 1) if i / steps <= max_x + 1e-12]
+    if abs(xs[-1] - max_x) > 1e-12:
+        xs.append(max_x)                            # the cap itself, when it is not on the grid
+    for x in xs:
         cost = (x * (slippage_at(x, curve) + carry_lost) if x > 0 else 0.0) + (1 - x) * el
         if cost < best_cost - 1e-12:
             best_x, best_cost = x, cost

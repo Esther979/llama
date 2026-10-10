@@ -158,31 +158,184 @@ def failure_types(cal, graph):
     return {"types": ft, "by_node": by_node}
 
 
-def position_presets(notional, lending, onc, oracle):
-    """Positions the front end can switch between; oracle flags are per scenario: oracleFalls(oracle, ...)."""
-    base = {"collateral_usd": notional, "lltv": lending["lltv"] if lending else None, "can_hold": True}
-    out = {"spot": dict(base, label="PT held outright", debt_usd=0.0,
-                        evidence={"grade": "D", "source": "position size assumed"})}
-    if lending and lending.get("aggregate_ltv"):
-        out["lev_market_avg"] = dict(base, label="PT as collateral, LTV of the Morpho market average",
-                                     debt_usd=lending["aggregate_ltv"] * notional,
-                                     evidence={"grade": "A", "source": "Morpho API aggregate LTV x assumed size"})
+def size_input(notional, pt_price, onc, usd_curve, sources):
+    """The PT view's position size: the manager's input (default = the size of the main quotes). A position worth
+    V today holds V / pt_price_usd PT; Morpho sees them at oracle_price_usd (liquidation check only)."""
+    return {"default_usd": notional, "pt_price_usd": pt_price,
+            "oracle_price_usd": (onc or {}).get("oracle_price"),
+            "capacity_usd": usd_curve[-1][0], "smallest_quote_usd": usd_curve[0][0],
+            "note": "sizes above capacity_usd cannot be sold through the pool now (larger quotes refused); below "
+                    "smallest_quote_usd the smallest quote's cost is used",
+            "evidence": {"default_usd": {"grade": "D", "source": "our assumption until the manager enters a size"},
+                         "pt_price_usd": {"grade": "A", "source": "Pendle GET /v1/prices/assets at quote time"},
+                         "oracle_price_usd": {"grade": "A", "source": f"lending oracle price() at block {onc['block']}"}
+                         if onc else {"grade": "D", "source": "no oracle read: market price used"},
+                         "capacity_usd": {"grade": "A", "source": sources}}}
+
+
+def sized_preset(p, size_usd, si):
+    """Preset p for a position worth size_usd today: PT units from the quoted PT price, collateral at the oracle
+    price, debt = the preset's LTV (on the oracle value, as Morpho computes it) x that collateral."""
+    units = size_usd / si["pt_price_usd"]
+    co = units * (si["oracle_price_usd"] or si["pt_price_usd"])
+    return dict(p, collateral_usd=size_usd, pt_units=units, collateral_oracle_usd=co, debt_usd=p["ltv"] * co)
+
+
+def borrower_preset(d, address, label=None):
+    """A real Morpho borrower of this market at its real size (d.borrowers.list): None if not found.
+    Mirrored by RiskModel.borrowerPreset."""
+    b = next((x for x in (d.get("borrowers") or {}).get("list") or [] if x["address"] == address.lower()), None)
+    if not b:
+        return None
+    px = d["position"]["pt_price_usd"]
+    return {"label": label or f"Morpho borrower {b['address'][:10]}... (real position)", "can_hold": True,
+            "sized": False, "address": b["address"], "pt_units": b["collateral_pt"],
+            "collateral_usd": b["collateral_pt"] * px, "collateral_oracle_usd": b["collateral_usdc"],
+            "debt_usd": b["borrow_usdc"], "ltv": b["ltv"], "lltv": d["borrowers"]["lltv"],
+            "evidence": {"grade": "A", "source": f"eth_call @ block {d['borrowers']['block']}: collateral (PT) and debt; "
+                                                 f"value = PT units x Pendle PT price {px:.5f}"}}
+
+
+def position_presets(notional, lending, onc, oracle, pt_price):
+    """Positions the front end can switch between; oracle flags are per scenario: oracleFalls(oracle, ...).
+    `sized` presets follow the size input (at_size); real borrowers keep their real size."""
+    si = {"pt_price_usd": pt_price, "oracle_price_usd": (onc or {}).get("oracle_price")}
+    base = {"lltv": onc["lltv"] if onc else lending["lltv"] if lending else None, "can_hold": True, "sized": True}
+    out = {"spot": sized_preset(dict(base, label="PT held outright", ltv=0.0,
+                                     evidence={"grade": "D", "source": "position size: the manager's input"}),
+                                notional, si)}
     if onc and onc.get("borrowers"):
+        bs = onc["borrowers"]
+        ltv = sum(x["borrow_usdc"] for x in bs) / sum(x["collateral_usdc"] for x in bs)
+        out["lev_market_avg"] = sized_preset(dict(base, label="PT as collateral, LTV of the Morpho market average",
+                                                  ltv=ltv,
+                                                  evidence={"grade": "A", "source": f"eth_call @ block {onc['block']}: "
+                                                            f"total borrow / total collateral at the oracle price x the "
+                                                            f"size input"}), notional, si)
+    elif lending and lending.get("aggregate_ltv"):
+        out["lev_market_avg"] = sized_preset(dict(base, label="PT as collateral, LTV of the Morpho market average",
+                                                  ltv=lending["aggregate_ltv"],
+                                                  evidence={"grade": "A", "source": "Morpho API aggregate LTV x the size "
+                                                                                    "input"}), notional, si)
+    if onc and onc.get("borrowers"):
+        mini = {"position": {"pt_price_usd": pt_price},
+                "borrowers": {"list": onc["borrowers"], "lltv": onc["lltv"], "block": onc["block"]}}
         b = max((x for x in onc["borrowers"] if x["borrow_usdc"] > 0), key=lambda x: x["borrow_usdc"])
-        out["lev_largest_borrower"] = dict(base, label=f"PT as collateral, LTV of the largest real borrower "
-                                                       f"({b['address'][:10]}...)", debt_usd=b["ltv"] * notional,
-                                           ltv=b["ltv"], lltv=onc["lltv"],
-                                           evidence={"grade": "A", "source": f"eth_call @ block {onc['block']} x "
-                                                                             f"assumed size"})
+        out["lev_largest_borrower"] = borrower_preset(mini, b["address"], f"Largest real borrower ({b['address'][:10]}..., "
+                                                                         f"real position)")
         c = max((x for x in onc["borrowers"] if x["borrow_usdc"] > 0), key=lambda x: x["ltv"])
-        out["lev_closest_to_liquidation"] = dict(base, label=f"PT as collateral, LTV of the real borrower closest to "
-                                                             f"liquidation ({c['address'][:10]}...)",
-                                                 debt_usd=c["ltv"] * notional, ltv=c["ltv"], lltv=onc["lltv"],
-                                                 evidence={"grade": "A", "source": f"eth_call @ block {onc['block']} "
-                                                                                   f"x assumed size"})
+        out["lev_closest_to_liquidation"] = borrower_preset(mini, c["address"], f"Real borrower closest to liquidation "
+                                                                                f"({c['address'][:10]}..., real position)")
     for v in out.values():
         v["oracle_rule"] = "set oracle_tracks_underlying / oracle_tracks_market per scenario with oracleFalls(oracle, " \
                            "layer, shock, hours)" if oracle else "oracle unknown: leave both null (both branches)"
+    return out
+
+
+# ------------------------------------------------------------------ position size (the manager's input)
+def size_curve(d, value_usd):
+    """Exit curve of a position worth value_usd today: [(fraction sold, cost)] from the quotes by USD size
+    (exit_curve_usd), and the largest sellable fraction (1 when the whole position fits under the largest quote).
+    Older dashboards without exit_curve_usd: exit_curve as is. Mirrored by RiskModel.sizeCurve."""
+    from decision_core import slippage_at
+    if not d.get("exit_curve_usd"):
+        return [(x["fraction"], x["loss"]) for x in d["exit_curve"]], d["max_exit_fraction"]
+    pts = [(x["usd"], x["loss"]) for x in d["exit_curve_usd"]]
+    if value_usd <= pts[-1][0]:
+        out = [(u / value_usd, s) for u, s in pts if u < value_usd] + [(1.0, slippage_at(value_usd, pts))]
+    else:
+        out = [(u / value_usd, s) for u, s in pts]
+    return out, out[-1][0]
+
+
+def _gas_at(d, usd):
+    from decision_core import slippage_at
+    g = [(x["usd"], x["gas_usd"]) for x in d.get("exit_curve_usd") or [] if x.get("gas_usd") is not None]
+    return slippage_at(usd, g) if g else 0.0
+
+
+def exit_later_at(d, value_usd, drop):
+    """Exit now vs after liquidations, for a position worth value_usd: liquidators first sell the PT seized at oracle
+    drop `drop` (nearest row of borrowers.liquidation_curve) into the pool; our sale starts where theirs stopped on the
+    same quotes (pool not refilled). incidents.exit_later in USD instead of fractions of one notional; costs include
+    gas. None without borrowers or exit_curve_usd. Mirrored by RiskModel.exitLaterAt."""
+    from decision_core import slippage_at
+    rows = (d.get("borrowers") or {}).get("liquidation_curve") or []
+    if not rows or not d.get("exit_curve_usd"):
+        return None
+    r = min(rows, key=lambda r: abs(r["oracle_drop"] - drop))
+    pts = [(x["usd"], x["loss"]) for x in d["exit_curve_usd"]]
+    cap = pts[-1][0]
+    cum = lambda u: u * slippage_at(u, pts) if u > 0 else 0.0
+    y = r["pt_seized"] * d["position"]["pt_price_usd"]
+    now = min(value_usd, cap)
+    out = {"oracle_drop": r["oracle_drop"], "pt_seized": r["pt_seized"], "seized_usd": y,
+           "seized_in_position_units": y / value_usd, "sellable_now": now / value_usd,
+           "avg_cost_now": (cum(now) + _gas_at(d, now)) / now}
+    if y >= cap:
+        out.update(sellable_later=0.0, avg_cost_later=None, market_impact_of_liquidations=None,
+                   note="liquidations alone use up the pool's quoted capacity")
+        return out
+    z = min(value_usd, cap - y)
+    h = min(0.005 * value_usd, cap - y)
+    out.update(sellable_later=z / value_usd, avg_cost_later=(cum(y + z) - cum(y) + _gas_at(d, z)) / z,
+               market_impact_of_liquidations=(cum(y + h) - cum(y)) / h if y > 0 else 0.0, note=None)
+    return out
+
+
+def wallet_presets(d, address):
+    """Presets for a wallet address, read on chain at the borrowers' block: "wallet" = PT held in the wallet
+    (unlevered), "wallet_morpho" = its position in this Morpho market. Looked up in borrowers.wallets (read with
+    onchain_positions.py --wallet: both parts) and else in borrowers.list (Morpho part only). Returns (read, presets):
+    read = the address was read on chain. Mirrored by RiskModel.walletPresets."""
+    b = d.get("borrowers") or {}
+    a = address.lower()
+    w = next((x for x in b.get("wallets") or [] if x["address"] == a), None)
+    out = {}
+    if w is None:
+        m = borrower_preset(d, a)
+        return (m is not None), ({"wallet_morpho": m} if m else {})
+    px, opx = d["position"]["pt_price_usd"], b["oracle_price"]
+    src = f"eth_call @ block {b['block']} (onchain_positions.py --wallet)"
+    if w["pt_in_wallet"] > 0:
+        out["wallet"] = {"label": f"Wallet {a[:10]}...: PT held (real position)", "can_hold": True, "sized": False,
+                         "address": a, "pt_units": w["pt_in_wallet"], "collateral_usd": w["pt_in_wallet"] * px,
+                         "collateral_oracle_usd": w["pt_in_wallet"] * opx, "debt_usd": 0.0, "ltv": 0.0,
+                         "lltv": b["lltv"], "evidence": {"grade": "A", "source": f"PT balanceOf: {src}; value = PT units "
+                                                                                 f"x Pendle PT price {px:.5f}"}}
+    if w["collateral_pt"] > 0 or w["borrow_usdc"] > 0:
+        out["wallet_morpho"] = dict(borrower_preset(d, a) or {
+            "can_hold": True, "sized": False, "address": a, "pt_units": w["collateral_pt"],
+            "collateral_usd": w["collateral_pt"] * px, "collateral_oracle_usd": w["collateral_usdc"],
+            "debt_usd": w["borrow_usdc"], "ltv": w["ltv"], "lltv": b["lltv"],
+            "evidence": {"grade": "A", "source": f"Morpho position: {src}; value = PT units x Pendle PT price {px:.5f}"}},
+            label=f"Wallet {a[:10]}...: PT on Morpho (real position)")
+    return True, out
+
+
+def at_size(d, size_usd, wallet=None):
+    """The dashboard for a position worth size_usd today (the manager's input): `sized` presets resized,
+    exit_curve / max_exit_fraction / position.notional_usd for that size, borrowers.exit_later recomputed. wallet = an
+    address read on chain (wallet_presets): adds presets "wallet" (PT held) and / or "wallet_morpho" (Morpho position)
+    at their real size; wallet_read = the address was read on chain, wallet_found = it holds something.
+    Legacy fields (scenarios, incidents, decision_grid...) stay at the export size. Mirrored by RiskModel.atSize."""
+    si = d["size_input"]
+    out = dict(d)
+    out["position_presets"] = {k: sized_preset(p, size_usd, si) if p.get("sized") else p
+                               for k, p in d["position_presets"].items()}
+    if wallet:
+        read, ws = wallet_presets(d, wallet)
+        out["wallet_read"], out["wallet_found"] = read, bool(ws)
+        out["position_presets"].update(ws)
+    curve, cap = size_curve(d, size_usd)
+    out["exit_curve"] = [{"fraction": x, "usd": x * size_usd, "loss": s, "gas_usd": _gas_at(d, x * size_usd)}
+                         for x, s in curve]
+    out["max_exit_fraction"] = cap
+    out["position"] = dict(d["position"], notional_usd=size_usd)
+    if (d.get("borrowers") or {}).get("liquidation_curve") and d.get("exit_curve_usd"):
+        out["borrowers"] = dict(d["borrowers"], exit_later=[exit_later_at(d, size_usd, r["oracle_drop"])
+                                                            for r in d["borrowers"]["liquidation_curve"]])
+    out["size_usd"] = size_usd
     return out
 
 
@@ -296,7 +449,8 @@ def ui_view(graph, oracle, position, lending, onc):
         {"from": "lending", "to": "market", "type": "forced selling", "grade": "B",
          "evidence": "liquidators sell seized PT into the pool: borrowers.exit_later"},
         {"from": "pt", "to": "position", "type": "holding", "grade": "D",
-         "evidence": "the position holds the PT; its size is assumed (position_presets)"},
+         "evidence": "the position holds the PT; its size is the manager's input (size_input, at_size) or a real "
+                     "borrower's on-chain position (position_presets)"},
         {"from": "lending", "to": "position", "type": "liquidation", "grade": "B",
          "evidence": "Morpho liquidation rule (source, back-tested 9/9); only for levered presets",
          "applies_to": [k for k in ("lev_market_avg", "lev_largest_borrower", "lev_closest_to_liquidation")]},
@@ -304,36 +458,48 @@ def ui_view(graph, oracle, position, lending, onc):
     return {"nodes": nodes, "layers": lay, "edges": edges, "injections": INJECTIONS}
 
 
-def inject(d, preset_key, node, fail, sev):
+def inject(d, preset_key, node, fail, sev, opts=None):
     """Reference implementation of RiskModel.inject (web/risk_model.js): loss and exit effect of failing `node` with
-    `fail` at severity `sev` (in the failure's unit, % or h) for position preset `preset_key` of dashboard d."""
+    `fail` at severity `sev` (in the failure's unit, % or h) for position preset `preset_key` of dashboard d.
+    opts (sensitivity / timeline): {"hours": incident duration, "oracle_falls": forced oracle behaviour, "can_hold": bool,
+    "permanent": share of the shock left after the incident, "collateral_usd" (market value) / "collateral_oracle_usd"
+    (value at the lending oracle's price, liquidation check only) / "debt_usd": position at that time,
+    "sale_value_usd": value of the position today, what a sale now is sized on (default: the preset's collateral_usd)}."""
+    opts = opts or {}
     from loss_model import Position, Scenario, position_loss
     from oracle_types import oracle_falls
     from decision_core import slippage_at
     m = INJECTIONS[f"{node}:{fail}"]
     p = d["position_presets"][preset_key]
-    C, D_ = p["collateral_usd"], p["debt_usd"]
+    C, D_ = opts.get("collateral_usd", p["collateral_usd"]), opts.get("debt_usd", p["debt_usd"])
+    Co = opts.get("collateral_oracle_usd", C * p.get("collateral_oracle_usd", p["collateral_usd"]) / p["collateral_usd"])
+    V = opts.get("sale_value_usd", p["collateral_usd"])
+    can_hold = opts.get("can_hold", p["can_hold"])
     equity = C - D_
-    curve = [(x["fraction"], x["loss"]) for x in d["exit_curve"]]
-    cap = d["max_exit_fraction"]
+    curve, cap = size_curve(d, V)
     out = {"type": m["type"], "note": m["note"], "L_low": 0.0, "L_high": 0.0, "loss_usd": 0.0, "oracle_falls": None,
            "liquidated": None, "sellable_now": cap, "sellable_later": cap, "avg_cost_later": slippage_at(cap, curve)}
 
     def later(drop):
-        rows = (d.get("borrowers") or {}).get("exit_later") or []
-        if not rows:
-            return
-        r = min(rows, key=lambda r: abs(r["oracle_drop"] - drop))
+        r = exit_later_at(d, V, drop)
+        if r is None:
+            rows = (d.get("borrowers") or {}).get("exit_later") or []      # older dashboards
+            if not rows:
+                return
+            r = min(rows, key=lambda r: abs(r["oracle_drop"] - drop))
         out.update(sellable_later=r["sellable_later"], avg_cost_later=r["avg_cost_later"], exit_row_drop=r["oracle_drop"])
 
     if m["type"] == "loss_model":
         shock = sev / 100
-        flag = (oracle_falls(d["oracle"], m["scenario_layer"], shock, m["hours"], m.get("token"))
+        hours = opts.get("hours", m["hours"])
+        flag = (oracle_falls(d["oracle"], m["scenario_layer"], shock, hours, m.get("token"))
                 if m["oracle"] == "rule" else m["oracle"])
-        s = Scenario("inject", m["scenario_layer"], shock, m["permanent"], m["hours"], "", False)
-        r = position_loss(s, Position("p", C, D_, p["lltv"] or 0.915, p["can_hold"],
+        if "oracle_falls" in opts:
+            flag = opts["oracle_falls"]
+        s = Scenario("inject", m["scenario_layer"], shock, opts.get("permanent", m["permanent"]), hours, "", False)
+        r = position_loss(s, Position("p", C, D_, p["lltv"] or 0.915, can_hold,
                                       flag if m["scenario_layer"] == 2 else None,
-                                      flag if m["scenario_layer"] == 3 else None))
+                                      flag if m["scenario_layer"] == 3 else None, Co))
         out.update(L_low=r["L_low"], L_high=r["L_high"], loss_usd=r["L_high"] * equity, oracle_falls=flag,
                    liquidated=[b["liquidated"] for b in r["branches"]])
         if flag is True:
@@ -348,24 +514,29 @@ def inject(d, preset_key, node, fail, sev):
 
 
 # ------------------------------------------------------------------ decision without a probability
-def decide_at(d, preset_key, node, fail, sev, carry=0.0):
+def decide_at(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     """Given the incident has happened at severity `sev`: sell the share x of the position that minimises
     x * (slippage + carry) + (1 - x) * L(sev), never beyond the largest quote (decision_core.decide with p = 1).
-    Costs per unit of equity: slippage and carry x collateral / equity. Mirrored by RiskModel.decideAt."""
+    The sale happens now, so it is sized and costed on today's value V (exit curve of a position worth V); the loss
+    is on the equity E at the end of the incident. Costs per unit of equity: (slippage + carry) x V / E.
+    Mirrored by RiskModel.decideAt."""
     from decision_core import Scenario as DS, decide, slippage_at
-    r = inject(d, preset_key, node, fail, sev)
+    r = inject(d, preset_key, node, fail, sev, opts)
     p = d["position_presets"][preset_key]
-    C, E = p["collateral_usd"], p["collateral_usd"] - p["debt_usd"]
-    scale = C / E
-    raw = [(x["fraction"], x["loss"]) for x in d["exit_curve"]]
+    o = opts or {}
+    C = o.get("collateral_usd", p["collateral_usd"])
+    E = C - o.get("debt_usd", p["debt_usd"])
+    V = o.get("sale_value_usd", p["collateral_usd"])
+    scale = V / E
+    raw, _ = size_curve(d, V)
     L = r["L_high"]
     res = decide([DS("incident", 1.0, L)], [(x, s * scale) for x, s in raw], carry_lost=carry * scale)
     x = res["best_exit_fraction"]
-    sale = x * ((slippage_at(x, raw) if x > 0 else 0.0) + carry) * C
+    sale = x * ((slippage_at(x, raw) if x > 0 else 0.0) + carry) * V
     kept = (1 - x) * L * E
     verdict = ("STAY" if x <= 0 else "SELL_TO_CAP" if res["stuck_fraction"] > 0 else
                "EXIT" if x >= 1 - 1e-12 else "REDUCE")
-    return dict(r, verdict=verdict, sell_fraction=x, sell_usd=x * C, sale_cost_usd=sale, loss_if_stay_usd=L * E,
+    return dict(r, verdict=verdict, sell_fraction=x, sell_usd=x * V, sale_cost_usd=sale, loss_if_stay_usd=L * E,
                 loss_kept_usd=kept, total_if_act_usd=sale + kept, avoided_usd=L * E - sale - kept,
                 stuck_fraction=res["stuck_fraction"])
 
@@ -396,3 +567,163 @@ def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, 
     sells = lambda s: decide_at(d, preset_key, node, fail, s, carry)["sell_fraction"] > 0
     full = lambda s: decide_at(d, preset_key, node, fail, s, carry)["verdict"] in ("SELL_TO_CAP", "EXIT")
     return {"start": first(sells), "cap": first(full), "lo": lo, "hi": hi}
+
+
+GRADE_RANK = "ABCD"
+
+
+def sensitivity(d, preset_key, node, fail, sev, carry=0.0):
+    """Which assumption flips the verdict, given the incident at severity sev (no probability). Each candidate
+    replaces one assumption by its stated alternative and reruns decide_at. weakest = the lowest-graded candidate
+    that flips the verdict (ties: larger change). Other position presets are shown as comparisons (the position is the
+    user's choice, not an assumption about the world) and never chosen as weakest. Mirrored by RiskModel.sensitivity."""
+    base = decide_at(d, preset_key, node, fail, sev, carry)
+    m = INJECTIONS[f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    E = p["collateral_usd"] - p["debt_usd"]
+    o = d.get("oracle") or {}
+    cands = []
+    if m["type"] == "loss_model":
+        if m["oracle"] == "rule" and o.get("kind") == "meta_oracle_timelock" and o.get("challenge_timelock_s"):
+            h = o["challenge_timelock_s"] / 3600 / 2
+            cands.append(("duration", f"the incident lasts {h:g} h, less than the oracle's {2 * h:g} h challenge timelock",
+                          "D", preset_key, carry, {"hours": h}))
+        if p["debt_usd"] > 0:
+            cands.append(("oracle", "the lending oracle " + ("does not follow" if base["oracle_falls"] else "follows")
+                          + " the shock", (o.get("evidence") or {}).get("grade", "D"), preset_key, carry,
+                          {"oracle_falls": not base["oracle_falls"]}))
+        cands.append(("can_hold", "the position must sell at the worst point" if p["can_hold"]
+                      else "the position can hold to expiry", "D", preset_key, carry, {"can_hold": not p["can_hold"]}))
+    for k, q in d["position_presets"].items():
+        if k != preset_key:
+            cands.append(("position", q["label"], q["evidence"]["grade"], k, carry, None))
+    c1 = carry + 0.01 * max(0.0, d["time_model"]["days_to_expiry"]) / 365     # 1% a year, until expiry
+    cands.append(("carry", f"cash after selling earns 1% a year less than assumed (carry {c1:.3%} until expiry)", "D",
+                  preset_key, c1, None))
+    rows = []
+    for key, alt, grade, pk, c, op in cands:
+        r = decide_at(d, pk, node, fail, sev, c, op)
+        Ek = d["position_presets"][pk]["collateral_usd"] - d["position_presets"][pk]["debt_usd"]
+        rows.append({"key": key, "alternative": alt, "grade": grade, "verdict": r["verdict"],
+                     "comparison": key == "position",
+                     "sell_fraction": r["sell_fraction"], "loss_if_stay_usd": r["loss_if_stay_usd"],
+                     "flips": r["verdict"] != base["verdict"],
+                     "effect": abs(r["sell_fraction"] - base["sell_fraction"])
+                     + abs(r["loss_if_stay_usd"] / Ek - base["loss_if_stay_usd"] / E)})
+    flips = [x for x in rows if x["flips"] and not x["comparison"]]
+    weakest = None
+    if flips:
+        g = max(x["grade"] for x in flips)          # "D" > "C" > "B" > "A": lowest grade
+        weakest = max((x for x in flips if x["grade"] == g), key=lambda x: x["effect"])
+    return {"verdict": base["verdict"], "candidates": rows, "weakest": weakest}
+
+
+# ------------------------------------------------------------------ timeline: how long the incident lasts
+DURATIONS_H = [1, 6, 12, 16, 24, 48, 72, 168, 336, 720, 1440, 2160, 4320]   # 1 h .. 6 months
+
+
+def time_model(d_position, oracle, onc, generated_at):
+    """What changes with time: PT price (market: implied APY; oracle: linear discount), expiry, borrow rate."""
+    import datetime as dt
+    f = ((oracle or {}).get("primary") or {}).get("parts", {}).get("BASE_FEED_1") or {}
+    mat = f.get("maturity")
+    now = dt.datetime.fromisoformat(generated_at).timestamp()
+    if mat is None:
+        exp = dt.datetime.fromisoformat(d_position["expiry"] + "T00:00:00+00:00").timestamp()
+    else:
+        exp = mat
+    return {"generated_at": generated_at, "expiry": d_position["expiry"], "days_to_expiry": (exp - now) / 86400,
+            "implied_apy": d_position["implied_apy"], "oracle_discount_per_year": f.get("base_discount_per_year"),
+            "borrow_apr": (onc or {}).get("borrow_apr"),
+            "evidence": {"implied_apy": {"grade": "A", "source": "Pendle markets API"},
+                         "oracle_discount_per_year": {"grade": "A", "source": "PendleSparkLinearDiscountOracle."
+                                                      "baseDiscountPerYear (eth_call)"},
+                         "borrow_apr": {"grade": "A", "source": "AdaptiveCurveIrm.borrowRateView at the positions block; "
+                                                                "assumed constant over the incident (D)"}}}
+
+
+def carry_of(d, alt_apy=None, days=None):
+    """Yield given up by selling now, as a fraction of the value sold: (PT implied APY - what cash earns) over `days`,
+    at most until expiry (days None = until expiry). alt_apy = the manager's "cash earns after selling" (annual, e.g.
+    0.04); None = the PT's implied APY (nothing given up). This, not the annual difference, is the `carry` that
+    decide_at / break_even_severity / sensitivity take. Mirrored by RiskModel.carryOf."""
+    tm = d["time_model"]
+    alt = tm["implied_apy"] if alt_apy is None else alt_apy
+    left = max(0.0, tm["days_to_expiry"])
+    return max(0.0, tm["implied_apy"] - alt) * (left if days is None else min(days, left)) / 365
+
+
+def pt_prices(tm, days):
+    """PT price `days` from now: market (constant implied APY) and oracle (linear discount); 1 after expiry."""
+    left = max(0.0, tm["days_to_expiry"] - days)
+    mk = 1 / (1 + tm["implied_apy"]) ** (left / 365) if tm["implied_apy"] is not None else None
+    disc = tm["oracle_discount_per_year"]
+    orc = 1 - left / 365 * disc if disc is not None else None
+    return mk, orc
+
+
+def decide_at_duration(d, preset_key, node, fail, sev, hours, recovers=True, alt_apy=None):
+    """Decision now for an incident of severity sev lasting `hours`. recovers: the shock disappears after the
+    incident (holders who can wait lose nothing, liquidations during it stay). PT valued at its price: at the end of
+    the incident the position is worth PT units x market price (implied APY; the loss is on this value), Morpho
+    sees PT units x oracle price (linear discount; liquidation check only) and the debt has grown at the borrow APR.
+    A sale now is costed on today's value. Yield given up by exiting = (implied APY - alt) over the incident, at most
+    until expiry. Mirrored by RiskModel.decideAtDuration."""
+    import math
+    tm = d["time_model"]
+    m = INJECTIONS[f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    days = hours / 24
+    mk0, orc0 = pt_prices(tm, 0.0)
+    mkT, orcT = pt_prices(tm, days)
+    carry = carry_of(d, alt_apy, days)
+    V0, D0 = p["collateral_usd"], p["debt_usd"]
+    Co0 = p.get("collateral_oracle_usd", V0)
+    VT = V0 * (mkT / mk0 if mk0 and mkT else 1.0)
+    C = Co0 * (orcT / orc0 if orc0 and orcT else 1.0)
+    D_ = D0 * math.exp((tm["borrow_apr"] or 0.0) * days / 365) if D0 > 0 else 0.0
+    opts = {"hours": hours, "collateral_usd": VT, "collateral_oracle_usd": C, "debt_usd": D_, "sale_value_usd": V0}
+    if recovers and m["type"] == "loss_model":
+        opts["permanent"] = 0.0
+    r = decide_at(d, preset_key, node, fail, sev, carry, opts)
+    r.update(hours=hours, days=days, recovers=recovers, past_expiry=days >= tm["days_to_expiry"], carry=carry,
+             pt_price_market=mkT, pt_price_oracle=orcT, position_value_usd=VT,
+             collateral_usd=C, debt_usd=D_, ltv=D_ / C if C else None)
+    return r
+
+
+def timeline_pt(d, preset_key, node, fail, sev, recovers=True, alt_apy=None, durations=None):
+    """decide_at_duration over a grid of incident durations (1 h .. 6 months, plus expiry)."""
+    tm = d["time_model"]
+    hs = sorted(set((durations or DURATIONS_H) + [round(tm["days_to_expiry"] * 24, 6)]))
+    return [decide_at_duration(d, preset_key, node, fail, sev, h, recovers, alt_apy) for h in hs if h > 0]
+
+
+def timeline_summary(d, preset_key, rows):
+    """Does the duration change the verdict? Change points with their reason, or why the timeline is flat.
+    Mirrored by RiskModel.timelineSummary."""
+    levered = d["position_presets"][preset_key]["debt_usd"] > 0
+    changes = []
+    for a, b in zip(rows, rows[1:]):
+        if a["verdict"] == b["verdict"]:
+            continue
+        why = []
+        if b.get("oracle_falls") is True and a.get("oracle_falls") is not True:
+            why.append("the meta-oracle switches (challenge timelock reached)")
+        if b.get("past_expiry") and not a.get("past_expiry"):
+            why.append("the PT reaches expiry")
+        if any(b.get("liquidated") or []) and not any(a.get("liquidated") or []):
+            why.append("the debt keeps growing after expiry until the LTV crosses the liquidation line"
+                       if levered and a.get("past_expiry") else "the position is liquidated")
+        if not why:
+            why.append("the debt keeps growing after expiry" if levered and a.get("past_expiry") else
+                       "the loss or the yield given up changes with the duration")
+        changes.append({"from_hours": a["hours"], "to_hours": b["hours"], "verdict_before": a["verdict"],
+                        "verdict_after": b["verdict"], "reason": "; ".join(why)})
+    flat = None
+    if not changes:
+        flat = ("no debt: nothing in this position changes with time (no oracle timer, no interest), so the verdict "
+                "depends only on the severity and on whether the loss recovers" if not levered else
+                "the verdict is the same at every duration on the grid")
+    return {"duration_matters": bool(changes), "changes": changes,
+            "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}

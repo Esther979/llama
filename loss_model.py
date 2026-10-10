@@ -46,6 +46,8 @@ class Position:
     can_hold: bool = True           # can wait for recovery / maturity; False = must sell at the worst point
     oracle_tracks_underlying: Optional[bool] = None   # does the lending oracle fall when the underlying falls?
     oracle_tracks_market: Optional[bool] = None       # does it fall when the Pendle market price is pushed down?
+    collateral_oracle_usd: Optional[float] = None     # PT units x lending-oracle price (liquidation check only);
+                                                      # None = collateral_usd (market value)
 
 
 # Anchors measured in this repo's data or cited sources (see README / CLAUDE.md).
@@ -67,7 +69,8 @@ PRESETS = [
 
 
 def _one_branch(s: Scenario, p: Position, oracle_falls: bool) -> dict:
-    C, D = p.collateral_usd, p.debt_usd
+    C, D = p.collateral_usd, p.debt_usd             # C = market value: what the PT is worth and sells for
+    Co = C if p.collateral_oracle_usd is None else p.collateral_oracle_usd   # what Morpho's health check sees
     equity = C - D
     oracle_drop = s.shock if oracle_falls else 0.0
     end_value = 1 - s.shock * s.permanent           # PT value at the end, relative to now
@@ -81,16 +84,16 @@ def _one_branch(s: Scenario, p: Position, oracle_falls: bool) -> dict:
         out.update(loss_usd=loss, loss_of_equity=loss / C if C else 0.0)
         return out
 
-    threshold = 1 - D / (C * p.lltv)                 # oracle drop that makes the position unhealthy
+    threshold = 1 - D / (Co * p.lltv)                # oracle drop that makes the position unhealthy
     out["liquidation_drop_threshold"] = threshold
     if oracle_drop > threshold:
         f = lif(p.lltv)
         # share of PT units taken by the liquidator (oracle at 0: collateral worthless, all of it is taken)
-        seized_units = D * f / (C * (1 - oracle_drop)) if oracle_drop < 1 else float("inf")
+        seized_units = D * f / (Co * (1 - oracle_drop)) if oracle_drop < 1 else float("inf")
         out["liquidated"] = True
         out["lif"] = f
         if seized_units >= 1:                        # collateral exhausted: borrower loses all equity
-            repaid = C * (1 - oracle_drop) / f
+            repaid = Co * (1 - oracle_drop) / f
             out["bad_debt_usd"] = D - repaid
             loss = equity
         else:

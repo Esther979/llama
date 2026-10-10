@@ -333,12 +333,15 @@ def analyze_vault(row, rpc, block, now, cfg, log=print):
              "restricted_gates": restricted,
              "evidence": {"tranches": {"grade": "A", "source": f"idle balance, liquidityAdapter/liquidityData, market "
                                                                f"liquidity and forceDeallocatePenalty @ block {block}"},
+                          "deposit": {"grade": "user input", "source": "amount invested, entered by the manager "
+                                                                       f"(default {cfg['deposit']:,.0f})"},
                           "carry_cost": {"grade": "D", "source": f"(vault APY {row.get('apy')} from the input file - "
                                                                  f"alternative {cur or 'USD'} APY {alt:.2%} assumed) x "
                                                                  f"{cfg['horizon_days']} days / 365"}}}
     for inc in incidents:
         if inc.get("analyzed", True):
             inc["decision"] = vault_decide_at(inc, exit_, dep)
+            inc["sensitivity"] = vault_sensitivity(inc, exit_, dep)
             sentence(inc, exit_)
     credit = [i for i in incidents if i.get("analyzed", True) and i["type"] != "asset_issuer"]
     worst_L = max([i["decision"]["L"] for i in credit] + [0.0])
@@ -447,8 +450,20 @@ def incident(kind, tok, t, live, presets, types, total, cfg, edges, vault, name_
     for sv in SEVERITY_GRID:
         lo, hi, _ = vault_loss(Scenario("grid", layer, sv, perm, None, "", True))
         grid.append({"severity": sv, "L_low": lo, "L_high": hi})
+    # incident duration: the loss only changes where a meta-oracle of an affected market can switch (its challenge
+    # timelock), so one grid per duration segment is exact; and per "recovers after the incident" or not
+    starts = [0.0] + sorted({m["oracle"]["challenge_timelock_s"] / 3600 for m in affected
+                             if m["oracle"].get("kind") == "meta_oracle_timelock" and m["oracle"].get("challenge_timelock_s")})
+    dgrids = []
+    for h in starts:
+        for rec in (False, True):
+            pts = []
+            for sv in SEVERITY_GRID:
+                lo, hi, _ = vault_loss(Scenario("grid", layer, sv, 0.0 if rec else perm, h, "", True))
+                pts.append({"severity": sv, "L_low": lo, "L_high": hi})
+            dgrids.append({"from_hours": h, "recovers": rec, "grid": pts})
     return {"key": f"{kind}:{(t['symbol'] or tok)}", "type": kind, "token": tok, "symbol": t["symbol"], "layer": layer,
-            "severity_grid": grid, "permanent": perm, **severity_defaults(kind, presets, cfg),
+            "severity_grid": grid, "duration_grids": dgrids, "permanent": perm, **severity_defaults(kind, presets, cfg),
             "affected_markets": [m["key"] for m in affected],
             "affected_allocation": sum(m["allocation"] for m in affected), "propagation_paths": paths,
             "outcomes": rows, "expected_loss": exp, "tail_loss_95": cv, "var_95": var,
@@ -498,23 +513,35 @@ def severity_crossing(grid, c):
     return None
 
 
-def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None):
+def duration_grid(inc, hours, recovers):
+    """The severity grid for an incident lasting `hours` (None = lasting, i.e. the full severity_grid)."""
+    if hours is None or not inc.get("duration_grids"):
+        return inc["severity_grid"]
+    cands = [g for g in inc["duration_grids"] if g["recovers"] == bool(recovers) and g["from_hours"] <= hours]
+    return max(cands, key=lambda g: g["from_hours"])["grid"] if cands else inc["severity_grid"]
+
+
+def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None, low_branch=False, hours=None,
+                    recovers=False):
     """Stay / exit for a depositor of `amount` given the incident at severity `sev` (no probability): withdraw
     each tranche whose unit cost (yield given up; + force-deallocation penalty) is below L(sev). Mirrored by
     RiskModel.vaultDecideAt."""
     sev = inc["default_severity"] if sev is None else sev
     alt = ex["alt_apy"] if alt_apy is None else alt_apy
-    h = ex["horizon_days"] if horizon_days is None else horizon_days
+    # with a duration, the yield given up is counted over the incident (you come back when it is over)
+    h = (hours / 24 if hours is not None else ex["horizon_days"]) if horizon_days is None else horizon_days
     carry = max(0.0, (ex["vault_apy"] or 0.0) - alt) * h / 365
     pen = ex["force_deallocate_penalty"]
-    L = L_at(inc["severity_grid"], sev)
+    base_grid = duration_grid(inc, hours, recovers)
+    grid = [{"severity": g["severity"], "L_high": g["L_low"]} for g in base_grid] if low_branch else base_grid
+    L = L_at(grid, sev)
     free_amt = min(amount, ex["free_usd"])
     forced_amt = min(amount - free_amt, ex["forced_usd"])
     locked = amount - free_amt - forced_amt
     out = {"amount": amount, "severity": sev, "L": L, "loss_if_stay_usd": L * amount, "carry_cost": carry,
            "penalty": pen, "free_usd": free_amt, "forced_usd": forced_amt, "locked_usd": locked,
-           "severity_break_even_free": severity_crossing(inc["severity_grid"], carry),
-           "severity_break_even_forced": severity_crossing(inc["severity_grid"], carry + pen)}
+           "severity_break_even_free": severity_crossing(grid, carry),
+           "severity_break_even_forced": severity_crossing(grid, carry + pen)}
     if inc["type"] == "asset_issuer":
         out.update(verdict="REVIEW", exit_usd=0.0, exit_cost_usd=0.0, loss_kept_usd=L * amount,
                    total_if_act_usd=L * amount, avoided_usd=0.0)
@@ -527,6 +554,75 @@ def vault_decide_at(inc, ex, amount, sev=None, alt_apy=None, horizon_days=None):
                exit_usd=exit_amt, exit_cost_usd=cost, loss_kept_usd=kept, total_if_act_usd=cost + kept,
                avoided_usd=L * amount - cost - kept)
     return out
+
+
+VAULT_DURATIONS_H = [1, 6, 12, 16, 24, 48, 72, 168, 336, 720, 1440, 2160, 4320]
+
+
+def vault_timeline(inc, ex, amount, sev=None, recovers=True, alt_apy=None):
+    """vault_decide_at over incident durations (1 h .. 6 months, plus the meta-oracle switch points)."""
+    hs = sorted(set(VAULT_DURATIONS_H + [g["from_hours"] for g in inc.get("duration_grids", []) if g["from_hours"] > 0]))
+    out = []
+    for h in hs:
+        r = vault_decide_at(inc, ex, amount, sev, alt_apy, None, False, h, recovers)
+        r.update(hours=h, days=h / 24, recovers=recovers)
+        out.append(r)
+    return out
+
+
+def vault_timeline_summary(inc, rows):
+    """Does the duration change the vault verdict? Change points with their reason, or why the timeline is flat.
+    Mirrored by RiskModel.vaultTimelineSummary."""
+    switches = {g["from_hours"] for g in inc.get("duration_grids", []) if g["from_hours"] > 0}
+    changes = []
+    for a, b in zip(rows, rows[1:]):
+        if a["verdict"] == b["verdict"]:
+            continue
+        if any(a["hours"] < h <= b["hours"] for h in switches):
+            why = "a meta-oracle of an affected market switches (challenge timelock reached)"
+        elif abs(a["L"] - b["L"]) < 1e-12:
+            why = "the yield given up grows with the duration"
+        else:
+            why = "the vault loss changes with the duration"
+        changes.append({"from_hours": a["hours"], "to_hours": b["hours"], "verdict_before": a["verdict"],
+                        "verdict_after": b["verdict"], "reason": why})
+    flat = None
+    if not changes:
+        flat = ("no affected market has an oracle timer, so the duration does not change the loss; the verdict depends "
+                "on the severity and on whether the loss recovers" if not switches else
+                "the verdict is the same at every duration on the grid")
+    return {"duration_matters": bool(changes), "changes": changes,
+            "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}
+
+
+def vault_sensitivity(inc, ex, amount, sev=None):
+    """Which assumption flips the vault verdict at severity sev (no probability); weakest = lowest-graded flip
+    (ties: larger change). The larger deposit is a comparison (the user's choice), never chosen as weakest.
+    Mirrored by RiskModel.vaultSensitivity."""
+    base = vault_decide_at(inc, ex, amount, sev)
+    g_or = ((inc.get("evidence") or {}).get("L") or {}).get("basis", {}).get("oracle", "D")
+    cands = [("oracle", "the lending oracles do not follow the shock (lower loss branch)", g_or,
+              dict(low_branch=True)),
+             ("alt_yield", "cash earns nothing after withdrawing (alternative yield 0%)", "D", dict(alt_apy=0.0)),
+             ("alt_yield", "cash earns as much as the vault (no yield given up)", "D", dict(alt_apy=ex["vault_apy"] or 0.0)),
+             ("horizon", "horizon 7 days", "D", dict(horizon_days=7)),
+             ("horizon", "horizon 90 days", "D", dict(horizon_days=90)),
+             ("amount", "a deposit 10 times larger", "D", dict(amount=amount * 10))]
+    rows = []
+    for key, alt, grade, kw in cands:
+        amt = kw.pop("amount", amount)
+        r = vault_decide_at(inc, ex, amt, base["severity"], **kw)
+        rows.append({"key": key, "alternative": alt, "grade": grade, "verdict": r["verdict"], "comparison": key == "amount",
+                     "exit_share": r["exit_usd"] / amt if amt else 0.0, "L": r["L"],
+                     "flips": r["verdict"] != base["verdict"],
+                     "effect": abs((r["exit_usd"] / amt if amt else 0) - (base["exit_usd"] / amount if amount else 0))
+                     + abs(r["L"] - base["L"])})
+    flips = [x for x in rows if x["flips"] and not x["comparison"]]
+    weakest = None
+    if flips:
+        g = max(x["grade"] for x in flips)
+        weakest = max((x for x in flips if x["grade"] == g), key=lambda x: x["effect"])
+    return {"verdict": base["verdict"], "candidates": rows, "weakest": weakest}
 
 
 def asset_incident(asset, sym, presets, types, vault, name_of, cfg=None):
@@ -544,6 +640,10 @@ def asset_incident(asset, sym, presets, types, vault, name_of, cfg=None):
     cv, var = inc_mod.tail(dist)
     return {"key": f"asset_issuer:{sym}", "type": "asset_issuer", "token": asset, "symbol": sym, "layer": 2,
             "severity_grid": [{"severity": sv, "L_low": sv, "L_high": sv} for sv in SEVERITY_GRID], "permanent": 1.0,
+            "duration_grids": [{"from_hours": 0.0, "recovers": rec, "grid": [{"severity": sv, "L_low": 0.0 if rec else sv,
+                                                                              "L_high": 0.0 if rec else sv}
+                                                                             for sv in SEVERITY_GRID]}
+                               for rec in (False, True)],
             **severity_defaults("asset_issuer", presets, cfg),
             "affected_markets": [], "affected_allocation": None,
             "propagation_paths": [f"Ethereum -> {name_of(vault)} -> [asset] {sym} -> [issued by] {sym} issuer (off-chain)"],
@@ -762,7 +862,8 @@ def main():
     ap.add_argument("input")
     ap.add_argument("--only", nargs="*", help="vault addresses to analyze (default: all)")
     ap.add_argument("--rpc", default=os.environ.get("RPC_URL", "https://ethereum-rpc.publicnode.com"))
-    ap.add_argument("--deposit", type=float, default=1e6, help="depositor size in the vault's asset")
+    ap.add_argument("--deposit", type=float, default=1e7,
+                    help="amount invested in the vault (vault asset units), entered by the manager; default 10,000,000")
     ap.add_argument("--alt-apy", "--alt-apy-usd", dest="alt_apy", type=float, default=0.04,
                     help="alternative yield for USD vaults (assumed)")
     ap.add_argument("--alt-apy-eur", type=float, default=0.02, help="alternative yield for EUR vaults (assumed)")
