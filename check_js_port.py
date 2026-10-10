@@ -346,6 +346,31 @@ def main():
           + (f"  first {xunchecked[0]}" if xunchecked else ""))
     bad = bad + xbad + xunchecked + pi_bad
 
+    # one duration mechanism (guide 5b): decideAt with the inputs decideAtDuration used equals decideAtDuration
+    from frontend_contract import decide_at_duration
+    dur_bad, n_dur = [], 0
+    for sz in (1e6, 1e7):
+        dz = at_size(d, sz)
+        for pk, P in dz["position_presets"].items():
+            for k in dz["ui"]["injections"]:
+                for sev in (0.5, 2, 10):
+                    for hours, rec in ((1, True), (24, True), (24, False), (720, False)):
+                        n_dur += 1
+                        node, fail = k.split(":")
+                        r = decide_at_duration(dz, pk, node, fail, sev, hours, rec, 0.04)
+                        o = {"hours": hours, "collateral_usd": r["position_value_usd"],
+                             "collateral_oracle_usd": r["collateral_usd"], "debt_usd": r["debt_usd"],
+                             "sale_value_usd": P["collateral_usd"]}
+                        if rec:
+                            o["permanent"] = 0
+                        a = decide_at(dz, pk, node, fail, sev, r["carry"], o)
+                        if any(a[f] != r[f] for f in ("verdict", "sell_fraction", "sale_cost_usd", "loss_if_stay_usd",
+                                                      "loss_kept_usd")):
+                            dur_bad.append((sz, pk, k, sev, hours, rec))
+    print(f"GATE {'PASS' if not dur_bad else 'FAIL'}  one duration mechanism: decideAt with decideAtDuration's inputs "
+          f"equals decideAtDuration in {n_dur - len(dur_bad)}/{n_dur} cases" + (f"  first {dur_bad[0]}" if dur_bad else ""))
+    bad = bad + dur_bad
+
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob
     from vault_pipeline import liquidity_run, vault_decide, vault_decide_at

@@ -216,6 +216,20 @@ Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours,
 | Debt over time | levered presets: debt grows at the market's borrow APR (`d.time_model.borrow_apr`, read on chain); the oracle price rises with the linear discount; after expiry it stays at 1 while the debt keeps growing (`ltv`) |
 | Yield given up | exiting gives up (implied APY - alt) over the incident, at most until expiry (`carry`) |
 
+One mechanism once the duration slider exists. The decision card, `breakEvenSeverity`, `sensitivity` and `decisionText` all use the duration inputs; past incidents (section 3c) only preset the controls. Selecting a past incident sets node, failure, severity, the duration slider to `p.hours` and the recovers toggle to `p.recovers` (events with `hours: null` leave the duration at its default and `recovers` off); `p.opts` is then not used (it is for pages without the duration slider). Pass the other functions the inputs `decideAtDuration` used, so that every number on the screen is the same:
+
+```js
+const r = RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
+const o = {hours: S.hours, collateral_usd: r.position_value_usd, collateral_oracle_usd: r.collateral_usd,
+           debt_usd: r.debt_usd, sale_value_usd: d.position_presets[S.pos].collateral_usd};
+if (S.recovers) o.permanent = 0;
+const be = RiskModel.breakEvenSeverity(d, S.pos, S.node, S.fail, r.carry, f.min, f.max, 400, o);
+const sv = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, r.carry, o);
+const t  = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, r.carry, o);
+```
+
+`RiskModel.decideAt(d, S.pos, S.node, S.fail, S.sev, r.carry, o)` equals `r` exactly. The carry is the yield given up over the incident only, at most until expiry (`r.carry`), not `carryOf` until expiry. First screen with the duration path: PT-reUSD on the closest borrower, loss if staying $164,900 (the position is valued at the end of the 1 h incident) instead of $164,903 with `decideAt` and `p.opts`.
+
 Describe the timeline with `RiskModel.timelineSummary(d, S.pos, rows)`: `duration_matters` false -> "The duration does not change the answer: {why_flat}" (e.g. an unlevered holder: no debt, so no oracle timer and no interest; the verdict then comes from the severity and the recovers / stays toggle, it is not "always stay"); true -> one line per `changes[]` entry: "From {to_hours} h: {verdict_before} -> {verdict_after} ({reason})".
 
 Timeline chart: `RiskModel.timeline(d, S.pos, S.node, S.fail, S.sev, recovers, altApy)` returns the same object for 1 h, 6 h, 12 h, 16 h, 1 d, 2 d, 3 d, 1 w, 2 w, 30 d, expiry, 60 d, 90 d, 180 d. Plot `loss_if_stay_usd` against the duration (log x axis), colour the background by `verdict`, and mark 16 h and expiry. Assumptions to show (D): pool depth as today, borrow APR constant, implied APY constant.
@@ -251,7 +265,7 @@ Remove these old texts, the backend now contradicts them: "Type unknown", "Upstr
 
 ## 8. Evidence drawer
 
-For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan link, `contract_name`, `evidence`, `note`), its `members` looked up in `d.dependency_graph.nodes` (label, contract name, address, grade), and the edges of `d.ui.edges` touching `k` with their `evidence`. Off-chain dependencies: for `ethena` and `usde` show `d.offchain.USDe`, for `susde` also `d.offchain.sUSDe`: the issuer, the `summary`, then `relations` grouped by `kind` (custodians, hedging exchanges, reserve assets, attestations, ...), each with `entity`, `relation`, a link to `evidence.url` and the `evidence.quote` in quotation marks, dashed (grade D: stated by the issuer, not verifiable on chain), "third-party source" when `evidence.official` is false, and "quote re-checked {checked_at}" when `evidence.quote_found` is true. For `oracle`, add the oracle tree `d.oracle` (primary, backup, threshold, timelock, deviation now). For `feeds`, the count of Chainlink transmitters is in the note.
+For a node `k`: `d.ui.nodes[k]` (`kind`, `layer`, `address` with the Etherscan link, `contract_name`, `evidence`, `note`), its `members` looked up in `d.dependency_graph.nodes` (label, contract name, address, grade), and the edges of `d.ui.edges` touching `k` with their `evidence`. Off-chain dependencies: for `ethena` and `usde` show `d.offchain.USDe`, for `susde` also `d.offchain.sUSDe`: the issuer, the `summary`, then `relations` grouped by `kind` (custodians, hedging exchanges, reserve assets, attestations, ...), each with `entity`, `relation`, a link to `evidence.url` and the `evidence.quote` in quotation marks, dashed (grade D: stated by the issuer, not verifiable on chain), "third-party source" when `evidence.official` is false. The quote's check state, `evidence.quote_found` (from the last `offchain.py` run, `evidence.checked_at`): `true` -> show the quote with "re-checked {checked_at}"; `null` -> show the quote with "not re-checked: the source page could not be read by the checker" (the quote was taken from the page when the relation was found; only the re-check failed, e.g. Ceffu's page returns HTTP 403), never "not found"; `false` -> do not show the quote, show "quote not found on the page at the last check" (should not happen: `offchain.py` fails its gate and the backend fixes the relation before exporting). For `oracle`, add the oracle tree `d.oracle` (primary, backup, threshold, timelock, deviation now). For `feeds`, the count of Chainlink transmitters is in the note.
 
 ## 9. Acceptance tests
 
