@@ -757,3 +757,128 @@ def timeline_summary(d, preset_key, rows):
                 "the verdict is the same at every duration on the grid")
     return {"duration_matters": bool(changes), "changes": changes,
             "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}
+
+
+# ------------------------------------------------------------------ reasons a manager can act on (PT view)
+def _round_int(v, d):
+    """round(|v| x 10^d) half away from zero, as an integer (same arithmetic as RiskModel's _roundInt)."""
+    import math
+    a = math.floor(abs(v) * 10 ** d + 0.5)
+    return -a if v < 0 else a
+
+
+def _num(v, d=2):
+    """v with at most d decimals (trailing zeros dropped) and thousands commas; identical in RiskModel._num."""
+    n = _round_int(v, d)
+    sign, n = ("-" if n < 0 else ""), abs(n)
+    ip, fp = divmod(n, 10 ** d)
+    out = f"{ip:,}"
+    frac = str(fp).rjust(d, "0").rstrip("0") if d else ""
+    return sign + out + ("." + frac if frac else "")
+
+
+def decision_text(d, preset_key, node, fail, sev, carry=0.0):
+    """The PT view's reasons, built only from the model's results: verdict, a title, the headline sentence (loss if
+    staying vs selling now), the propagation reasons (oracle, liquidation, recovery, exit), the break-even severity
+    and the assumption the answer hinges on. `numbers` lists every number written; `unchecked` = numbers in the text
+    that are not among them (must be empty). `rule` is the injection's fixed note (data, not checked).
+    Mirrored by RiskModel.decisionText."""
+    from loss_model import lif
+    from reasoning import NUM
+    r = decide_at(d, preset_key, node, fail, sev, carry)
+    be = break_even_severity(d, preset_key, node, fail, carry)
+    sv = sensitivity(d, preset_key, node, fail, sev, carry)
+    m = d["ui"]["injections"][f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    ft = d["failure_types"]["types"][fail]
+    o = d.get("oracle") or {}
+    nl, fl = d["ui"]["nodes"][node]["label"], ft["label"]
+    nums = []
+
+    def f(s):
+        nums.extend(NUM.findall(s))
+        return s
+    money = lambda v: f("$" + _num(v, 0))
+    pct = lambda v: f(_num(v * 100, 2) + "%")
+    unit = lambda v: f(_num(v, 2) + ("%" if ft["unit"] == "%" else " h"))
+    D, C = p["debt_usd"], p["collateral_usd"]
+    Co = p.get("collateral_oracle_usd", C)
+    title = f"{fl} ({nl}), severity {unit(sev)}"
+    reasons = []
+    if m["type"] == "loss_model":
+        loss = r["loss_if_stay_usd"]
+        if loss <= 0:
+            head = "STAY: doing nothing loses nothing at this severity, so there is nothing to sell for."
+        elif r["verdict"] == "STAY":
+            head = f"STAY: doing nothing loses {money(loss)}; selling would cost more than it saves."
+        else:
+            head = (f"{r['verdict']}: doing nothing loses {money(loss)}. Selling {money(r['sell_usd'])} now "
+                    f"({pct(r['sell_fraction'])} of the position) costs {money(r['sale_cost_usd'])}"
+                    + (f" and leaves {money(r['loss_kept_usd'])} at risk on the rest." if r["loss_kept_usd"] > 0 else ".")
+                    + (f" {pct(r['stuck_fraction'])} of the position cannot be sold through the pool now."
+                       if r["stuck_fraction"] > 0 else ""))
+        of, meta = r["oracle_falls"], o.get("kind") == "meta_oracle_timelock" and m["oracle"] == "rule"
+        if of is True:
+            reasons.append(f"The lending oracle follows it: the deviation is above the meta-oracle's "
+                           f"{pct(o['deviation_threshold'])} threshold for at least "
+                           f"{f(_num(o['challenge_timelock_s'] / 3600, 2))} h, so it switches to its backup feed."
+                           if meta else "The lending oracle reports the low price itself.")
+        elif of is False:
+            reasons.append(f"The lending oracle does not follow it: the meta-oracle switches only after a deviation "
+                           f"above {pct(o['deviation_threshold'])} lasting "
+                           f"{f(_num(o['challenge_timelock_s'] / 3600, 2))} h." if meta else
+                           "The lending oracle does not follow it: no feed of the oracle prices this.")
+        else:
+            reasons.append(f"The oracle's behaviour is unknown: the loss is the worse of both branches "
+                           f"({pct(r['L_low'])} to {pct(r['L_high'])} of equity).")
+        if D <= 0:
+            reasons[-1] += " This matters only for a levered position: this one has no debt."
+        if D > 0:
+            thr = 1 - D / (Co * p["lltv"])
+            if any(r["liquidated"] or []):
+                reasons.append(f"The position is liquidated: the oracle falls {unit(sev)} while the liquidation line is "
+                               f"{pct(thr)} away; Morpho seizes collateral worth the debt plus a "
+                               f"{pct(lif(p['lltv']) - 1)} bonus.")
+            elif thr > 0:
+                reasons.append(f"Not liquidated: the oracle would have to fall {pct(thr)} before this position can be "
+                               f"liquidated.")
+            else:
+                reasons.append("The position is already above the liquidation line.")
+        if m["permanent"] == 0 and p["can_hold"]:
+            reasons.append("The price recovers (the PT redeems at expiry), so a holder who can wait loses nothing on "
+                           "the value" + ("; liquidations during the incident stay." if D > 0 else "."))
+        elif m["permanent"] == 1:
+            reasons.append("The loss is permanent: no recovery is assumed.")
+    elif m["type"] in ("exit_later", "exit_only"):
+        head = ("STAY: no direct loss on this position; " + (
+            f"the part that can be sold falls from {pct(r['sellable_now'])} to {pct(r['sellable_later'])}."
+            if r["sellable_later"] < r["sellable_now"] - 1e-12 else
+            f"{pct(r['sellable_now'])} of the position can still be sold."))
+    else:
+        head = "STAY: no direct loss is modelled for this failure."
+    later = r["sellable_later"] < r["sellable_now"] - 1e-12 and m["type"] != "not_modelled"
+    reasons.append(f"Today the pool takes {pct(r['sellable_now'])} of this position "
+                   f"({money(r['sellable_now'] * C)})"
+                   + (("; after the failure nothing can be sold." if r["sellable_later"] <= 0 else
+                       f"; after the failure only {pct(r['sellable_later'])}.") if later else "."))
+    if m["type"] != "loss_model":
+        brk = "No break-even severity: this failure causes no direct loss."
+    elif be["start"] is None:
+        brk = f"Selling does not pay at any severity from {unit(be['lo'])} to {unit(be['hi'])}."
+    elif be["start"] <= be["lo"]:
+        brk = (f"Selling pays from the lowest severity tested ({unit(be['lo'])})"
+               + ("." if be["cap"] is None else " up to all the pool takes." if be["cap"] <= be["lo"]
+                  else f"; it sells all the pool takes above {unit(be['cap'])}."))
+    else:
+        brk = (f"Selling starts to pay above {unit(be['start'])}"
+               + (f" and sells all the pool takes above {unit(be['cap'])}." if be["cap"] is not None else "."))
+    w = sv["weakest"]
+    if w:
+        f(w["alternative"])
+        hinge = f"The answer hinges on: {w['alternative']} (grade {w['grade']}): the verdict would be {w['verdict']}."
+    else:
+        hinge = "No tested assumption changes the answer."
+    text = " ".join([title, head] + reasons + [brk, hinge]).replace(nl, "").replace(fl, "")
+    bad = [x for x in NUM.findall(text) if x not in nums]
+    return {"verdict": r["verdict"], "title": title, "headline": head, "rule": m["note"], "reasons": reasons,
+            "break_even": brk, "hinges_on": hinge, "numbers": nums, "unchecked": bad}
