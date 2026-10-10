@@ -28,7 +28,6 @@ import re
 import sys
 import time
 
-from Crypto.Hash import keccak
 
 import crawl as crawl_mod
 import etherscan
@@ -85,6 +84,7 @@ def route(r):
 
 
 def kc(hexdata):
+    from Crypto.Hash import keccak      # imported here: check_js_port.py imports this module without pycryptodome
     return "0x" + keccak.new(digest_bits=256, data=bytes.fromhex(hexdata.replace("0x", ""))).hexdigest()
 
 
