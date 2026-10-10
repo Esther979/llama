@@ -24,10 +24,12 @@ import os
 import sys
 
 import backtest_reusd
+import incidents as inc_mod
 import onchain_positions
 from decision_core import Scenario, decide, load_curve
 from loss_model import PRESETS, Position, position_loss
-from reasoning import check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link
+from reasoning import (check_texts, decision_texts, derived, ev, overall_weakest, scenario_reasoning, weakest_link,
+                       worst)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -77,6 +79,21 @@ def refusals(curves, max_x):
     return sorted(out)
 
 
+def gas_used_of(curves):
+    """{fraction: gasUsed} from Pendle's routes[0].data.gasUsed in the raw quote files next to the curves."""
+    out = {}
+    for c in curves:
+        raw = c.replace("exit_curve_", "exit_quotes_raw_").replace(".csv", ".json")
+        for q in load_json(raw) or []:
+            try:
+                g = (q["response"]["routes"][0]["data"] or {}).get("gasUsed")
+            except (KeyError, IndexError, TypeError):
+                continue
+            if g is not None and q.get("status") in (200, 201):
+                out[q["fraction"]] = int(g)
+    return out
+
+
 def tri(v):
     v = v.lower()
     if v not in ("true", "false", "unknown"):
@@ -105,7 +122,8 @@ def run_grid(curve, L, pstep):
 
 
 def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=True,
-          oracle_tracks_underlying=None, oracle_tracks_market=None, positions=None, borrower=None):
+          oracle_tracks_underlying=None, oracle_tracks_market=None, positions=None, borrower=None,
+          calibration=None, lender_supply=1e6):
     mk = load_json(os.path.join(data_dir, "pendle_markets.json"))
     if not mk:
         sys.exit(f"missing {data_dir}/pendle_markets.json - run fetch_data.py step1")
@@ -251,9 +269,8 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                    derived("debt / collateral", debt_usd=g_debt, collateral_usd=g_coll))
     g_ltv = e_in["ltv"]["grade"]
     e_in["scale"] = derived("collateral / equity = 1 / (1 - ltv)", ltv=g_ltv)
-    ev_scen = {}
-    for sc in PRESETS:
-        r = position_loss(sc, pos)
+    def loss_dep(sc, r):
+        """Grades of what L actually depends on, following loss_model's branches."""
         g_perm = "C" if sc.recovery_source else "D"
         perm = ev(g_perm, f"observed: {sc.recovery_source}" if sc.recovery_source else
                   "assumption: no recovery" if sc.permanent == 1 else "assumption")
@@ -270,6 +287,12 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                      **({"can_hold": e_in["can_hold"]["grade"]} if not all(liq) else {}),
                      **({"permanent": g_perm} if uses_perm else {})}
             thr_dep = {"formula": mech["grade"], "ltv": g_ltv, "lltv": g_lltv}
+        return L_dep, thr_dep, perm
+
+    ev_scen = {}
+    for sc in PRESETS:
+        r = position_loss(sc, pos)
+        L_dep, thr_dep, perm = loss_dep(sc, r)
         L_ev = derived("loss_model.position_loss (fraction of equity)", **L_dep)
         ev_scen[sc.key] = {
             "shock": ev("C", sc.source),
@@ -283,6 +306,18 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "grid": derived("decision_core.decide with L_used and the exit curve (costs per fraction of a "
                             "position of this size)", exit_curve="A", position_size=g_coll, L_used=L_ev["grade"]),
         }
+    # ---- gas per quoted size (Pendle gasUsed x gas price at the on-chain block x ETH price) ----
+    gas_used = gas_used_of(curves)
+    gas = (onc or {}).get("gas") or {}
+    gwei = (gas.get("base_fee_gwei") or 0) + (gas.get("priority_fee_gwei") or 0)
+    gas_ok = bool(gas_used) and gas.get("eth_usd") is not None and bool(gas)
+    gas_pts = sorted((f, g * gwei * 1e-9 * gas["eth_usd"]) for f, g in gas_used.items()) if gas_ok else None
+    costs = inc_mod.exit_costs(curve, gas_pts, notional)
+    e_gas = (ev("A", f"Pendle routes[0].data.gasUsed per quote x ({gas['base_fee_gwei']:.4g} + "
+                     f"{gas.get('priority_fee_gwei') or 0:.4g}) gwei at block {onc['block']} x ETH "
+                     f"${gas['eth_usd']:,.0f} ({gas['source']})") if gas_ok
+             else ev("D", "gas not included: no gas price (run onchain_positions.py and pass --positions)"))
+
     borrowers_block = None
     if onc:
         cap_pt = max_x * notional / pt_price
@@ -297,6 +332,8 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "gates_total": len(onc["gates"]),
             "list": onc["borrowers"], "distribution": onc["distribution"],
             "capacity_pt": cap_pt, "liquidation_curve": lc, "first_drop_seized_exceeds_capacity": first,
+            "exit_later": [inc_mod.exit_later(curve, gas_pts, notional, pt_price, row["pt_seized"], row["oracle_drop"])
+                           for row in lc],
             "selected": bor["address"] if bor else None,
             "evidence": {"list": e_chain, "distribution": e_chain, "oracle_price": e_chain, "lltv": e_chain,
                          "capacity_pt": derived("largest quoted sale in USD (max_exit_fraction x notional_usd, an "
@@ -307,7 +344,10 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                                                       formula=mech["grade"]),
                          "first_drop_seized_exceeds_capacity": derived(
                              "first oracle drop where PT seized > capacity_pt", borrowers="A",
-                             formula=mech["grade"], capacity_pt="A")},
+                             formula=mech["grade"], capacity_pt="A"),
+                         "exit_later": derived("our sale starts where the liquidators' sale stopped on the same "
+                                               "quoted curve (pool not refilled)", exit_curve="A", borrowers="A",
+                                               formula=mech["grade"], position_size=g_coll)},
         }
     ctx = {"collateral": notional, "debt": debt, "lltv": lltv, "can_hold": can_hold,
            "oracle_tracks_underlying": oracle_tracks_underlying, "oracle_tracks_market": oracle_tracks_market,
@@ -345,6 +385,18 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             sys.exit(f"GATE FAIL  decision_text for {sc.key} uses numbers not in its reasoning steps: {bad}")
         es = ev_scen[sc.key]
         g_grid = es["grid"]
+        be = inc_mod.break_even(costs, scale, r["L_high"])
+        bad_be = inc_mod.check_break_even(be, curve, scale)
+        if bad_be:
+            sys.exit(f"GATE FAIL  break-even for {sc.key} disagrees with decide(): {bad_be}")
+        be["evidence"] = derived("exit cost (quotes + gas) x exit_cost_scale / L_used", exit_curve="A",
+                                 gas=e_gas["grade"], position_size=g_coll, L_used=es["L"]["grade"])
+        xl = None
+        if onc:
+            seized = onchain_positions.liquidation_curve(onc["borrowers"], onc["oracle_price"], onc["lltv"],
+                                                         None, drops=[min(sc.shock, 0.999)])[0][0]["pt_seized"]
+            xl = inc_mod.exit_later(curve, gas_pts, notional, pt_price, seized, sc.shock)
+            xl["condition"] = "if the lending oracle falls by the shock (liquidators sell first)"
         scenarios[-1].update({
             "evidence": {"shock": es["shock"], "permanent": es["permanent"], "hours": es["hours"],
                          "L_low": es["L"], "L_high": es["L"], "L_used": es["L"],
@@ -354,7 +406,53 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
             "reasoning": S,
             "decision_text": texts,
             "weakest_link": weakest_link(ctx, sc, r, sthr, grid_fn),
+            "break_even": be,
+            **({"exit_later": xl} if xl else {}),
         })
+
+    # ---- incidents: three outcomes, expected / tail loss, break-even on the severe probability ----
+    cal = load_json(calibration) if calibration else None
+    if cal and not cal.get("all_gates_pass"):
+        sys.exit(f"{calibration}: calibration gates failed - rerun calibrate_depeg.py")
+    presets = {s.key: s for s in PRESETS}
+    if cal:
+        presets["depeg_partial"] = inc_mod.depeg_partial(cal)
+    loss_ev = lambda sc_, r_: derived("loss_model.position_loss (fraction of equity)", **loss_dep(sc_, r_)[0])
+    incidents_out = []
+    for it in inc_mod.incident_types(cal):
+        if any(k and k not in presets for k in it["outcomes"].values()):
+            continue
+        o = inc_mod.evaluate(it, pos, presets, loss_ev, costs, scale, equity)
+        sev_key = it["outcomes"][o["break_even"]["worst_outcome"]]
+        o["decision_text"] = inc_mod.sentence(o, sev_key)
+        if o["decision_text"].get("unchecked"):
+            sys.exit(f"GATE FAIL  incident {it['key']} sentence has unchecked numbers {o['decision_text']['unchecked']}")
+        o["evidence"] = {"probabilities": it["probability_evidence"],
+                         "expected_loss": derived("sum of probability x L_used", probabilities=it["probability_evidence"]["grade"],
+                                                  L=worst(*[x["evidence"]["L"]["grade"] for x in o["outcomes"]])),
+                         "tail_loss_95": derived("CVaR 95% over the three outcomes (decision_core.cvar)",
+                                                 probabilities=it["probability_evidence"]["grade"],
+                                                 L=worst(*[x["evidence"]["L"]["grade"] for x in o["outcomes"]])),
+                         "break_even": derived("exit cost of the sellable part (quotes + gas) / L of the worst "
+                                               "outcome", exit_curve="A", gas=e_gas["grade"], position_size=g_coll,
+                                               L=worst(*[x["evidence"]["L"]["grade"] for x in o["outcomes"]
+                                                         if x["outcome"] == o["break_even"]["worst_outcome"]]))}
+        if onc:
+            o["exit_later"] = []
+            for x in o["outcomes"]:
+                if x["shock"]:
+                    sz = onchain_positions.liquidation_curve(onc["borrowers"], onc["oracle_price"], onc["lltv"],
+                                                             None, drops=[min(x["shock"], 0.999)])[0][0]["pt_seized"]
+                    o["exit_later"].append({"outcome": x["outcome"], **inc_mod.exit_later(
+                        curve, gas_pts, notional, pt_price, sz, x["shock"])})
+        incidents_out.append(o)
+
+    lender_out = None
+    if onc:
+        lender_out = inc_mod.lender(onc, lender_supply, presets, [s.key for s in PRESETS],
+                                    {"oracle_tracks_underlying": oracle_tracks_underlying,
+                                     "oracle_tracks_market": oracle_tracks_market}, mech["grade"],
+                                    inc_mod.incident_types(cal) if cal else [])
     refused = refusals(curves, max_x)
     g_pos = ev("A", src["pendle"])
     placeholder = ev("D", "placeholder L (--L), not from the loss model")
@@ -371,7 +469,8 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
                                                 "pool_liquidity_usd", "implied_apy")},
                          "notional_usd": e_in["collateral"], "pt_price_usd": e_in["pt_price"]},
         },
-        "exit_curve": [{"fraction": x, "usd": round(x * notional, 2), "loss": s} for x, s in curve],
+        "exit_curve": [{"fraction": x, "usd": round(x * notional, 2), "loss": s,
+                        "gas_usd": dict(gas_pts).get(x) if gas_pts else None} for x, s in curve],
         "max_exit_fraction": max_x,
         "lending": lending,
         "assumptions": {"L": L, "L_is_placeholder": True,
@@ -402,6 +501,11 @@ def build(market, curves, L, pstep, data_dir, debt=0.0, lltv_arg=None, can_hold=
         },
         "scenarios": scenarios,
         **({"borrowers": borrowers_block} if borrowers_block else {}),
+        "incidents": incidents_out,
+        **({"lender": lender_out} if lender_out else {}),
+        "exit_costs": {**costs, "gas_included": gas_ok,
+                       "evidence": {"costs": derived("Pendle quotes + gas", exit_curve="A", gas=e_gas["grade"]),
+                                    "gas": e_gas}},
         "weakest_link": overall_weakest(scenarios),
         "validation": validation,
         "evidence": {
@@ -436,9 +540,13 @@ def main():
     ap.add_argument("--oracle-tracks-market", type=tri, default=None, metavar="true|false|unknown")
     ap.add_argument("--positions", help="data/morpho_positions_<id>.json from onchain_positions.py")
     ap.add_argument("--borrower", help="a borrower in --positions: its LTV (and debt if same size) replace --debt")
+    ap.add_argument("--calibration", default=os.path.join(HERE, "data", "depeg_calibration.json"),
+                    help="calibrate_depeg.py output (default probabilities of the depeg incident)")
+    ap.add_argument("--lender-supply", type=float, default=1e6, help="USDC supplied, for the lender block")
     a = ap.parse_args()
     out = build(a.market, a.curves, a.L, a.pstep, a.data_dir, a.debt, a.lltv, a.can_hold,
-                a.oracle_tracks_underlying, a.oracle_tracks_market, a.positions, a.borrower)
+                a.oracle_tracks_underlying, a.oracle_tracks_market, a.positions, a.borrower,
+                a.calibration if os.path.exists(a.calibration) else None, a.lender_supply)
     path = a.out or os.path.join(a.data_dir, "dashboard.json")
     with open(path, "w") as f:
         json.dump(out, f, indent=1)
@@ -461,6 +569,17 @@ def main():
         print(f"borrowers at block {b['block']}: {b['distribution']['n_borrowers']} with debt, debt-weighted LTV "
               f"{b['distribution']['ltv_debt_weighted']:.4f}; seized PT > Pendle capacity from a "
               f"{b['first_drop_seized_exceeds_capacity']} oracle drop")
+    for s in out["scenarios"]:
+        be = s["break_even"]
+        if be["p_start"] is not None:
+            print(f"  {s['key']:13s} break-even: start {be['p_start']:.4%}  exit sellable {be['p_exit_sellable']:.4%}  "
+                  f"sell to cap {be['p_sell_to_cap']:.4%}")
+    for i in out["incidents"]:
+        print(f"incident {i['key']}: E[L] {i['expected_loss']:.4%}  tail95 {i['tail_loss_95']:.4%}\n  "
+              f"{i['decision_text']['text']}")
+    if "lender" in out:
+        print(f"lender: {out['lender']['decision_text']}")
+    print("GATE PASS  break-even formulas agree with decide() on both sides of each threshold")
     w, v = out["weakest_link"], out["validation"]
     print(f"overall weakest link: {w.get('input')} ({w.get('grade')}) in {w.get('scenarios')}")
     print(f"GATE {'PASS' if v['all_pass'] else 'FAIL'}  back-test {v['passed']}/{v['total']}; "

@@ -28,6 +28,8 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `loss_model.py` | L = shock × transmission (Morpho liquidation rules) per preset scenario |
 | `reasoning.py` | Evidence grades A–D, per-scenario reasoning steps, decision texts, weakest link |
 | `backtest_reusd.py` | Back-test of the Morpho rules on PT-reUSD 25 Aug 2026; grade B depends on it passing |
+| `calibrate_depeg.py` | Stablecoin depeg outcome frequencies (DeFiLlama) -> default incident probabilities |
+| `incidents.py` | Three-outcome incidents, expected / tail loss, exact break-even, exit now vs later, lender |
 | `onchain_positions.py` | Morpho borrowers on chain over JSON-RPC (stdlib): positions, LTVs, liquidation curve vs capacity; 7 gates |
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |
@@ -64,6 +66,10 @@ Done
 - `onchain_positions.py` (block 26,161,967): 13 borrowers, all gates pass (borrowShares sum exact). One borrower
   holds $2.94M of the $6.99M debt at LTV 0.906, 0.99% from liquidation. Seized PT exceeds what one Pendle sale can
   absorb (4.53M PT) from a 5.5% oracle drop. `export_dashboard.py --positions/--borrower` uses it.
+- Incidents (`incidents[]`): depeg (resolved 68.7% / partial 26.7% / severe 4.6%, 326 episodes, C) and oracle
+  dip (D). Unlevered: E[L] 5.2%, tail 92%; exit the sellable 45% if P(severe) > 0.49% (0.98% if severe = -50%).
+  Exact break-even per scenario (checked against decide()). Exit later: after a 1.6% oracle fall only 14% is
+  sellable at 1.2% (now 45% at 0.49%). Gas ~$0.1-0.3 per sale. Lender: 76% withdrawable now.
 
 Not done (in priority order)
 1. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`
@@ -97,4 +103,8 @@ the Pendle swap route (no limit orders, OTC, or holding to maturity); p is set b
   schema introspection.
 - keccak256: not in hashlib (`sha3_256` is different). pycryptodome 3.24.0 is in .venv; onchain_positions.py hard-codes
   the selectors and only re-checks them with it.
+- Pendle convert response: `routes[0].data.gasUsed` (gas units, grows with size: 508k to 1.135M);
+  `routes[0].data.fee.usd` is the swap fee (already inside the realized loss), not gas.
+- DeFiLlama free `stablecoins.llama.fi/stablecoinprices` (sdk `stablecoins.getPrices`): daily prices of every
+  stablecoin by gecko_id since 2020-12-30 (first row has date 0). Stream xUSD is not in it.
 - DeFiLlama Pro-only (avoid): `getTokenProtocols`, `getOracles`, `getHacks`, all `yields.*`.

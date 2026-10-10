@@ -41,6 +41,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
 MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"   # docs.morpho.org/developers/contracts/addresses
 MORPHO_GQL = "https://api.morpho.org/graphql"
+LLAMA_COINS = "https://coins.llama.fi"      # same API as fetch_data.py (decimals / prices)
+WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 EXPECTED = {   # from the Morpho API (fetch_data.py step4); checked against idToMarketParams on chain
     "loan_token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",          # USDC
     "collateral_token": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",    # PT-sUSDe-26NOV2026
@@ -274,6 +276,20 @@ def run(a):
     head = int(rpc.call("eth_blockNumber", []), 16)
     blk = rpc.call("eth_getBlockByNumber", [hex(head), False])
     ts = int(blk["timestamp"], 16)
+    base_fee = int(blk.get("baseFeePerGas", "0x0"), 16)
+    try:
+        prio = int(rpc.call("eth_maxPriorityFeePerGas", []), 16)
+    except RuntimeError:
+        prio = None
+    try:
+        req = urllib.request.Request(f"{LLAMA_COINS}/prices/current/ethereum:{WETH}",
+                                     headers={"User-Agent": "belem-onchain/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            eth = json.load(r)["coins"][f"ethereum:{WETH}"]
+        eth_usd, eth_ts = float(eth["price"]), int(eth["timestamp"])
+    except Exception as e:                       # gas in USD is then unknown, not guessed
+        print(f"ETH price unavailable ({e})")
+        eth_usd = eth_ts = None
     print(f"pinned block {head} ({time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime(ts))}) via {a.rpc}")
 
     # 1. market params on chain == API
@@ -403,6 +419,10 @@ def run(a):
         "discovery": {"mode": a.discover, "sources": sources, "logs_cover_from_block": covered_from,
                       "candidates": len(found)},
         "selectors": sel_note,
+        "gas": {"base_fee_gwei": base_fee / 1e9, "priority_fee_gwei": None if prio is None else prio / 1e9,
+                "eth_usd": eth_usd, "eth_price_timestamp": eth_ts,
+                "source": f"baseFeePerGas of block {head} and eth_maxPriorityFeePerGas ({a.rpc.split('?')[0]}); "
+                          f"ETH = WETH price from {LLAMA_COINS}/prices/current"},
         "borrowers": borrowers,
         "distribution": distribution(borrowers),
         "capacity": cap,
@@ -412,8 +432,10 @@ def run(a):
                   "included (Morpho accrues it on the next interaction)",
                   "liquidation curve assumes every liquidatable borrower is liquidated in full at the dropped "
                   "oracle price; seized PT is compared with what one Pendle sale can absorb now"],
-        "evidence": {k: ev for k in ("market_params", "lltv", "oracle_price", "market", "borrowers", "distribution",
-                                     "liquidation_curve")},
+        "evidence": {**{k: ev for k in ("market_params", "lltv", "oracle_price", "market", "borrowers",
+                                        "distribution", "liquidation_curve")},
+                     "gas": {"grade": "A", "source": "block base fee + RPC priority fee; ETH price DeFiLlama coins API",
+                             "block": head}},
         "gates": GATES, "all_gates_pass": all(g["pass"] for g in GATES),
     }
 
