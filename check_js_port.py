@@ -132,7 +132,42 @@ def main():
     bad = [(c, k, inject(d, *c)[k], j.get(k)) for c, j in zip(combos, jout) for k in keys if not same(inject(d, *c)[k], j.get(k))]
     print(f"GATE {'PASS' if not bad else 'FAIL'}  inject: {len(combos)} (preset, node, failure, severity) combinations "
           f"equal on {', '.join(keys)}" + (f"  first mismatch {bad[0]}" if bad else ""))
-    sys.exit(1 if fails or bad else 0)
+    # second view: vault decisions on the vault detail files (data/vaults)
+    import glob
+    from vault_pipeline import liquidity_run, vault_decide
+    vcases, vfiles = [], sorted(glob.glob(os.path.join(HERE, "data", "vaults", "0x*.json")))
+    for vf in vfiles:
+        v = json.load(open(vf))
+        for inc in v["incidents"]:
+            if inc.get("analyzed", True) and inc.get("outcomes"):
+                for amount in (1e4, 1e6, 5e7):
+                    for pw in (None, 0.0, 0.01, 0.2):
+                        for alt in (None, 0.0, 0.08):
+                            vcases.append((vf, inc["key"], amount, pw, alt, None))
+    vbad = 0
+    if vcases:
+        with tempfile.TemporaryDirectory() as tmp:
+            cf, sf = os.path.join(tmp, "v.json"), os.path.join(tmp, "v.js")
+            json.dump(vcases, open(cf, "w"))
+            open(sf, "w").write("const M=require(process.argv[2]);const fs=require('fs');"
+                                "const cs=JSON.parse(fs.readFileSync(process.argv[3]));const cache={};"
+                                "console.log(JSON.stringify(cs.map(c=>{const v=cache[c[0]]||(cache[c[0]]=JSON.parse(fs.readFileSync(c[0])));"
+                                "const inc=v.incidents.find(i=>i.key===c[1]);"
+                                "return [M.vaultDecide(inc,v.exit,c[2],c[3],c[4],c[5]),M.vaultRun(v.exit,c[2],0.5,0.03)];})));")
+            jv = json.loads(subprocess.run(["node", sf, JS, cf], check=True, capture_output=True, text=True).stdout)
+        cache = {}
+        vk = ("verdict", "expected_loss", "stay_loss_usd", "exit_usd", "exit_cost_usd", "locked_usd", "p_break_even")
+        for c, (jd, jr) in zip(vcases, jv):
+            v = cache.setdefault(c[0], json.load(open(c[0])))
+            inc = next(i for i in v["incidents"] if i["key"] == c[1])
+            pd = vault_decide(inc, v["exit"], c[2], c[3], c[4], c[5])
+            pr = liquidity_run(v["exit"], c[2], 0.03, None)["rows"][1]
+            if not all(same(pd[k], jd[k]) if not isinstance(pd[k], str) else pd[k] == jd[k] for k in vk) or \
+                    not all(same(pr[k], jr[k]) for k in ("free_usd", "forced_usd", "locked_usd", "expected_loss_on_locked_usd")):
+                vbad += 1
+        print(f"GATE {'PASS' if not vbad else 'FAIL'}  vaultDecide / vaultRun: {len(vcases) - vbad}/{len(vcases)} cases "
+              f"equal ({len(vfiles)} vault files)")
+    sys.exit(1 if fails or bad or vbad else 0)
 
 
 if __name__ == "__main__":

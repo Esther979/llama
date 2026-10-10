@@ -80,6 +80,9 @@ Done
 - Vault mode (`vault_pipeline.py`, input `sample_data/rockawayx_vaults.csv`, 33 rows): 12 ethereum Morpho VaultV2
   vaults get full numbers; the oracle of our PT-sUSDe market is a MetaOracleDeviationTimelock (0.75%, 16h) over a
   PendleSparkLinearDiscountOracle (no market input). `onchain_positions.read_market` reads any Morpho market.
+- Vault view = second view (PT stays the main view): asset-issuer and liquidity-run scenarios, alternative yield per
+  currency (EUR vault vs EUR rate), dependency_chain, vault_decide / RiskModel.vaultDecide (USD amounts, STAY / EXIT),
+  window.VAULTS bundle; FRONTEND_VAULT_GUIDE.md for the front end.
 
 Not done (in priority order)
 1. Merge all dependencies into one edge file: `src, dst, type, weight_usd, evidence`

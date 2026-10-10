@@ -141,7 +141,45 @@
     return out;
   }
 
-  const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, inject};
+  /* ---- second view: vaults (port of vault_pipeline.vault_decide / liquidity_run). v = a vault detail
+     (window.VAULTS.details[address]); inc = one of v.incidents; amount in the vault asset (~USD / EUR). */
+  function vaultDecide(inc, ex, amount, pWorst = null, altApy = null, horizonDays = null) {
+    const alt = altApy === null ? ex.alt_apy : altApy, h = horizonDays === null ? ex.horizon_days : horizonDays;
+    const carry = Math.max(0, (ex.vault_apy || 0) - alt) * h / 365, pen = ex.force_deallocate_penalty;
+    const o = {}; for (const x of inc.outcomes) o[x.outcome] = x;
+    const w = inc.worst_outcome, Lw = o[w].L_high || 0, pw0 = o[w].probability || 0;
+    const pw = pWorst === null ? pw0 : pWorst;
+    const other = w === 'severe' ? 'partial' : null;
+    const ratio = other && pw0 && o[other].L_high !== null ? o[other].probability / pw0 : 0;
+    const Lo = other && o[other].L_high !== null ? o[other].L_high : 0;
+    const po = Math.min(ratio * pw, 1 - pw), el = pw * Lw + po * Lo;
+    const freeAmt = Math.min(amount, ex.free_usd), forcedAmt = Math.min(amount - freeAmt, ex.forced_usd);
+    const lockedAmt = amount - freeAmt - forcedAmt;
+    const out = {amount, p_worst: pw, p_other: po, worst_outcome: w, L_worst: Lw, L_other: Lo, expected_loss: el,
+                 stay_loss_usd: el * amount, carry_cost: carry, penalty: pen, free_usd: freeAmt, forced_usd: forcedAmt,
+                 locked_usd: lockedAmt,
+                 p_break_even: (Lw + ratio * Lo) > 0 ? carry / (Lw + ratio * Lo) : null,
+                 p_break_even_worst_alone: Lw > 0 ? carry / Lw : null};
+    if (inc.type === 'asset_issuer')
+      return Object.assign(out, {verdict: 'REVIEW', exit_usd: 0, exit_cost_usd: 0, loss_if_exit_usd: el * amount});
+    const takeFree = el > carry, takeForced = el > carry + pen;
+    const exitAmt = freeAmt * takeFree + forcedAmt * takeForced;
+    const cost = freeAmt * carry * takeFree + forcedAmt * (carry + pen) * takeForced;
+    const verdict = exitAmt <= 0 ? 'STAY' : exitAmt >= amount - 1e-9 ? 'EXIT' : 'EXIT_PARTIAL';
+    return Object.assign(out, {verdict, exit_usd: exitAmt, exit_cost_usd: cost,
+                               loss_if_exit_usd: el * (amount - exitAmt) + cost});
+  }
+
+  /* Morpho liquidity incident: other depositors take `share` (0..1) of the free liquidity first. */
+  function vaultRun(ex, amount, share, worstExpectedLoss) {
+    const freeAmt = Math.min(amount, ex.free_usd * (1 - share));
+    const forcedAmt = Math.min(amount - freeAmt, ex.forced_usd * (1 - share));
+    const locked = amount - freeAmt - forcedAmt;
+    return {others_take: share, free_usd: freeAmt, forced_usd: forcedAmt, locked_usd: locked,
+            expected_loss_on_locked_usd: locked * worstExpectedLoss};
+  }
+
+  const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, inject, vaultDecide, vaultRun};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;
 })(typeof window !== 'undefined' ? window : this);
