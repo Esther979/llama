@@ -30,6 +30,8 @@ JSON's field names or meaning without updating README.md and telling the user.
 | `backtest_reusd.py` | Back-test of the Morpho rules on PT-reUSD 25 Aug 2026; grade B depends on it passing |
 | `calibrate_depeg.py` | Stablecoin depeg outcome frequencies (DeFiLlama) -> default incident probabilities |
 | `incidents.py` | Three-outcome incidents, expected / tail loss, exact break-even, exit now vs later, lender |
+| `etherscan.py` | Etherscan V2 verified source / ABI / contract name (key in .env, never saved) |
+| `crawl.py` | Generic ABI-driven dependency crawler -> edges_<tag>.csv (src, dst, type, kind, weight_usd, evidence) |
 | `onchain_positions.py` | Morpho borrowers on chain over JSON-RPC (stdlib): positions, LTVs, liquidation curve vs capacity; 7 gates |
 | `llama_graph.py` | DeFiLlama free endpoints via `defillama-sdk` 0.1.4: protocol-level edges, price and stablecoin replay |
 | `sample_data/dashboard.sample.json` | dashboard.json from the 10 Oct run, for UI work without API calls |
