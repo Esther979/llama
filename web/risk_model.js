@@ -385,11 +385,18 @@
     const orc = tm.oracle_discount_per_year !== null ? 1 - left / 365 * tm.oracle_discount_per_year : null;
     return [mk, orc];
   }
+  /* Yield given up by selling now, fraction of the value sold (port of frontend_contract.carry_of): (implied APY -
+     altApy) over `days`, at most until expiry (days null = until expiry); altApy null = nothing given up. Pass the
+     result as `carry` to decideAt / breakEvenSeverity / sensitivity, never the annual difference. */
+  function carryOf(d, altApy = null, days = null) {
+    const tm = d.time_model, alt = altApy === null || altApy === undefined ? tm.implied_apy : altApy;
+    const left = Math.max(0, tm.days_to_expiry);
+    return Math.max(0, tm.implied_apy - alt) * (days === null || days === undefined ? left : Math.min(days, left)) / 365;
+  }
   function decideAtDuration(d, presetKey, node, fail, sev, hours, recovers = true, altApy = null) {
     const tm = d.time_model, m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey];
     const days = hours / 24, [mk0, orc0] = ptPrices(tm, 0), [mkT, orcT] = ptPrices(tm, days);
-    const alt = altApy === null ? tm.implied_apy : altApy;
-    const carry = Math.max(0, tm.implied_apy - alt) * Math.min(days, Math.max(0, tm.days_to_expiry)) / 365;
+    const carry = carryOf(d, altApy, days);
     const V0 = p.collateral_usd, D0 = p.debt_usd;
     const Co0 = 'collateral_oracle_usd' in p ? p.collateral_oracle_usd : V0;
     const VT = V0 * (mk0 && mkT ? mkT / mk0 : 1);
@@ -480,8 +487,9 @@
     }
     for (const [k, q] of Object.entries(d.position_presets))
       if (k !== presetKey) cands.push(['position', q.label, q.evidence.grade, k, carry, null]);
-    cands.push(['carry', `cash after selling earns 1% less a year than the PT (carry ${((carry + 0.01) * 100).toFixed(2)}%)`,
-                'D', presetKey, carry + 0.01, null]);
+    const c1 = carry + 0.01 * Math.max(0, d.time_model.days_to_expiry) / 365;   // 1% a year, until expiry
+    cands.push(['carry', `cash after selling earns 1% a year less than assumed (carry ${(c1 * 100).toFixed(3)}% until expiry)`,
+                'D', presetKey, c1, null]);
     const rows = cands.map(([key, alternative, grade, pk, c, op]) => {
       const r = decideAt(d, pk, node, fail, sev, c, op), q = d.position_presets[pk], Ek = q.collateral_usd - q.debt_usd;
       return {key, alternative, grade, verdict: r.verdict, comparison: key === 'position',
@@ -523,7 +531,7 @@
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
                inject, decideAt, breakEvenSeverity,
-               sensitivity, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
+               sensitivity, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;

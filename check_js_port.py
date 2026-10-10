@@ -169,9 +169,22 @@ def main():
     bad = bad + dbad + bbad
 
     # sensitivity (no probability): same candidates, flips, effects and weakest link
-    from frontend_contract import sensitivity
-    scombos = [(pk, k.split(":")[0], k.split(":")[1], sev, 0.0) for pk in d["position_presets"]
-               for k in d["ui"]["injections"] for sev in (0.5, 2, 10)]
+    from frontend_contract import carry_of, sensitivity
+    ccombos = [(alt, days) for alt in (None, 0.0, 0.02, 0.04, 0.0501, 0.08) for days in (None, 0.5, 10, 46, 100)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "c.json"), os.path.join(tmp, "c.js")
+        json.dump(ccombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(a.map(c=>M.carryOf(d,c[0],c[1]))));")
+        jc = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    cbad = [c for c, j in zip(ccombos, jc) if not same(carry_of(d, *c), j)]
+    print(f"GATE {'PASS' if not cbad else 'FAIL'}  carryOf: {len(ccombos)} (cash APY, days) cases equal"
+          + (f"  first mismatch {cbad[0]}" if cbad else ""))
+    bad = bad + cbad
+    c4 = carry_of(d, 0.04)
+    scombos = [(pk, k.split(":")[0], k.split(":")[1], sev, c) for pk in d["position_presets"]
+               for k in d["ui"]["injections"] for sev in (0.5, 2, 10) for c in (0.0, c4)]
     with tempfile.TemporaryDirectory() as tmp:
         cf, sf = os.path.join(tmp, "s.json"), os.path.join(tmp, "s.js")
         json.dump(scombos, open(cf, "w"))

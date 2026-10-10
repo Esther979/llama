@@ -597,8 +597,9 @@ def sensitivity(d, preset_key, node, fail, sev, carry=0.0):
     for k, q in d["position_presets"].items():
         if k != preset_key:
             cands.append(("position", q["label"], q["evidence"]["grade"], k, carry, None))
-    cands.append(("carry", f"cash after selling earns 1% less a year than the PT (carry {carry + 0.01:.2%})", "D",
-                  preset_key, carry + 0.01, None))
+    c1 = carry + 0.01 * max(0.0, d["time_model"]["days_to_expiry"]) / 365     # 1% a year, until expiry
+    cands.append(("carry", f"cash after selling earns 1% a year less than assumed (carry {c1:.3%} until expiry)", "D",
+                  preset_key, c1, None))
     rows = []
     for key, alt, grade, pk, c, op in cands:
         r = decide_at(d, pk, node, fail, sev, c, op)
@@ -641,6 +642,17 @@ def time_model(d_position, oracle, onc, generated_at):
                                                                 "assumed constant over the incident (D)"}}}
 
 
+def carry_of(d, alt_apy=None, days=None):
+    """Yield given up by selling now, as a fraction of the value sold: (PT implied APY - what cash earns) over `days`,
+    at most until expiry (days None = until expiry). alt_apy = the manager's "cash earns after selling" (annual, e.g.
+    0.04); None = the PT's implied APY (nothing given up). This, not the annual difference, is the `carry` that
+    decide_at / break_even_severity / sensitivity take. Mirrored by RiskModel.carryOf."""
+    tm = d["time_model"]
+    alt = tm["implied_apy"] if alt_apy is None else alt_apy
+    left = max(0.0, tm["days_to_expiry"])
+    return max(0.0, tm["implied_apy"] - alt) * (left if days is None else min(days, left)) / 365
+
+
 def pt_prices(tm, days):
     """PT price `days` from now: market (constant implied APY) and oracle (linear discount); 1 after expiry."""
     left = max(0.0, tm["days_to_expiry"] - days)
@@ -664,8 +676,7 @@ def decide_at_duration(d, preset_key, node, fail, sev, hours, recovers=True, alt
     days = hours / 24
     mk0, orc0 = pt_prices(tm, 0.0)
     mkT, orcT = pt_prices(tm, days)
-    alt = tm["implied_apy"] if alt_apy is None else alt_apy
-    carry = max(0.0, tm["implied_apy"] - alt) * min(days, max(0.0, tm["days_to_expiry"])) / 365
+    carry = carry_of(d, alt_apy, days)
     V0, D0 = p["collateral_usd"], p["debt_usd"]
     Co0 = p.get("collateral_oracle_usd", V0)
     VT = V0 * (mkT / mk0 if mk0 and mkT else 1.0)

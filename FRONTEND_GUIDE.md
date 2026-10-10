@@ -120,7 +120,7 @@ function model() {
 
 `RiskModel.breakEvenSeverity(d, preset, node, fail, carry, lo, hi)` returns `{start, cap}`: the smallest severity (in the failure's unit) at which selling starts, and at which it reaches the pool limit (or a full exit); `null` = not within `[lo, hi]`. Pass the page's slider range as `lo`, `hi`.
 
-- `carry()`: pass it as today (implied APY minus the "cash earns" assumption, unscaled). `decideAt` and `breakEvenSeverity` multiply it by collateral / equity for levered presets, like the slippage (yield given up per unit of collateral sold, per unit of equity).
+- `carry()`: the input "Cash earns after selling, % APY" (`S.alt`, default `d.time_model.implied_apy x 100` = 5.01, i.e. nothing given up) is annual; the model needs the yield given up **until expiry** as a fraction of the value sold. Always convert with `const carry = () => RiskModel.carryOf(d, S.alt / 100);` (= max(0, implied APY - S.alt / 100) x days to expiry / 365: 4% today -> 0.128%, not 1.01%). Never pass the annual difference: it overstates the cost of selling about 8 times (46 days to expiry). `decideAt`, `breakEvenSeverity` and `sensitivity` multiply it by value / equity for levered presets, like the slippage. Parse the input with a decimal comma too ("5,01").
 - Severity zones on the step-2 slider: `[lo, be.start)` stay, `[be.start, be.cap)` sell part, `[be.cap, hi]` sell to the pool limit.
 - Money: everything is already in USD in the result.
 
@@ -139,7 +139,7 @@ The organisers asked for a timeline ("over how many months, what risk") with the
 - "How long does it last?": a duration slider, log scale from 1 hour to 6 months (`hours`), with tick marks at the meta-oracle switch (`d.oracle.challenge_timelock_s / 3600` = 16 h) and at the PT's expiry (`d.time_model.days_to_expiry x 24` h).
 - "After the incident": a toggle "recovers" (default) / "stays" (`recovers` true / false).
 
-Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours, recovers, altApy)` instead of `decideAt` (same result fields, plus `hours`, `days`, `past_expiry`, `carry`, `pt_price_market`, `pt_price_oracle`, `position_value_usd`, `collateral_usd`, `debt_usd`, `ltv`). `altApy` = the "cash earns" assumption as a fraction (`S.alt / 100`; `null` = the PT's implied APY, i.e. no yield given up). What it models:
+Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours, recovers, altApy)` instead of `decideAt` (same result fields, plus `hours`, `days`, `past_expiry`, `carry`, `pt_price_market`, `pt_price_oracle`, `position_value_usd`, `collateral_usd`, `debt_usd`, `ltv`). `altApy` = the "cash earns" assumption as a fraction (`S.alt / 100`; `null` = the PT's implied APY, i.e. no yield given up); these functions convert it themselves (`carryOf` over the incident's duration, at most until expiry). What it models:
 
 | Effect of the duration | How |
 |---|---|
