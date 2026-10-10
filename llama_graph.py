@@ -223,16 +223,22 @@ def cmd_prices(a):
 
 # ------------------------------------------------------------------------- step D
 def cmd_stable(a):
-    want = {s.strip().lower() for s in a.symbols.split(",") if s.strip()}
     lst = call(client.stablecoins.getStablecoins, True)
     assets = (lst or {}).get("peggedAssets") or []
-    hits = [s for s in assets if (s.get("symbol") or "").lower() in want]
+    if a.ids:
+        # exact match on gecko_id: symbols are not unique (e.g. several coins called USDX)
+        want = {s.strip().lower() for s in a.ids.split(",") if s.strip()}
+        hits = [s for s in assets if (s.get("gecko_id") or "").lower() in want]
+        missing = want - {(s.get("gecko_id") or "").lower() for s in hits}
+    else:
+        want = {s.strip().lower() for s in a.symbols.split(",") if s.strip()}
+        hits = [s for s in assets if (s.get("symbol") or "").lower() in want]
+        missing = want - {(s.get("symbol") or "").lower() for s in hits}
     print(f"{len(assets)} stablecoins listed; matched {len(hits)}:")
     for s in hits:
         circ = num((s.get("circulating") or {}).get("peggedUSD"))
         print(f"  id={s.get('id'):5s} {s.get('symbol'):8s} {s.get('name')}  gecko_id={s.get('gecko_id')}  "
               f"mechanism={s.get('pegMechanism')}  price={s.get('price')}  circulating=${circ / 1e6:.1f}m")
-    missing = want - {(s.get("symbol") or "").lower() for s in hits}
     if missing:
         print(f"  not in DeFiLlama's stablecoin list: {sorted(missing)}")
     time.sleep(0.5)
@@ -258,8 +264,8 @@ def cmd_stable(a):
         pts = [p for p in det.get("tokens") or [] if lo <= int(num(p.get("date"))) <= hi]
         supply[s.get("symbol")] = [{"date": day(p["date"]), "circulating_usd": num((p.get("circulating") or {}).get("peggedUSD"))}
                                    for p in pts]
-    save_json("replay_stablecoins.json", {"matched": hits, "prices": rows, "supply": supply})
-    save_csv("replay_stable_prices.csv", rows)
+    save_json(f"{a.out}.json", {"matched": hits, "prices": rows, "supply": supply})
+    save_csv("replay_stable_prices.csv" if a.out == "replay_stablecoins" else f"{a.out}_prices.csv", rows)
     for k in sorted(keys):
         ser = [r for r in rows if r["gecko_id"] == k]
         if ser:
@@ -282,6 +288,8 @@ def main():
     s.add_argument("--start", required=True); s.add_argument("--end", required=True)
     s.add_argument("--period", default="1d", choices=["1h", "4h", "1d"])
     s = sub.add_parser("stable"); s.add_argument("--symbols", default="deUSD,xUSD,USDX,USDe")
+    s.add_argument("--ids", help="comma-separated gecko_ids for an exact match, e.g. ethena-usde,elixir-deusd")
+    s.add_argument("--out", default="replay_stablecoins", help="output file stem in data/")
     s.add_argument("--start", default="2025-10-25"); s.add_argument("--end", default="2025-11-20")
     a = p.parse_args()
     {"protocols": cmd_protocols, "protocol": cmd_protocol, "prices": cmd_prices, "stable": cmd_stable}[a.cmd](a)
