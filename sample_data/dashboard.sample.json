@@ -1,0 +1,1690 @@
+{
+ "generated_at": "2026-10-10T10:12:23+00:00",
+ "position": {
+  "chain_id": 1,
+  "name": "sUSDe",
+  "market": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+  "pt": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+  "underlying": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+  "expiry": "2026-11-26",
+  "pool_liquidity_usd": 3819919,
+  "implied_apy": 0.0501,
+  "notional_usd": 10000000.0
+ },
+ "exit_curve": [
+  {
+   "fraction": 0.01,
+   "usd": 100000.0,
+   "loss": 0.000153
+  },
+  {
+   "fraction": 0.05,
+   "usd": 500000.0,
+   "loss": 0.000199
+  },
+  {
+   "fraction": 0.1,
+   "usd": 1000000.0,
+   "loss": 0.00033
+  },
+  {
+   "fraction": 0.25,
+   "usd": 2500000.0,
+   "loss": 0.00082
+  },
+  {
+   "fraction": 0.3,
+   "usd": 3000000.0,
+   "loss": 0.001375
+  },
+  {
+   "fraction": 0.35,
+   "usd": 3500000.0,
+   "loss": 0.002124
+  },
+  {
+   "fraction": 0.4,
+   "usd": 4000000.0,
+   "loss": 0.003135
+  },
+  {
+   "fraction": 0.45,
+   "usd": 4500000.0,
+   "loss": 0.004909
+  }
+ ],
+ "max_exit_fraction": 0.45,
+ "lending": [
+  {
+   "protocol": "morpho",
+   "market_id": "0x5613b170de",
+   "loan_asset": "USDC",
+   "lltv": 0.915,
+   "collateral_usd": 7926744.871895941,
+   "borrow_usd": 6992052.443136358,
+   "liquidity_usd": 764314.0325366299,
+   "aggregate_ltv": 0.8820836996944975,
+   "oracle_address": "0xF8b29e7E9c00CE531434775f7923CC9fbCa01b08",
+   "oracle_type": "Unknown"
+  }
+ ],
+ "assumptions": {
+  "L": 0.5,
+  "L_is_placeholder": true,
+  "note": "L = loss if the event happens; placeholder until the per-layer model exists"
+ },
+ "thresholds": {
+  "start_selling_p": 0.005,
+  "sell_to_cap_p": 0.045
+ },
+ "decision_grid": [
+  {
+   "p": 0.0,
+   "verdict": "STAY",
+   "exit_fraction": 0.0,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.0,
+   "stay_cost": 0.0
+  },
+  {
+   "p": 0.005,
+   "verdict": "PARTIAL EXIT 25%",
+   "exit_fraction": 0.25,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.00208,
+   "stay_cost": 0.0025
+  },
+  {
+   "p": 0.01,
+   "verdict": "PARTIAL EXIT 30%",
+   "exit_fraction": 0.3,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.003912499999999999,
+   "stay_cost": 0.005
+  },
+  {
+   "p": 0.015,
+   "verdict": "PARTIAL EXIT 35%",
+   "exit_fraction": 0.35,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.0056184,
+   "stay_cost": 0.0075
+  },
+  {
+   "p": 0.02,
+   "verdict": "PARTIAL EXIT 37%",
+   "exit_fraction": 0.37,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.007235508,
+   "stay_cost": 0.01
+  },
+  {
+   "p": 0.025,
+   "verdict": "PARTIAL EXIT 40%",
+   "exit_fraction": 0.4,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.008754,
+   "stay_cost": 0.0125
+  },
+  {
+   "p": 0.03,
+   "verdict": "PARTIAL EXIT 40%",
+   "exit_fraction": 0.4,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.010254,
+   "stay_cost": 0.015
+  },
+  {
+   "p": 0.035,
+   "verdict": "PARTIAL EXIT 40%",
+   "exit_fraction": 0.4,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.011754,
+   "stay_cost": 0.0175
+  },
+  {
+   "p": 0.04,
+   "verdict": "PARTIAL EXIT 44%",
+   "exit_fraction": 0.44,
+   "stuck_fraction": 0.0,
+   "expected_cost": 0.013203848,
+   "stay_cost": 0.02
+  },
+  {
+   "p": 0.045,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.014584050000000001,
+   "stay_cost": 0.0225
+  },
+  {
+   "p": 0.05,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.015959050000000002,
+   "stay_cost": 0.025
+  },
+  {
+   "p": 0.055,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.01733405,
+   "stay_cost": 0.0275
+  },
+  {
+   "p": 0.06,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.01870905,
+   "stay_cost": 0.03
+  },
+  {
+   "p": 0.065,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.020084050000000003,
+   "stay_cost": 0.0325
+  },
+  {
+   "p": 0.07,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.021459050000000004,
+   "stay_cost": 0.035
+  },
+  {
+   "p": 0.075,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.02283405,
+   "stay_cost": 0.0375
+  },
+  {
+   "p": 0.08,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.024209050000000003,
+   "stay_cost": 0.04
+  },
+  {
+   "p": 0.085,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.025584050000000004,
+   "stay_cost": 0.0425
+  },
+  {
+   "p": 0.09,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.026959050000000002,
+   "stay_cost": 0.045
+  },
+  {
+   "p": 0.095,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.028334050000000003,
+   "stay_cost": 0.0475
+  },
+  {
+   "p": 0.1,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.029709050000000004,
+   "stay_cost": 0.05
+  },
+  {
+   "p": 0.105,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.031084050000000002,
+   "stay_cost": 0.0525
+  },
+  {
+   "p": 0.11,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.03245905,
+   "stay_cost": 0.055
+  },
+  {
+   "p": 0.115,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.033834050000000004,
+   "stay_cost": 0.0575
+  },
+  {
+   "p": 0.12,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.03520905,
+   "stay_cost": 0.06
+  },
+  {
+   "p": 0.125,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.03658405,
+   "stay_cost": 0.0625
+  },
+  {
+   "p": 0.13,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.03795905,
+   "stay_cost": 0.065
+  },
+  {
+   "p": 0.135,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.03933405,
+   "stay_cost": 0.0675
+  },
+  {
+   "p": 0.14,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.040709050000000004,
+   "stay_cost": 0.07
+  },
+  {
+   "p": 0.145,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.04208405,
+   "stay_cost": 0.0725
+  },
+  {
+   "p": 0.15,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.04345905,
+   "stay_cost": 0.075
+  },
+  {
+   "p": 0.155,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.04483405,
+   "stay_cost": 0.0775
+  },
+  {
+   "p": 0.16,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.04620905,
+   "stay_cost": 0.08
+  },
+  {
+   "p": 0.165,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.04758405,
+   "stay_cost": 0.0825
+  },
+  {
+   "p": 0.17,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.048959050000000004,
+   "stay_cost": 0.085
+  },
+  {
+   "p": 0.175,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05033405,
+   "stay_cost": 0.0875
+  },
+  {
+   "p": 0.18,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05170905,
+   "stay_cost": 0.09
+  },
+  {
+   "p": 0.185,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05308405,
+   "stay_cost": 0.0925
+  },
+  {
+   "p": 0.19,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05445905,
+   "stay_cost": 0.095
+  },
+  {
+   "p": 0.195,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05583405,
+   "stay_cost": 0.0975
+  },
+  {
+   "p": 0.2,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.057209050000000004,
+   "stay_cost": 0.1
+  },
+  {
+   "p": 0.205,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05858405,
+   "stay_cost": 0.1025
+  },
+  {
+   "p": 0.21,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.05995905,
+   "stay_cost": 0.105
+  },
+  {
+   "p": 0.215,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06133405,
+   "stay_cost": 0.1075
+  },
+  {
+   "p": 0.22,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06270905,
+   "stay_cost": 0.11
+  },
+  {
+   "p": 0.225,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06408405,
+   "stay_cost": 0.1125
+  },
+  {
+   "p": 0.23,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06545905000000002,
+   "stay_cost": 0.115
+  },
+  {
+   "p": 0.235,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06683405,
+   "stay_cost": 0.1175
+  },
+  {
+   "p": 0.24,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06820905000000001,
+   "stay_cost": 0.12
+  },
+  {
+   "p": 0.245,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.06958405000000001,
+   "stay_cost": 0.1225
+  },
+  {
+   "p": 0.25,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07095905000000001,
+   "stay_cost": 0.125
+  },
+  {
+   "p": 0.255,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07233405000000001,
+   "stay_cost": 0.1275
+  },
+  {
+   "p": 0.26,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07370905000000001,
+   "stay_cost": 0.13
+  },
+  {
+   "p": 0.265,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07508405000000001,
+   "stay_cost": 0.1325
+  },
+  {
+   "p": 0.27,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07645905000000001,
+   "stay_cost": 0.135
+  },
+  {
+   "p": 0.275,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07783405000000002,
+   "stay_cost": 0.1375
+  },
+  {
+   "p": 0.28,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.07920905000000002,
+   "stay_cost": 0.14
+  },
+  {
+   "p": 0.285,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08058405,
+   "stay_cost": 0.1425
+  },
+  {
+   "p": 0.29,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08195905,
+   "stay_cost": 0.145
+  },
+  {
+   "p": 0.295,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08333405,
+   "stay_cost": 0.1475
+  },
+  {
+   "p": 0.3,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08470905000000001,
+   "stay_cost": 0.15
+  },
+  {
+   "p": 0.305,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08608405000000001,
+   "stay_cost": 0.1525
+  },
+  {
+   "p": 0.31,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08745905000000001,
+   "stay_cost": 0.155
+  },
+  {
+   "p": 0.315,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.08883405000000001,
+   "stay_cost": 0.1575
+  },
+  {
+   "p": 0.32,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09020905000000001,
+   "stay_cost": 0.16
+  },
+  {
+   "p": 0.325,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09158405000000001,
+   "stay_cost": 0.1625
+  },
+  {
+   "p": 0.33,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09295905000000002,
+   "stay_cost": 0.165
+  },
+  {
+   "p": 0.335,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09433405000000002,
+   "stay_cost": 0.1675
+  },
+  {
+   "p": 0.34,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09570905000000002,
+   "stay_cost": 0.17
+  },
+  {
+   "p": 0.345,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09708405,
+   "stay_cost": 0.1725
+  },
+  {
+   "p": 0.35,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09845905,
+   "stay_cost": 0.175
+  },
+  {
+   "p": 0.355,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.09983405000000001,
+   "stay_cost": 0.1775
+  },
+  {
+   "p": 0.36,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10120905000000001,
+   "stay_cost": 0.18
+  },
+  {
+   "p": 0.365,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10258405000000001,
+   "stay_cost": 0.1825
+  },
+  {
+   "p": 0.37,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10395905000000001,
+   "stay_cost": 0.185
+  },
+  {
+   "p": 0.375,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10533405000000001,
+   "stay_cost": 0.1875
+  },
+  {
+   "p": 0.38,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10670905000000001,
+   "stay_cost": 0.19
+  },
+  {
+   "p": 0.385,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10808405000000001,
+   "stay_cost": 0.1925
+  },
+  {
+   "p": 0.39,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.10945905000000002,
+   "stay_cost": 0.195
+  },
+  {
+   "p": 0.395,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11083405000000002,
+   "stay_cost": 0.1975
+  },
+  {
+   "p": 0.4,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11220905000000002,
+   "stay_cost": 0.2
+  },
+  {
+   "p": 0.405,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11358405000000002,
+   "stay_cost": 0.2025
+  },
+  {
+   "p": 0.41,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11495905000000001,
+   "stay_cost": 0.205
+  },
+  {
+   "p": 0.415,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11633405000000001,
+   "stay_cost": 0.2075
+  },
+  {
+   "p": 0.42,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11770905000000001,
+   "stay_cost": 0.21
+  },
+  {
+   "p": 0.425,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.11908405000000001,
+   "stay_cost": 0.2125
+  },
+  {
+   "p": 0.43,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12045905000000001,
+   "stay_cost": 0.215
+  },
+  {
+   "p": 0.435,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12183405000000001,
+   "stay_cost": 0.2175
+  },
+  {
+   "p": 0.44,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12320905000000001,
+   "stay_cost": 0.22
+  },
+  {
+   "p": 0.445,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12458405000000002,
+   "stay_cost": 0.2225
+  },
+  {
+   "p": 0.45,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12595905000000002,
+   "stay_cost": 0.225
+  },
+  {
+   "p": 0.455,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12733405,
+   "stay_cost": 0.2275
+  },
+  {
+   "p": 0.46,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.12870905000000002,
+   "stay_cost": 0.23
+  },
+  {
+   "p": 0.465,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13008405,
+   "stay_cost": 0.2325
+  },
+  {
+   "p": 0.47,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13145905,
+   "stay_cost": 0.235
+  },
+  {
+   "p": 0.475,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13283404999999998,
+   "stay_cost": 0.2375
+  },
+  {
+   "p": 0.48,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13420905,
+   "stay_cost": 0.24
+  },
+  {
+   "p": 0.485,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13558404999999998,
+   "stay_cost": 0.2425
+  },
+  {
+   "p": 0.49,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13695905,
+   "stay_cost": 0.245
+  },
+  {
+   "p": 0.495,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13833405,
+   "stay_cost": 0.2475
+  },
+  {
+   "p": 0.5,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.13970905,
+   "stay_cost": 0.25
+  },
+  {
+   "p": 0.505,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14108405000000002,
+   "stay_cost": 0.2525
+  },
+  {
+   "p": 0.51,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14245905,
+   "stay_cost": 0.255
+  },
+  {
+   "p": 0.515,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14383405000000002,
+   "stay_cost": 0.2575
+  },
+  {
+   "p": 0.52,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14520905,
+   "stay_cost": 0.26
+  },
+  {
+   "p": 0.525,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14658405000000002,
+   "stay_cost": 0.2625
+  },
+  {
+   "p": 0.53,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14795905,
+   "stay_cost": 0.265
+  },
+  {
+   "p": 0.535,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.14933405000000002,
+   "stay_cost": 0.2675
+  },
+  {
+   "p": 0.54,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15070905,
+   "stay_cost": 0.27
+  },
+  {
+   "p": 0.545,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15208405000000003,
+   "stay_cost": 0.2725
+  },
+  {
+   "p": 0.55,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15345905,
+   "stay_cost": 0.275
+  },
+  {
+   "p": 0.555,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15483405000000003,
+   "stay_cost": 0.2775
+  },
+  {
+   "p": 0.56,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15620905000000002,
+   "stay_cost": 0.28
+  },
+  {
+   "p": 0.565,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15758404999999998,
+   "stay_cost": 0.2825
+  },
+  {
+   "p": 0.57,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.15895905,
+   "stay_cost": 0.285
+  },
+  {
+   "p": 0.575,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16033404999999998,
+   "stay_cost": 0.2875
+  },
+  {
+   "p": 0.58,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16170905,
+   "stay_cost": 0.29
+  },
+  {
+   "p": 0.585,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16308404999999998,
+   "stay_cost": 0.2925
+  },
+  {
+   "p": 0.59,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16445905,
+   "stay_cost": 0.295
+  },
+  {
+   "p": 0.595,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16583404999999998,
+   "stay_cost": 0.2975
+  },
+  {
+   "p": 0.6,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16720905,
+   "stay_cost": 0.3
+  },
+  {
+   "p": 0.605,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16858404999999999,
+   "stay_cost": 0.3025
+  },
+  {
+   "p": 0.61,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.16995905,
+   "stay_cost": 0.305
+  },
+  {
+   "p": 0.615,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17133405,
+   "stay_cost": 0.3075
+  },
+  {
+   "p": 0.62,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17270905,
+   "stay_cost": 0.31
+  },
+  {
+   "p": 0.625,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17408405,
+   "stay_cost": 0.3125
+  },
+  {
+   "p": 0.63,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17545905,
+   "stay_cost": 0.315
+  },
+  {
+   "p": 0.635,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17683405000000002,
+   "stay_cost": 0.3175
+  },
+  {
+   "p": 0.64,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17820905,
+   "stay_cost": 0.32
+  },
+  {
+   "p": 0.645,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.17958405000000002,
+   "stay_cost": 0.3225
+  },
+  {
+   "p": 0.65,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18095905,
+   "stay_cost": 0.325
+  },
+  {
+   "p": 0.655,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18233405000000003,
+   "stay_cost": 0.3275
+  },
+  {
+   "p": 0.66,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18370905,
+   "stay_cost": 0.33
+  },
+  {
+   "p": 0.665,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18508405000000003,
+   "stay_cost": 0.3325
+  },
+  {
+   "p": 0.67,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18645905000000002,
+   "stay_cost": 0.335
+  },
+  {
+   "p": 0.675,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18783405000000003,
+   "stay_cost": 0.3375
+  },
+  {
+   "p": 0.68,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.18920905000000002,
+   "stay_cost": 0.34
+  },
+  {
+   "p": 0.685,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19058405000000003,
+   "stay_cost": 0.3425
+  },
+  {
+   "p": 0.69,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19195905,
+   "stay_cost": 0.345
+  },
+  {
+   "p": 0.695,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19333404999999998,
+   "stay_cost": 0.3475
+  },
+  {
+   "p": 0.7,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19470905,
+   "stay_cost": 0.35
+  },
+  {
+   "p": 0.705,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19608404999999998,
+   "stay_cost": 0.3525
+  },
+  {
+   "p": 0.71,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19745905,
+   "stay_cost": 0.355
+  },
+  {
+   "p": 0.715,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.19883404999999998,
+   "stay_cost": 0.3575
+  },
+  {
+   "p": 0.72,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20020905,
+   "stay_cost": 0.36
+  },
+  {
+   "p": 0.725,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20158405,
+   "stay_cost": 0.3625
+  },
+  {
+   "p": 0.73,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20295905,
+   "stay_cost": 0.365
+  },
+  {
+   "p": 0.735,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20433405,
+   "stay_cost": 0.3675
+  },
+  {
+   "p": 0.74,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20570905,
+   "stay_cost": 0.37
+  },
+  {
+   "p": 0.745,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20708405,
+   "stay_cost": 0.3725
+  },
+  {
+   "p": 0.75,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20845905,
+   "stay_cost": 0.375
+  },
+  {
+   "p": 0.755,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.20983405000000002,
+   "stay_cost": 0.3775
+  },
+  {
+   "p": 0.76,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21120905,
+   "stay_cost": 0.38
+  },
+  {
+   "p": 0.765,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21258405000000002,
+   "stay_cost": 0.3825
+  },
+  {
+   "p": 0.77,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21395905,
+   "stay_cost": 0.385
+  },
+  {
+   "p": 0.775,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21533405000000003,
+   "stay_cost": 0.3875
+  },
+  {
+   "p": 0.78,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21670905000000001,
+   "stay_cost": 0.39
+  },
+  {
+   "p": 0.785,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21808405000000003,
+   "stay_cost": 0.3925
+  },
+  {
+   "p": 0.79,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.21945905000000002,
+   "stay_cost": 0.395
+  },
+  {
+   "p": 0.795,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22083405000000003,
+   "stay_cost": 0.3975
+  },
+  {
+   "p": 0.8,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22220905000000002,
+   "stay_cost": 0.4
+  },
+  {
+   "p": 0.805,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22358405000000003,
+   "stay_cost": 0.4025
+  },
+  {
+   "p": 0.81,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22495905000000002,
+   "stay_cost": 0.405
+  },
+  {
+   "p": 0.815,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22633404999999998,
+   "stay_cost": 0.4075
+  },
+  {
+   "p": 0.82,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22770905,
+   "stay_cost": 0.41
+  },
+  {
+   "p": 0.825,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.22908404999999998,
+   "stay_cost": 0.4125
+  },
+  {
+   "p": 0.83,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23045905,
+   "stay_cost": 0.415
+  },
+  {
+   "p": 0.835,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23183404999999999,
+   "stay_cost": 0.4175
+  },
+  {
+   "p": 0.84,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23320905,
+   "stay_cost": 0.42
+  },
+  {
+   "p": 0.845,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23458405,
+   "stay_cost": 0.4225
+  },
+  {
+   "p": 0.85,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23595905,
+   "stay_cost": 0.425
+  },
+  {
+   "p": 0.855,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23733405,
+   "stay_cost": 0.4275
+  },
+  {
+   "p": 0.86,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.23870905,
+   "stay_cost": 0.43
+  },
+  {
+   "p": 0.865,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24008405,
+   "stay_cost": 0.4325
+  },
+  {
+   "p": 0.87,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24145905,
+   "stay_cost": 0.435
+  },
+  {
+   "p": 0.875,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24283405000000002,
+   "stay_cost": 0.4375
+  },
+  {
+   "p": 0.88,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24420905,
+   "stay_cost": 0.44
+  },
+  {
+   "p": 0.885,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24558405000000003,
+   "stay_cost": 0.4425
+  },
+  {
+   "p": 0.89,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24695905,
+   "stay_cost": 0.445
+  },
+  {
+   "p": 0.895,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24833405000000003,
+   "stay_cost": 0.4475
+  },
+  {
+   "p": 0.9,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.24970905000000002,
+   "stay_cost": 0.45
+  },
+  {
+   "p": 0.905,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25108405000000006,
+   "stay_cost": 0.4525
+  },
+  {
+   "p": 0.91,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25245905,
+   "stay_cost": 0.455
+  },
+  {
+   "p": 0.915,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25383405000000003,
+   "stay_cost": 0.4575
+  },
+  {
+   "p": 0.92,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25520905000000005,
+   "stay_cost": 0.46
+  },
+  {
+   "p": 0.925,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25658405,
+   "stay_cost": 0.4625
+  },
+  {
+   "p": 0.93,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25795905,
+   "stay_cost": 0.465
+  },
+  {
+   "p": 0.935,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.25933405000000004,
+   "stay_cost": 0.4675
+  },
+  {
+   "p": 0.94,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26070905,
+   "stay_cost": 0.47
+  },
+  {
+   "p": 0.945,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26208405,
+   "stay_cost": 0.4725
+  },
+  {
+   "p": 0.95,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26345905,
+   "stay_cost": 0.475
+  },
+  {
+   "p": 0.955,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26483405,
+   "stay_cost": 0.4775
+  },
+  {
+   "p": 0.96,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26620905,
+   "stay_cost": 0.48
+  },
+  {
+   "p": 0.965,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26758405,
+   "stay_cost": 0.4825
+  },
+  {
+   "p": 0.97,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.26895905,
+   "stay_cost": 0.485
+  },
+  {
+   "p": 0.975,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.27033405,
+   "stay_cost": 0.4875
+  },
+  {
+   "p": 0.98,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.27170905,
+   "stay_cost": 0.49
+  },
+  {
+   "p": 0.985,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.27308405,
+   "stay_cost": 0.4925
+  },
+  {
+   "p": 0.99,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.27445905,
+   "stay_cost": 0.495
+  },
+  {
+   "p": 0.995,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.27583405,
+   "stay_cost": 0.4975
+  },
+  {
+   "p": 1.0,
+   "verdict": "EXIT 45% NOW (capacity limit)",
+   "exit_fraction": 0.45,
+   "stuck_fraction": 0.55,
+   "expected_cost": 0.27720905,
+   "stay_cost": 0.5
+  }
+ ]
+}
