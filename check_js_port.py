@@ -314,20 +314,28 @@ def main():
 
     # reasons (PT view): decisionText, same text as Python, every number from the model
     from frontend_contract import decision_text
-    xcombos = [(sz, pk, k, sev, c) for sz in (1e6, 1e7) for pk in at_size(d, sz)["position_presets"]
-               for k in d["ui"]["injections"] for sev in (0.5, 2, 10, 40) for c in (0.0, carry_of(d, 0.04))]
+    from frontend_contract import past_incidents
+    pis = d.get("past_incidents") or past_incidents()
+    xcombos = [(sz, pk, k, sev, c, None) for sz in (1e6, 1e7) for pk in at_size(d, sz)["position_presets"]
+               for k in d["ui"]["injections"] for sev in (0.5, 2, 10, 40) for c in (0.0, carry_of(d, 0.04))] + \
+              [(sz, pk, f"{pi['node']}:{pi['fail']}", pi["sev"], c, pi["opts"]) for sz in (1e6, 1e7)
+               for pk in at_size(d, sz)["position_presets"] for pi in pis for c in (0.0, carry_of(d, 0.04))]
+    pi_bad = [pi["key"] for pi in pis if f"{pi['node']}:{pi['fail']}" not in d["ui"]["injections"]
+              or pi["fail"] not in d["ui"]["nodes"][pi["node"]]["failures"]]
+    print(f"GATE {'PASS' if not pi_bad else 'FAIL'}  past_incidents: {len(pis)} incidents point to an existing node and "
+          f"failure" + (f": not {pi_bad}" if pi_bad else ""))
     with tempfile.TemporaryDirectory() as tmp:
         cf, sf = os.path.join(tmp, "x.json"), os.path.join(tmp, "x.js")
         json.dump(xcombos, open(cf, "w"))
         open(sf, "w").write("const M=require(process.argv[2]);const d0=require(process.argv[3]);"
                             "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));const cache={};"
                             "console.log(JSON.stringify(a.map(c=>{const d=cache[c[0]]||(cache[c[0]]=M.atSize(d0,c[0]));"
-                            "const k=c[2].split(':');return M.decisionText(d,c[1],k[0],k[1],c[3],c[4]);})));")
+                            "const k=c[2].split(':');return M.decisionText(d,c[1],k[0],k[1],c[3],c[4],c[5]);})));")
         jx = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
     sized = {sz: at_size(d, sz) for sz in (1e6, 1e7)}
     xbad, xunchecked = [], []
     for c, j in zip(xcombos, jx):
-        py = decision_text(sized[c[0]], c[1], *c[2].split(":"), c[3], c[4])
+        py = decision_text(sized[c[0]], c[1], *c[2].split(":"), c[3], c[4], c[5])
         if py != j:
             xbad.append(c)
         if py["unchecked"]:
@@ -336,7 +344,7 @@ def main():
           + (f"  first mismatch {xbad[0]}" if xbad else ""))
     print(f"GATE {'PASS' if not xunchecked else 'FAIL'}  decisionText: every number in the text comes from the model"
           + (f"  first {xunchecked[0]}" if xunchecked else ""))
-    bad = bad + xbad + xunchecked
+    bad = bad + xbad + xunchecked + pi_bad
 
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob

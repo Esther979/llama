@@ -266,7 +266,7 @@
   }
 
   /* Smallest severity at which selling starts / reaches the cap (port of frontend_contract.break_even_severity). */
-  function breakEvenSeverity(d, presetKey, node, fail, carry = 0, lo = null, hi = null, steps = 400) {
+  function breakEvenSeverity(d, presetKey, node, fail, carry = 0, lo = null, hi = null, steps = 400, opts = null) {
     const ft = d.failure_types.types[fail];
     lo = lo === null ? ft.min : lo; hi = hi === null ? ft.max : hi;
     if (d.ui.injections[node + ':' + fail].type !== 'loss_model') return {start: null, cap: null, lo, hi};
@@ -282,8 +282,8 @@
       }
       return null;
     };
-    const sells = s => decideAt(d, presetKey, node, fail, s, carry).sell_fraction > 0;
-    const full = s => ['SELL_TO_CAP', 'EXIT'].includes(decideAt(d, presetKey, node, fail, s, carry).verdict);
+    const sells = s => decideAt(d, presetKey, node, fail, s, carry, opts).sell_fraction > 0;
+    const full = s => ['SELL_TO_CAP', 'EXIT'].includes(decideAt(d, presetKey, node, fail, s, carry, opts).verdict);
     return {start: first(sells), cap: first(full), lo, hi};
   }
 
@@ -468,9 +468,11 @@
     const frac = d ? String(fp).padStart(d, '0').replace(/0+$/, '') : '';
     return sign + String(ip).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : '');
   }
-  function decisionText(d, presetKey, node, fail, sev, carry = 0) {
-    const r = decideAt(d, presetKey, node, fail, sev, carry), be = breakEvenSeverity(d, presetKey, node, fail, carry);
-    const sv = sensitivity(d, presetKey, node, fail, sev, carry);
+  function decisionText(d, presetKey, node, fail, sev, carry = 0, opts = null) {
+    opts = opts || {};
+    const r = decideAt(d, presetKey, node, fail, sev, carry, opts);
+    const be = breakEvenSeverity(d, presetKey, node, fail, carry, null, null, 400, opts);
+    const sv = sensitivity(d, presetKey, node, fail, sev, carry, opts);
     const m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey], ft = d.failure_types.types[fail];
     const o = d.oracle || {}, nl = d.ui.nodes[node].label, fl = ft.label, nums = [];
     const f = s => { nums.push(...(s.match(NUM) || [])); return s; };
@@ -508,10 +510,15 @@
           reasons.push(`Not liquidated: the oracle would have to fall ${pct(thr)} before this position can be liquidated.`);
         else reasons.push('The position is already above the liquidation line.');
       }
+      const perm = 'permanent' in opts ? opts.permanent : m.permanent;
       if (m.permanent === 0 && p.can_hold)
         reasons.push('The price recovers (the PT redeems at expiry), so a holder who can wait loses nothing on the value' +
           (D > 0 ? '; liquidations during the incident stay.' : '.'));
-      else if (m.permanent === 1) reasons.push('The loss is permanent: no recovery is assumed.');
+      else if (perm === 0 && p.can_hold)
+        reasons.push('The shock is over after the incident' +
+          (opts.hours !== null && opts.hours !== undefined ? ` (${f(_num(opts.hours, 2))} h)` : '') +
+          ', so a holder who can wait loses nothing on the value' + (D > 0 ? '; liquidations during the incident stay.' : '.'));
+      else if (perm === 1) reasons.push('The loss is permanent: no recovery is assumed.');
     } else if (m.type === 'exit_later' || m.type === 'exit_only') {
       head = 'STAY: no direct loss on this position; ' + (r.sellable_later < r.sellable_now - 1e-12
         ? `the part that can be sold falls from ${pct(r.sellable_now)} to ${pct(r.sellable_later)}.`
@@ -550,8 +557,9 @@
   };
 
   /* Which assumption flips the verdict (port of frontend_contract.sensitivity). */
-  function sensitivity(d, presetKey, node, fail, sev, carry = 0) {
-    const base = decideAt(d, presetKey, node, fail, sev, carry), m = d.ui.injections[node + ':' + fail];
+  function sensitivity(d, presetKey, node, fail, sev, carry = 0, opts = null) {
+    opts = opts || {};
+    const base = decideAt(d, presetKey, node, fail, sev, carry, opts), m = d.ui.injections[node + ':' + fail];
     const p = d.position_presets[presetKey], E = p.collateral_usd - p.debt_usd, o = d.oracle || {};
     const cands = [];
     if (m.type === 'loss_model') {
@@ -572,7 +580,8 @@
     cands.push(['carry', `cash after selling earns 1% a year less than assumed (carry ${(c1 * 100).toFixed(3)}% until expiry)`,
                 'D', presetKey, c1, null]);
     const rows = cands.map(([key, alternative, grade, pk, c, op]) => {
-      const r = decideAt(d, pk, node, fail, sev, c, op), q = d.position_presets[pk], Ek = q.collateral_usd - q.debt_usd;
+      const r = decideAt(d, pk, node, fail, sev, c, Object.assign({}, opts, op || {})), q = d.position_presets[pk],
+        Ek = q.collateral_usd - q.debt_usd;
       return {key, alternative, grade, verdict: r.verdict, comparison: key === 'position',
               sell_fraction: r.sell_fraction, loss_if_stay_usd: r.loss_if_stay_usd,
               flips: r.verdict !== base.verdict,

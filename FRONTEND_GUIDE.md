@@ -24,6 +24,7 @@ The page passes the 15 rows at $10M of section 9, but it lags this guide in thre
 | 2 | Builds "What would change the answer" itself | `RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Same candidates, flips and weakest assumption as the backend; its "cash earns 1% a year less" step is converted to the time left to expiry |
 | 3 | No `RiskModel.atSize` | `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` on load and on every size / wallet change (section 3b) | Position size (USD) and wallet presets; then check the $1M, $7M and $50M rows of section 9 |
 | 4 | Builds the decision sentence itself | `RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Headline, reasons, break-even and the assumption it hinges on, with every number from the model and the same wording as the backend |
+| 5 | Builds `REPLAYS` from `failure_types` anchors; shows two invented examples and a "Prototype control" bar | `d.past_incidents` (section 3c); remove the invented examples and the prototype bar (user decision) | Four real past incidents, each with its node, failure, severity and the duration / recovery to pass to the model (`opts`); statistics are not listed as events |
 
 Open point: the merge report says the page has no position-size input yet, while the team was told the input is now
 "Position size (USD)". Check which is true on `frontend`, and which file is the page (`demo.html` or
@@ -58,7 +59,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 
 1. Do not hard-code numbers from the old snapshot. Read everything from `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` (section 3b), recomputed whenever the size or the wallet input changes.
 2. Do not compute losses in page code. Delete the `loss` functions of `FAIL`, `valueDrop` and the local `LIF` / `LIQ_DIST` formulas; call `RiskModel.inject(d, presetKey, node, fail, sev)` instead.
-3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`), Incidents are set by hand (node, failure, severity, duration): there is no detector and `d.detected` is always empty. If the prototype's sample feed stays, keep it labelled as invented.
+3. Step 1 offers exactly the 9 nodes of `d.ui.nodes` (grouped by `d.ui.layers`). Incidents are set by hand (node, failure, severity, duration) or loaded from a real past incident (`d.past_incidents`, section 3c). There is no detector (`d.detected` is always empty) and no invented incident (user decision): remove the prototype's invented examples.
 4. Step 2 stays a manual slider. Range: `min` / `max` of `d.failure_types.types[key]` are what the model covers; the page may use a narrower range, never a wider one (section 0b). Starting value and label: the page's own `FAIL` table (the same keys exist in `d.failure_types.types`; show `default_severity` and `anchors` as ticks). Add two entries for sUSDe, taking `label`, `unit`, `min`, `max`, `default_severity` from `d.failure_types.types.navLoss` and `.discount` ("NAV falls (USDe per sUSDe)", "Trades below its NAV"). USDe and sUSDe are different assets: 1 sUSDe is worth about 1.25 USDe, so "depeg" (falling below $1) applies to USDe only.
 5. No probability anywhere: delete step 3, `S.p`, `pOf` / `vOf`, the partial-case assumptions (`pk`, `ps`) and the probability zones. The decision assumes the incident has happened; the severity slider is the only "how bad" input. Show on that slider the zones from `RiskModel.breakEvenSeverity` (stay / sell part / sell to the pool limit). The backend still has probability-based fields (`decision_grid`, `thresholds`, `incidents[].probabilities`...) for compatibility: do not use them.
 6. Show evidence grades: A = read from chain / API, B = contract rule back-tested, C = analogy from history, D = assumption. Dashed style = D.
@@ -80,7 +81,7 @@ Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML 
 | `FAIL[k].prob` | delete (no probability) |
 | `stress()` | the `sellable_later` / `avg_cost_later` returned by `inject` (drain keeps its own curve, section 7) |
 | `DETECTED` | No detector: `d.detected` is always empty. The prototype sample list may stay, labelled as invented |
-| `REPLAYS` | oracle: node `oracle`, failure `oracleLow`, severity 2.77 (`d.failure_types.types.oracleLow.anchors[0]`), and show `d.validation` ("back-test of the liquidation rules on PT-reUSD: 9/9 checks pass"); issuer: node `ethena`, failure `shortfall`, severity 50 (Stream xUSD) or 99.87 (Elixir deUSD) from `anchors` |
+| `REPLAYS` | `d.past_incidents` (section 3c), not built from `failure_types` anchors in the page |
 
 ## 3b. Position size and wallet (header inputs)
 
@@ -94,6 +95,41 @@ let d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet || null);   // on lo
 ```
 
 Every other call takes this `d`. What changes with the size: PT units = size / `size_input.pt_price_usd`; Morpho values them at `size_input.oracle_price_usd` (liquidation only); the exit curve: up to `size_input.capacity_usd` ($4.5M) the whole position can be sold (`d.max_exit_fraction` = 1), above it the rest is stuck; "exit later" after liquidations. Show under the inputs: "{pt_units} PT at {pt_price_usd}; sellable now: {max_exit_fraction} ({capacity_usd} pool limit)".
+
+## 3c. Past incidents ("Load a past incident")
+
+`d.past_incidents` lists four real events as ready-made inputs. Each has `key`, `label`, `date`, `node`, `fail`, `sev` (in the failure's unit), `hours` (how long it lasted, `null` = not stated), `recovers`, `opts` (to pass to the model as is) and `evidence` (`grade` C, `source`, `basis`: this asset's own history or another asset by analogy).
+
+| key | Node · failure | Severity | opts |
+|---|---|---|---|
+| `usde_feb_2026` | `usde:depeg` | 1.62% | `{hours: 24, permanent: 0}`: USDe recovered the next day |
+| `pt_reusd_aug_2026` | `oracle:oracleLow` | 2.77% | `{hours: 1, permanent: 0}` |
+| `stream_xusd_nov_2025` | `ethena:shortfall` | 50% | `{}` (no recovery) |
+| `elixir_deusd_nov_2025` | `ethena:shortfall` | 99.87% | `{}` (no recovery) |
+
+Use (one option per past incident in "Load a past incident…"; on select, fill steps 1 and 2 from it and keep `p.opts` until the user moves a control):
+
+```js
+const p = d.past_incidents.find(x => x.key === S.past);           // S.past = selected key, null for a what-if test
+const o = p ? p.opts : null;
+const r  = RiskModel.decideAt(d, S.pos, p.node, p.fail, p.sev, carry(), o);
+const be = RiskModel.breakEvenSeverity(d, S.pos, p.node, p.fail, carry(), f.min, f.max, 400, o);
+const sv = RiskModel.sensitivity(d, S.pos, p.node, p.fail, p.sev, carry(), o);
+const t  = RiskModel.decisionText(d, S.pos, p.node, p.fail, p.sev, carry(), o);
+```
+
+Show `p.label`, `p.date` and `p.evidence.source` (grade C) with the result. `opts` matters: without it the USDe event would be read as a permanent 1.62% loss ($162,000 on $10M); with it an unlevered holder loses nothing (the shock is gone after 24 h) while a levered one is liquidated (24 h is longer than the oracle's 16 h switch). When the user moves the node, failure or severity, it becomes a what-if test: drop `opts`. Acceptance (size 10M, carry 0):
+
+| key | Preset | Verdict | Sell | Sale cost | Loss if stay | Oracle falls | Liquidated | Break-even (start / cap) |
+|---|---|---|---|---|---|---|---|---|
+| `usde_feb_2026` | `spot` | STAY | 0% | $0 | $0 | true | no | - / - |
+| `usde_feb_2026` | `lev_closest_to_liquidation` | EXIT | 100% | $5,683 | $128,586 | true | yes | 1.000% / 1.000% |
+| `pt_reusd_aug_2026` | `spot` | STAY | 0% | $0 | $0 | true | no | - / - |
+| `pt_reusd_aug_2026` | `lev_closest_to_liquidation` | EXIT | 100% | $5,683 | $164,903 | true | yes | 1.000% / 1.000% |
+| `stream_xusd_nov_2025` | `spot` | SELL_TO_CAP | 45% | $22,089 | $5,000,000 | true | no | 1.000% / 2.052% |
+| `stream_xusd_nov_2025` | `lev_closest_to_liquidation` | EXIT | 100% | $5,683 | $307,545 | true | yes | 1.000% / 1.000% |
+| `elixir_deusd_nov_2025` | `spot` | SELL_TO_CAP | 45% | $22,089 | $9,987,000 | true | no | 1.000% / 2.052% |
+| `elixir_deusd_nov_2025` | `lev_closest_to_liquidation` | EXIT | 100% | $5,683 | $307,545 | true | yes | 1.000% / 1.000% |
 
 ## 4. The model
 

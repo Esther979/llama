@@ -571,7 +571,7 @@ def decide_at(d, preset_key, node, fail, sev, carry=0.0, opts=None):
                 stuck_fraction=res["stuck_fraction"])
 
 
-def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, steps=400):
+def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, steps=400, opts=None):
     """Smallest severity (failure's unit) at which selling starts, and at which it reaches the cap or full exit:
     scan + bisection on decide_at. None = not within [lo, hi]. Mirrored by RiskModel.breakEvenSeverity."""
     ft = d["failure_types"]["types"][fail]
@@ -594,20 +594,22 @@ def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, 
                 return b
             prev = s
         return None
-    sells = lambda s: decide_at(d, preset_key, node, fail, s, carry)["sell_fraction"] > 0
-    full = lambda s: decide_at(d, preset_key, node, fail, s, carry)["verdict"] in ("SELL_TO_CAP", "EXIT")
+    sells = lambda s: decide_at(d, preset_key, node, fail, s, carry, opts)["sell_fraction"] > 0
+    full = lambda s: decide_at(d, preset_key, node, fail, s, carry, opts)["verdict"] in ("SELL_TO_CAP", "EXIT")
     return {"start": first(sells), "cap": first(full), "lo": lo, "hi": hi}
 
 
 GRADE_RANK = "ABCD"
 
 
-def sensitivity(d, preset_key, node, fail, sev, carry=0.0):
+def sensitivity(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     """Which assumption flips the verdict, given the incident at severity sev (no probability). Each candidate
     replaces one assumption by its stated alternative and reruns decide_at. weakest = the lowest-graded candidate
     that flips the verdict (ties: larger change). Other position presets are shown as comparisons (the position is the
-    user's choice, not an assumption about the world) and never chosen as weakest. Mirrored by RiskModel.sensitivity."""
-    base = decide_at(d, preset_key, node, fail, sev, carry)
+    user's choice, not an assumption about the world) and never chosen as weakest. opts (e.g. a past incident's
+    duration and recovery) apply to the base case and to every candidate. Mirrored by RiskModel.sensitivity."""
+    opts = opts or {}
+    base = decide_at(d, preset_key, node, fail, sev, carry, opts)
     m = INJECTIONS[f"{node}:{fail}"]
     p = d["position_presets"][preset_key]
     E = p["collateral_usd"] - p["debt_usd"]
@@ -632,7 +634,7 @@ def sensitivity(d, preset_key, node, fail, sev, carry=0.0):
                   preset_key, c1, None))
     rows = []
     for key, alt, grade, pk, c, op in cands:
-        r = decide_at(d, pk, node, fail, sev, c, op)
+        r = decide_at(d, pk, node, fail, sev, c, dict(opts, **(op or {})))
         Ek = d["position_presets"][pk]["collateral_usd"] - d["position_presets"][pk]["debt_usd"]
         rows.append({"key": key, "alternative": alt, "grade": grade, "verdict": r["verdict"],
                      "comparison": key == "position",
@@ -759,6 +761,35 @@ def timeline_summary(d, preset_key, rows):
             "verdict": rows[0]["verdict"] if rows and not changes else None, "why_flat": flat}
 
 
+# ------------------------------------------------------------------ past incidents (replays of real events)
+def past_incidents(cal=None):
+    """Real past incidents as ready-made inputs for the PT view: node, failure, severity (failure's unit) and the opts
+    to pass to decideAt / breakEvenSeverity / sensitivity / decisionText (duration and whether the shock is gone
+    after it). Severities are the failure_types anchors (grade C: observed on this asset or by analogy). Statistics
+    (median depeg losses) are not events and are not listed."""
+    from loss_model import PRESETS
+    pr = {s.key: s for s in PRESETS}
+    u, o, h, t = pr["usde_mild"], pr["oracle_dip"], pr["issuer_half"], pr["issuer_total"]
+    ev = lambda src, basis: {"grade": "C", "source": src, "basis": basis}
+    return [
+        {"key": "usde_feb_2026", "label": "USDe daily low, 1 Feb 2026 (recovered the next day)", "date": "2026-02-01",
+         "node": "usde", "fail": "depeg", "sev": round(100 * u.shock, 2), "hours": u.hours, "recovers": True,
+         "opts": {"hours": u.hours, "permanent": 0.0},
+         "evidence": ev(f"{u.source}; recovery: {u.recovery_source}", "this asset's own history")},
+        {"key": "pt_reusd_aug_2026", "label": "PT-reUSD oracle drop, 25 Aug 2026 (back-tested 9/9)",
+         "date": "2026-08-25", "node": "oracle", "fail": "oracleLow", "sev": 2.77, "hours": o.hours, "recovers": True,
+         "opts": {"hours": o.hours, "permanent": 0.0},
+         "evidence": ev("PT-reUSD oracle drop, 25 Aug 2026 (HackMD, back-tested by backtest_reusd.py); market: "
+                        + o.source, "another PT's oracle, by analogy")},
+        {"key": "stream_xusd_nov_2025", "label": "Stream xUSD issuer failure, Nov 2025", "date": "2025-11",
+         "node": "ethena", "fail": "shortfall", "sev": round(100 * h.shock, 2), "hours": None, "recovers": False,
+         "opts": {}, "evidence": ev(h.source, "another stablecoin issuer, by analogy")},
+        {"key": "elixir_deusd_nov_2025", "label": "Elixir deUSD collapse, Nov 2025", "date": "2025-11",
+         "node": "ethena", "fail": "shortfall", "sev": round(100 * t.shock, 2), "hours": None, "recovers": False,
+         "opts": {}, "evidence": ev(t.source, "another stablecoin issuer, by analogy")},
+    ]
+
+
 # ------------------------------------------------------------------ reasons a manager can act on (PT view)
 def _round_int(v, d):
     """round(|v| x 10^d) half away from zero, as an integer (same arithmetic as RiskModel's _roundInt)."""
@@ -777,17 +808,18 @@ def _num(v, d=2):
     return sign + out + ("." + frac if frac else "")
 
 
-def decision_text(d, preset_key, node, fail, sev, carry=0.0):
+def decision_text(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     """The PT view's reasons, built only from the model's results: verdict, a title, the headline sentence (loss if
     staying vs selling now), the propagation reasons (oracle, liquidation, recovery, exit), the break-even severity
     and the assumption the answer hinges on. `numbers` lists every number written; `unchecked` = numbers in the text
-    that are not among them (must be empty). `rule` is the injection's fixed note (data, not checked).
-    Mirrored by RiskModel.decisionText."""
+    that are not among them (must be empty). `rule` is the injection's fixed note (data, not checked). opts as in
+    decide_at, e.g. a past incident's {"hours", "permanent"} (past_incidents[].opts). Mirrored by RiskModel.decisionText."""
+    opts = opts or {}
     from loss_model import lif
     from reasoning import NUM
-    r = decide_at(d, preset_key, node, fail, sev, carry)
-    be = break_even_severity(d, preset_key, node, fail, carry)
-    sv = sensitivity(d, preset_key, node, fail, sev, carry)
+    r = decide_at(d, preset_key, node, fail, sev, carry, opts)
+    be = break_even_severity(d, preset_key, node, fail, carry, opts=opts)
+    sv = sensitivity(d, preset_key, node, fail, sev, carry, opts)
     m = d["ui"]["injections"][f"{node}:{fail}"]
     p = d["position_presets"][preset_key]
     ft = d["failure_types"]["types"][fail]
@@ -844,10 +876,16 @@ def decision_text(d, preset_key, node, fail, sev, carry=0.0):
                                f"liquidated.")
             else:
                 reasons.append("The position is already above the liquidation line.")
+        perm = opts.get("permanent", m["permanent"])
         if m["permanent"] == 0 and p["can_hold"]:
             reasons.append("The price recovers (the PT redeems at expiry), so a holder who can wait loses nothing on "
                            "the value" + ("; liquidations during the incident stay." if D > 0 else "."))
-        elif m["permanent"] == 1:
+        elif perm == 0 and p["can_hold"]:
+            reasons.append("The shock is over after the incident" + (f" ({f(_num(opts['hours'], 2))} h)"
+                                                                     if opts.get("hours") is not None else "")
+                           + ", so a holder who can wait loses nothing on the value"
+                           + ("; liquidations during the incident stay." if D > 0 else "."))
+        elif perm == 1:
             reasons.append("The loss is permanent: no recovery is assumed.")
     elif m["type"] in ("exit_later", "exit_only"):
         head = ("STAY: no direct loss on this position; " + (
