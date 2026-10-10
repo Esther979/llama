@@ -1,0 +1,131 @@
+# web/CLAUDE.md — front end (Risk Desk demo)
+
+Front end for the Belem Capital track: one static page that takes a single position, a simulated or detected
+incident and its severity, and returns a stay / exit recommendation with its reasoning.
+The backend rules are in the root `CLAUDE.md`. This file covers `web/` only.
+
+Reply to the user in the language they write in. Code, comments, commit messages and repo docs stay in English.
+
+## Files (target layout)
+
+| File                                 | Holds                                               | Never holds                                       |
+| ------------------------------------ | --------------------------------------------------- | ------------------------------------------------- |
+| `demo.html`                          | Markup and element ids                              | Inline styles, numbers, sentences built in script |
+| `demo.css`                           | Design tokens in `:root`, then component styles     | Anything read from data                           |
+| `demo.copy.js`                       | Every user-facing string, as one `COPY` object      | Logic                                             |
+| `demo.js`                            | State, calls to `RiskModel`, rendering, events      | Colours, sizes, literal sentences                 |
+| `risk_model.js`                      | Backend's model. Read-only here                     | —                                                 |
+| `../sample_data/dashboard.sample.js` | Backend's data (`window.DASHBOARD`). Read-only here | —                                                 |
+
+No framework and no build step. The page must open from disk by double-click.
+
+The page loads the backend's two files in place:
+
+```html
+<script src="../sample_data/dashboard.sample.js"></script>
+<script src="risk_model.js"></script>
+```
+
+Do not copy or move those two files. The backend regenerates them, and a copy goes stale on the next push.
+If the page is ever served over HTTP, serve from the repo root, not from `web/`, or the data path breaks.
+
+## Separation rules
+
+- State is expressed as classes or data attributes (`data-verdict="stay"`, `.hot`, `.origin`, `.hyp`). CSS decides
+  how each state looks.
+- Script may set inline values only for computed geometry: bar widths, SVG coordinates, chart points.
+- Every colour comes from a token. Light and dark values are defined together. Colour means verdict state only
+  (stay / reduce / exit); dashed means assumption (grade D).
+- A visual change should produce a diff in `demo.css` only. A wording change should produce a diff in
+  `demo.copy.js` only. If a change needs more files than that, say so before making it.
+
+## Source of truth
+
+- `../FRONTEND_GUIDE.md` and its acceptance table decide behaviour. Re-read it after every `git pull`; it changes.
+- No loss formulas in the page: every number comes from `RiskModel.*`. No snapshot numbers: read `window.DASHBOARD`.
+- No probability anywhere. The backend's probability fields are legacy; do not use them.
+- Failure labels, units and ranges come from `failure_types.types`. A key the page does not know must appear as one
+  more option, not break the page.
+- Edges, including the two to the position, come from `ui.edges`. Do not add page-made edges.
+- If the data lacks something, ask the user to raise it with the backend. Do not invent it.
+- Never edit the Python files, `sample_data/`, `risk_model.js` or the guides from a front-end task.
+
+## UX decisions to keep
+
+- First screen shows only: the verdict, one comparison (do nothing vs act), and the incident path.
+  Everything else opens on demand (folds, evidence drawer).
+- Inputs run in thinking order, left to right: where, what and how bad. Sliders update live; no Run button.
+- One mode (Prototype): any dependency can be failed by hand; detected incidents are listed first. Preview was
+  removed on 10 Oct.
+- Two dependency views. Layers (default) and Graph. Same incident and numbers in both.
+- Detected and what-if incidents look different (solid tag vs dashed tag).
+- Sample alerts are invented and always labelled as such.
+- Plain words. One number per sentence. Amounts in USD, shares as % of the position.
+- Every number in the drawer shows its source and its evidence grade (A to D).
+- Works at phone width; the graph may scroll sideways inside its own container.
+
+## Current state (local `frontend`, 10 Oct, after merging `main` at `80a806e`)
+
+What is on the branch:
+
+- `demo.html` at the repo root: the whole page in one file, styles and script inline. It loads
+  `sample_data/dashboard.sample.js` and `web/risk_model.js` in place. `index.html` and the two stale root-level
+  copies are deleted.
+- Preview mode is removed (Prototype only). Step 3 and every probability input are gone: the verdict comes from
+  `RiskModel.decideAt`, the step-2 zones and "selling starts at / pool limit from" from `breakEvenSeverity`.
+  Wide % sliders use a log scale shared with the zone bar.
+- Edges come from `ui.edges` only (data id `position` drawn as the page's `pos`); all 18 drawers open.
+- `main` is merged in: the model now has `atSize`, `carryOf`, `sensitivity`, `decideAtDuration`, `timeline`,
+  `timelineSummary`; the data has `time_model` and real-borrower presets. `FRONTEND_GUIDE.md` is `main`'s version.
+
+Checked after the merge (headless Chrome): no console errors, all 15 of the guide's 10M acceptance rows match,
+all 18 drawers open in both views. Not checked: the guide's 1M / 7M / 50M rows (the page has no size input yet),
+phone width and dark mode, and `check_js_port.py` (needs pycryptodome, missing locally).
+
+Gaps against the current guide: the page does not call `atSize` (no position size or wallet input), computes
+carry itself instead of `RiskModel.carryOf`, and builds "what would change the answer" itself instead of
+`sensitivity`.
+
+Until step 2 is done this file does not load on its own (it loads when a file in `web/` is opened), so read it
+at the start of the session.
+
+## To-do, in order
+
+1. ~~Bring the branch up to date: merge `main` into `frontend`.~~ Done (merge, not rebase: `frontend` was already
+   pushed, a rebase would need a force-push).
+2. Move: put the page at `web/demo.html` (`git mv demo.html web/demo.html`). Set the two script paths as shown above
+   and update the error message that names them. Open it in a browser to confirm it loads. Own commit.
+   (`index.html` and the root-level copies are already deleted.)
+3. ~~Fix the PT / lending drawer crash from duplicate position edges.~~ Done: data edges only.
+4. Split into the four files of the target layout. No behaviour change, no reformatting. Own commit.
+5. Follow the current guide. Done: step 3 and all probability code removed, verdict from `decideAt`, zones from
+   `breakEvenSeverity`. Left: position size / wallet input via `atSize`, carry via `carryOf`, "what would change
+   the answer" from `sensitivity`.
+6. Duration slider, recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
+   `timelineSummary`).
+7. Assumptions panel: keep "cash earns after selling"; "share of the book" is display-only and optional.
+8. Wording left from the probability model ("if severe"); path texts for `navLoss` and `discount`.
+   ("if severe" in the position line is fixed.)
+
+Update both sections when an item is done.
+
+## How to work
+
+- One concern per change: a fix, the split, a guide update and a visual tweak are separate commits.
+- Do not run a formatter over existing files. The local `demo.html` was formatted once; treat that as the
+  baseline and do not reformat again.
+- Show a per-file summary of the diff before committing. Commit and push only when the user asks.
+- Branch: `frontend`. Rebase on `main` before starting, since the backend moves fast.
+
+## How to verify
+
+Checking against the data files is not enough; the drawer crash was missed that way. Before saying a change works:
+
+1. Open the page in a browser with the console open. No errors on load.
+2. Click every one of the 9 nodes, in both views and both modes. Each drawer opens.
+3. Switch through all position presets and every failure type of each node.
+4. Compare the rows of the guide's acceptance table with what the page shows.
+5. Check phone width and dark mode for any visual change.
+
+`check_demo.mjs` (to be written with step 4) automates 1 to 4 and fails on any console error. Run it before each
+commit. State plainly what was checked and what was not.
