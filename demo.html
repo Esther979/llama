@@ -265,18 +265,6 @@
         padding: 2px 12px;
         font-size: 12.5px;
       }
-      .lrow.inert {
-        cursor: default;
-      }
-      .lrow.inert:hover {
-        border-color: var(--line);
-      }
-      .step select:disabled {
-        opacity: 1;
-        color: var(--ink);
-        appearance: none;
-        border-style: dashed;
-      }
       .banner {
         border-radius: 6px;
         padding: 8px 12px;
@@ -1143,13 +1131,6 @@
         <h1>Dependency Risk Desk</h1>
         <select id="pos" aria-label="Position"></select>
         <select id="replay" aria-label="Load a past incident pattern"></select>
-        <div class="mode" role="group" aria-label="View mode">
-          <button id="m-proto" data-mode="proto" aria-pressed="true">
-            Prototype</button
-          ><button id="m-preview" data-mode="preview" aria-pressed="false">
-            Preview
-          </button>
-        </div>
         <span class="stamp" id="stamp"></span>
       </header>
       <div class="banner" id="banner" hidden></div>
@@ -1531,12 +1512,10 @@
       const dets = () =>
         S.feed === "real" ? REAL : S.feed === "sample" ? SAMPLE : [];
       const sigTxt = (x) => x.signal + (x.real ? "" : " · sample alert");
-      /* Prototype = any dependency can be failed by hand. Preview = the product view: only detected incidents. */
-      const pv = () => S.mode === "preview";
+      /* Any dependency can be failed by hand; detected incidents are listed first. */
       let CUR = { type: "none" };
       const S = {
         view: "list",
-        mode: "proto",
         feed: REAL.length ? "real" : "sample",
         det: null,
         pos: Object.keys(PRE)[0],
@@ -1759,7 +1738,6 @@
         const efr = idle ? { o: {}, note: {} } : effects(m),
           ef = efr.o,
           org = idle ? 0 : NODES[S.node].layer,
-          lock = pv(),
           P = m.P;
         let h = LAY.map((L) => {
           const ids = L.nodes,
@@ -1778,7 +1756,7 @@
               (dd.some((x) => !x.real) ? " · sample alert" : "")
             : lf.fact;
           return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}"><span class="ln">${L.n}</span>
-      <button class="lrow ${lock && !dd.length ? "inert" : ""}" data-layer="${L.n}" aria-label="${lock ? "Layer" : "Test an incident at layer"} ${L.n}, ${L.name}">
+      <button class="lrow" data-layer="${L.n}" aria-label="Test an incident at layer ${L.n}, ${L.name}">
         <span class="lt"><span class="lbl">${L.name}</span><b>${lf.head}${tags}</b><span class="fact">${fact}</span></span>
         ${hot && ef[L.n] ? `<span class="eff">${ef[L.n]}</span>` : efr.note[L.n] ? `<span class="eff n">${efr.note[L.n]}</span>` : ""}</button>
       <button class="more" data-more="${L.n}" aria-expanded="${open}">${open ? "Hide" : "Show"} ${ids.length} ${ids.length > 1 ? "dependencies" : "dependency"} and evidence</button>
@@ -2224,28 +2202,18 @@
         $("#zoneBox").innerHTML = h;
       }
       function syncSteps() {
-        const ds = dets(),
-          lock = pv();
-        $("#proto").hidden = lock;
-        $("#replay").hidden = lock;
-        $("#m-proto").setAttribute("aria-pressed", !lock);
-        $("#m-preview").setAttribute("aria-pressed", lock);
-        $("#q1").textContent = lock
-          ? "Detected incident"
-          : ds.length
-            ? "Which incident?"
-            : "Test a failure at…";
-        $("#n1").textContent = lock
-          ? `${ds.length} detected in this snapshot.`
-          : ds.length
-            ? `${ds.length} detected now. Any other choice is a what-if test.`
-            : "No anomalies detected in this snapshot. Pick any dependency to run a what-if test.";
+        const ds = dets();
+        $("#q1").textContent = ds.length
+          ? "Which incident?"
+          : "Test a failure at…";
+        $("#n1").textContent = ds.length
+          ? `${ds.length} detected now. Any other choice is a what-if test.`
+          : "No anomalies detected in this snapshot. Pick any dependency to run a what-if test.";
         $("#node").innerHTML =
           (ds.length
             ? `<optgroup label="Detected now">${ds.map((x, i) => `<option value="det:${i}">${NODES[x.node].label} · ${x.signal}</option>`).join("")}</optgroup>`
             : "") +
-          (lock ? [] : LAY)
-            .map(
+          LAY.map(
               (L) =>
                 `<optgroup label="What-if · ${L.n} · ${L.name}">${L.nodes
                   .filter((k) => fails(k).length)
@@ -2263,59 +2231,17 @@
         const f = FAIL[S.fail],
           sv = $("#sev");
         sv.step = f.unit === "%" ? 0.1 : 1;
-        sv.min =
-          lock && S.det !== null ? Math.max(f.min, dets()[S.det].sev) : f.min;
+        sv.min = f.min;
         sv.max = f.max;
         sv.value = S.sev;
-        $("#fail").disabled = lock;
         $("#prob").value = vOf(S.p);
       }
-      const idleModel = () => {
-        const P = PRE[S.pos];
-        return {
-          P,
-          C: P.collateral_usd,
-          equity: P.collateral_usd - P.debt_usd,
-          cy: carry(),
-          el: 0,
-          x: 0,
-          slip: 0,
-          sev: {},
-        };
-      };
       function render() {
-        const idle = pv() && S.det === null;
-        $("#steps").hidden = idle;
-        if (idle) {
-          const m = idleModel();
-          renderChain(m, true);
-          renderIdle();
-          renderExit(m, true);
-          return;
-        }
         const m = model();
         renderSteps(m);
         renderChain(m);
         renderDecision(m);
         renderExit(m);
-      }
-      function renderIdle() {
-        $("#decision").innerHTML =
-          `<div class="vband"><span class="lbl">Monitoring · snapshot ${STAMP}</span><div class="verdict" style="font-size:30px">No incident</div><p class="why">No anomalies detected across the five layers. Nothing to decide.</p></div>
-   <div class="dbody"><p class="note">When the detector flags a dependency, the stay-or-exit answer appears here.</p></div>`;
-      }
-      function setMode(k) {
-        S.mode = k;
-        closeDrawer();
-        if (k === "preview") {
-          S.replay = "";
-          const i = S.det !== null ? S.det : pickTop();
-          if (i !== null) {
-            setDet(i);
-            return;
-          }
-        }
-        apply();
       }
       function apply() {
         syncSteps();
@@ -2532,12 +2458,8 @@
           const n = +t.dataset.layer,
             i = detAt((x) => NODES[x.node].layer === n);
           if (i >= 0) setDet(i);
-          else if (pv()) {
-            S.more[n] = !S.more[n];
-            render();
-          } else setNode(MAIN[n] || LAY[n - 1].nodes[0]);
-        } else if (t.dataset.mode) setMode(t.dataset.mode);
-        else if (t.dataset.e) edgeEvidence(+t.dataset.e);
+          else setNode(MAIN[n] || LAY[n - 1].nodes[0]);
+        } else if (t.dataset.e) edgeEvidence(+t.dataset.e);
         else if (t.dataset.view) {
           S.view = t.dataset.view;
           try {
@@ -2553,7 +2475,7 @@
           const id = t.dataset.n,
             i = detAt((x) => x.node === id);
           if (i >= 0) setDet(i);
-          else if (!pv()) setNode(id);
+          else setNode(id);
           nodeEvidence(id);
         } else if (t.id === "closeDrawer") closeDrawer();
         else if (t.id === "copy") {
