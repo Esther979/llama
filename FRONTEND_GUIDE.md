@@ -118,6 +118,8 @@ const sv = RiskModel.sensitivity(d, S.pos, p.node, p.fail, p.sev, carry(), o);
 const t  = RiskModel.decisionText(d, S.pos, p.node, p.fail, p.sev, carry(), o);
 ```
 
+First screen (user decision, 11 Oct): the page opens with `pt_reusd_aug_2026` preselected (with its `opts`) on the preset `lev_closest_to_liquidation`, so the decision card is never empty and shows the point of the tool: the oracle layer the brief highlights, a liquidation and an exit (EXIT, doing nothing loses $164,903, selling now costs $5,683; row below). With `spot` the same event gives STAY with no loss (no debt). If that key is missing, open on the first entry of `d.past_incidents`. Label it as a pattern applied to this position ("Pattern from …"), never as an incident on PT-sUSDe.
+
 Show `p.label`, `p.date` and `p.evidence.source` (grade C) with the result. `opts` matters: without it the USDe event would be read as a permanent 1.62% loss ($162,000 on $10M); with it an unlevered holder loses nothing (the shock is gone after 24 h) while a levered one is liquidated (24 h is longer than the oracle's 16 h switch). When the user moves the node, failure or severity, it becomes a what-if test: drop `opts`. Acceptance (size 10M, carry 0):
 
 | key | Preset | Verdict | Sell | Sale cost | Loss if stay | Oracle falls | Liquidated | Break-even (start / cap) |
