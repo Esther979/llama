@@ -8,6 +8,23 @@ The story in one line: **noticing the incident is easy; the page shows what it d
 when.** Scene 1 carries 60% of the time because it is the brief's worked example (five layers, incident at the oracle,
 "how fast").
 
+## Autopilot (the page clicks itself while you speak)
+
+`web/demo_autopilot.mjs` performs every step below in a visible Chrome: the incident menu, the sliders (glided, not
+jumped), Play, the displays, the drawer, the folds, the vault inputs. You advance it with the → key in the browser
+window (outside a text field); ← repeats the step's cue in the terminal, Esc quits.
+
+```bash
+npm i --no-save playwright          # once, repo root: the package only, it drives your installed Google Chrome
+node web/demo_autopilot.mjs         # 15 steps, → to advance
+node web/demo_autopilot.mjs --auto 12 --captions   # rehearsal: advances every 12 s, the cue in a bar at the bottom
+node web/demo_autopilot.mjs --from 9               # start at the vault scene (steps 1-8 run at once, unpaused)
+```
+
+The cues printed in the terminal are the short form of the scenes below. Keep the terminal on the laptop screen and
+the browser on the projector, or print this file. Headless check: `CHROME=/path/to/chrome node web/demo_autopilot.mjs
+--headless --shots shots --auto 0.5` writes one screenshot per step.
+
 ## Before the judges arrive
 
 - Open the page, leave the first screen as it loads (real borrower closest to liquidation, PT-reUSD oracle pattern,
