@@ -93,7 +93,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
     change" section.
 - These header inputs belong to the PT view. In the Vaults view the same place shows the vault's own inputs:
   vault address, amount invested, and the vault's alternative yield (`exit.alt_apy`, default per currency from
-  `VAULTS.report.assumptions.alt_apy_by_currency`) with the horizon (`exit.horizon_days`). The PT select, size,
+  `VAULTS.report.assumptions.alt_apy_by_currency`). The horizon field is gone (to-do 9): the vault view's duration
+  rail sets how long the incident lasts, and the yield given up is counted over it. The PT select, size,
   "cash earns" and past-incident dropdown are hidden there. Each view keeps its own values when switching.
 - The page never opens on an empty decision card: the PT-reUSD oracle drop is preselected on the real borrower
   closest to liquidation (done in `b47402c`), so the first screen shows a liquidation and an exit, not a STAY. A past
@@ -133,7 +134,8 @@ liquidity-run table) decide behaviour.
   numbers; the others are listed greyed with their `note`. Incidents with `analyzed: false` are listed greyed, never
   with a loss. Go by the flag, not by a list of names: today it covers volatile crypto collateral (WBTC, wstETH,
   cbBTC, weETH) and the WETH vault's asset issuer.
-- **Model.** `RiskModel.vaultDecideAt(inc, v.exit, amount, severity, altApy, horizonDays)` for the verdict (STAY /
+- **Model.** `RiskModel.vaultDecideAt(inc, v.exit, amount, severity, altApy, null, false, hours, recovers)` (the
+  duration path, guide 3 "Timeline"; at the default 30 days and "stays" it equals the static call) for the verdict (STAY /
   EXIT / EXIT_PARTIAL / REVIEW), `vaultLossAt`, `vaultRun` (liquidity run: no badge, a table), `vaultSensitivity`,
   `vaultTimeline`, `vaultTimelineSummary`. No probability: do not show `outcomes[].probability`, `expected_loss`,
   `tail_loss_95` or `break_even`.
@@ -152,17 +154,26 @@ What is on the branch:
 - `web/demo.html` (markup), `web/demo.css` (both former `<style>` blocks, in order) and `web/demo.js` (the former
   inline script), moved line for line: rebuilding the old single file from the three gives it byte for byte.
   The page loads `../sample_data/dashboard.sample.js` and `risk_model.js` in place, as shown above.
-- Vault view (`web/vault.js`, `COPY.vault`), first cut: the header switch; vault address (text or list) and amount
-  invested (your input; above the vault's assets: message, model gets the capped amount), alternative yield and
-  horizon; incidents grouped (not analysed ones greyed); severity on a log slider with historical anchors and the
-  break-even zones; badge from `vaultDecideAt`, the backend's sentence (amounts in short form), stay vs exit bars;
-  liquidity run as a `vaultRun` table (0 / 50 / 100%); the six-layer chain in Layers and Graph, the incident's path
-  marked in both. Not yet: markets, exit tranches, sensitivity, the run's share slider, layer-6 off-chain relations,
-  timeline, "share of my portfolio" input (to-do 9).
-- The vault graph's edges are derived by the page from data fields (`markets[].collateral`, "{symbol} issuer" /
-  `offchain`, a depeg incident's `affected_markets`, the vault-asset issuer), because the vault details carry no
-  edge list (`dependency_graph` holds counts only; its edges are in a git-ignored CSV). Ask the backend for a
-  vault `ui.edges`-like list; until then no match means no edge.
+- Vault view (`web/vault.js`, `COPY.vault`): the header switch; vault address (text or list), amount invested (your
+  input; above the vault's assets: message, model gets the capped amount), alternative yield; incidents grouped (not
+  analysed ones greyed); severity on a log slider with historical anchors and the break-even zones; badge from
+  `vaultDecideAt` on the duration path, the backend's sentence (amounts in short form), stay vs exit bars. To-do 9
+  added: a duration rail over the chain (native log range 1 h to 180 days, default `exit.horizon_days`, reference
+  marks at `duration_grids` switch points, none today), the recovers / stays toggle where the incident has grids for
+  both (default stays), `vaultTimelineSummary` lines under it and the `vaultTimeline` chart in a fold; folds under the
+  card: exit tranche by tranche (free / with penalty / locked for this amount, loss if stay / cost / kept / avoided,
+  the whole vault's free and forced fractions), "What would change the answer" (`vaultSensitivity`), the vault loss
+  by severity (`severity_grid` on the slider's scale, the current severity marked, each market at the anchors'
+  shocks, no probability); the markets table in a fold under the chain (affected markets highlighted); the liquidity
+  run's share slider (only its result redraws, so a drag keeps its element) with `run.text` for the whole vault;
+  layer-6 off-chain relations in the Layers display (issuer, summary, relations by kind with source links and the
+  quote's check state, as in the PT drawer). Not done: the "share of my portfolio" amount entry.
+- The vault's links and incident path come from the backend: `dependency_edges` (drawn exactly, dashed when grade D,
+  evidence as the label's tooltip) and `inc.chain_items` (marked in both displays; an edge is hot when both ends
+  are). The page-built edges and the path matching on labels are gone.
+- `RiskModel.vaultSensitivity(inc, ex, amount, sev)` takes no alternative yield, duration or recovers: it is computed
+  at the vault's defaults. Off them, the fold says so under the table. To raise with the backend: give it the same
+  inputs as `vaultDecideAt`.
 - `web/demo.copy.js` holds the `COPY` object: so far the step-1 hint, the past-event wording, "not your position"
   and the off-chain row. The other user-facing strings are still in `demo.js` and move step by step (see
   "Separation rules").
@@ -251,7 +262,9 @@ What is on the branch:
 - `main` was merged again at `48e5ab9` (in `74993e8`: `d.past_incidents`, the optional `opts` argument) and at
   `f1a44c5` (in `642e57b`: guide 3c, the first-screen rule, docs only).
 
-Check status (after to-do 8): `node web/check_demo.mjs` passes, 39 gates, nothing skipped (one NOTE: guide 3c's
+Check status (after to-do 9): `node web/check_demo.mjs` passes, 40 gates, nothing skipped (6f now against
+`dependency_edges` / `chain_items`; new 6g: 82 incident x duration cases for the vault details, 4 off-chain items,
+the run slider) (one NOTE: guide 3c's
 oracle / liquidated columns are not compared for the two events without a stated duration); `python3
 check_js_port.py` 30/30. What each gate covers is in its comment in `check_demo.mjs`; the history is in `git log`.
 Not checked: dragging the rail with a real mouse by eye (only CDP mouse events), layout by eye in dark mode beyond the
@@ -303,13 +316,15 @@ gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would c
 `RiskModel.sensitivity`, gate 3b (`778bf71`); decision card from `decisionText` and incident path from
 `propagation`, gates 2f / 2g (`52df261`); time rail with events, recovers toggle, Play and flash, the timeline
 chart in a fold, gates 7 / 7b (to-do 7: `e8ef479`, `5e436b9`); position size and cash yield in the header through
-`atSize`, gate 8, all guide 9 sizes (to-do 8).
+`atSize`, gate 8, all guide 9 sizes (to-do 8: `d215b5c`); vault view rest: links and path from the backend, details
+folds, duration rail and timeline, run slider, layer-6 off-chain relations, gates 6f / 6g (to-do 9).
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
 the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText), 6b (propagation) and 7
-(time rail, timeline chart) and 8 (position size) are done.
+(time rail, timeline chart), 8 (position size) and 9 (vault view rest) are done.
 
-Order of the remaining items (user decision, 11 Oct): 9, 10, as listed (6, 6b, 7 and 8 done).
+Order of the remaining items (user decision, 11 Oct): 10, as listed (6 to 9 done). Small leftovers: the vault
+"share of my portfolio" amount entry; the three inline swatch styles.
 
 To raise with the backend: `propagation`'s `position` step lists the `lending -> position` (liquidation) edge even
 when the position is not liquidated; the page filters it (see "Current state"), the data could drop it.
@@ -414,7 +429,7 @@ when the position is not liquidated; the page filters it (see "Current state"), 
    read-only (details in "UX decisions to keep"). Under the inputs show the guide's line: "{pt_units} PT at
    {pt_price_usd}; sellable now: {max_exit_fraction} ({capacity_usd} pool limit)". Update the selectors in
    `check_demo.mjs` in the same commit. Then the 1M / 7M / 50M acceptance rows must pass instead of being skipped.
-9. Vault view, rest: markets, exit tranches, sensitivity, liquidity-run slider and table, off-chain relations of
+9. Done. Vault view, rest: markets, exit tranches, sensitivity, liquidity-run slider and table, off-chain relations of
    layer 6, timeline.
 10. Last, only if time remains: PT wallet input (guide section 3b: an address read on chain, never typed-in
     collateral or debt). Until then the header has no wallet field.
