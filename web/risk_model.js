@@ -6,7 +6,7 @@
      oracleFalls                oracle_types.py (oracle_falls; meta-oracle threshold + timelock)
      slippageAt, decide         decision_core.py
      breakEven                  incidents.py (exact break-even from the exit curve, no p grid)
-     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText, propagation(AtDuration, Events)   frontend_contract.py (position size: the manager's input)
+     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText, propagation(AtDuration, Events), recoveryToggle   frontend_contract.py (position size: the manager's input)
 
    Shapes (same field names as the Python dataclasses):
      scenario = {layer: 2|3, shock: 0..1, permanent: 0..1, hours: number|null}
@@ -786,6 +786,30 @@
             events, numbers: nums, unchecked: bad};
   }
 
+  /* The "recovers / stays" toggle: shown only where the cause is off-chain (port of frontend_contract.recovery_toggle). */
+  const RECOVERY_REASON = {
+    'usde:depeg': "Whether USDe returns to $1 depends on Ethena's off-chain backing and redemptions: your assumption " +
+                  '(grade D).',
+    'ethena:shortfall': "Whether the shortfall is covered depends on Ethena's Reserve Fund, custodians and exchanges " +
+                        '(off-chain): your assumption (grade D).',
+    'susde:navLoss': "Whether sUSDe's NAV is restored depends on Ethena topping it up from its Reserve Fund " +
+                     '(off-chain): your assumption (grade D).',
+    'susde:discount': "Recovers by contract: the PT redeems at sUSDe's NAV at expiry, not at its market price.",
+    'pt:depeg': 'Recovers by contract: the PT redeems at expiry, whatever its market price before.',
+    'feeds:oracleLow': 'The reported price recovers after the incident; liquidations during it stay (Morpho).',
+    'oracle:oracleLow': 'The reported price recovers after the incident; liquidations during it stay (Morpho).'
+  };
+  function recoveryToggle(d, node, fail) {
+    const k = node + ':' + fail, m = d.ui.injections[k];
+    const show = m.type === 'loss_model' && (m.permanent || 0) > 0;
+    let reason;
+    if (k in RECOVERY_REASON) reason = RECOVERY_REASON[k];
+    else if (show) reason = 'Whether the loss comes back is not decided by any contract: your assumption (grade D).';
+    else if (m.type === 'loss_model') reason = "This loss recovers by the contracts' rules.";
+    else reason = 'No loss on the position is modelled for this failure, so recovery does not change the answer.';
+    return {show, reason};
+  }
+
   const pickWeakest = rows => {
     const flips = rows.filter(x => x.flips && !x.comparison);
     if (!flips.length) return null;
@@ -860,7 +884,7 @@
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
                inject, decideAt, breakEvenSeverity,
-               sensitivity, decisionText, propagation, propagationAtDuration, propagationEvents, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
+               sensitivity, decisionText, propagation, propagationAtDuration, propagationEvents, recoveryToggle, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;

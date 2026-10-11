@@ -206,7 +206,13 @@ function model() {
 The organisers asked for a timeline ("over how many months, what risk") with the PT valued at its price. Add to step 2, under the severity slider:
 
 - "How long does it last?": a duration slider, log scale from 1 hour to 6 months (`hours`), with tick marks at the meta-oracle switch (`d.oracle.challenge_timelock_s / 3600` = 16 h) and at the PT's expiry (`d.time_model.days_to_expiry x 24` h).
-- "After the incident": a toggle "recovers" (default) / "stays" (`recovers` true / false).
+- "After the incident": a toggle "recovers" (default) / "stays" (`recovers` true / false), shown only when
+  `RiskModel.recoveryToggle(d, S.node, S.fail).show` is true: `usde:depeg`, `ethena:shortfall`, `susde:navLoss`, the
+  failures whose cause is off-chain, so whether it comes back is the manager's assumption (grade D). For the others hide
+  the toggle and show its `reason` in small print instead (e.g. `pt:depeg`: "Recovers by contract: the PT redeems at
+  expiry, whatever its market price before."). Keep passing `S.recovers` unchanged: where the toggle is hidden it
+  changes nothing (`check_js_port.py` checks it on every preset, severity and duration). A past incident still sets
+  `S.recovers` from `p.recovers`; the toggle shows it only if the failure has one.
 
 Compute with `RiskModel.decideAtDuration(d, S.pos, S.node, S.fail, S.sev, hours, recovers, altApy)` instead of `decideAt` (same result fields, plus `hours`, `days`, `past_expiry`, `carry`, `pt_price_market`, `pt_price_oracle`, `position_value_usd`, `collateral_usd`, `debt_usd`, `ltv`). `altApy` = the "cash earns" assumption as a fraction (`S.alt / 100`; `null` = the PT's implied APY, i.e. no yield given up); these functions convert it themselves (`carryOf` over the incident's duration, at most until expiry). What it models:
 

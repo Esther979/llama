@@ -1207,3 +1207,37 @@ def propagation_events(d, preset_key, node, fail, sev, recovers=True, alt_apy=No
     return {"h_min": h_min, "h_max": h_max, "recovers": recovers,
             "start": {"verdict": first["verdict"], "layers": [{"n": x["n"], "state": x["state"]} for x in first["layers"]]},
             "events": events, "numbers": nums, "unchecked": bad}
+
+
+# ------------------------------------------------------------------ the "recovers / stays" toggle: only where the cause is off-chain
+RECOVERY_REASON = {
+    "usde:depeg": "Whether USDe returns to $1 depends on Ethena's off-chain backing and redemptions: your assumption "
+                  "(grade D).",
+    "ethena:shortfall": "Whether the shortfall is covered depends on Ethena's Reserve Fund, custodians and exchanges "
+                        "(off-chain): your assumption (grade D).",
+    "susde:navLoss": "Whether sUSDe's NAV is restored depends on Ethena topping it up from its Reserve Fund "
+                     "(off-chain): your assumption (grade D).",
+    "susde:discount": "Recovers by contract: the PT redeems at sUSDe's NAV at expiry, not at its market price.",
+    "pt:depeg": "Recovers by contract: the PT redeems at expiry, whatever its market price before.",
+    "feeds:oracleLow": "The reported price recovers after the incident; liquidations during it stay (Morpho).",
+    "oracle:oracleLow": "The reported price recovers after the incident; liquidations during it stay (Morpho).",
+}
+
+
+def recovery_toggle(d, node, fail):
+    """Whether the page shows the "recovers / stays" toggle for this failure: only when the loss can be permanent and
+    whether it comes back is decided off-chain (injection type loss_model with permanent > 0). Elsewhere the toggle
+    changes nothing (the contracts already make the loss recover, or no loss is modelled) and is hidden; `reason`
+    says why. Mirrored by RiskModel.recoveryToggle."""
+    k = f"{node}:{fail}"
+    m = d["ui"]["injections"][k]
+    show = m["type"] == "loss_model" and (m.get("permanent") or 0) > 0
+    if k in RECOVERY_REASON:
+        reason = RECOVERY_REASON[k]
+    elif show:
+        reason = "Whether the loss comes back is not decided by any contract: your assumption (grade D)."
+    elif m["type"] == "loss_model":
+        reason = "This loss recovers by the contracts' rules."
+    else:
+        reason = "No loss on the position is modelled for this failure, so recovery does not change the answer."
+    return {"show": show, "reason": reason}
