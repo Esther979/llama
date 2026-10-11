@@ -55,6 +55,9 @@ const COPY = {
      own texts; these are only the card's labels and the few lines built from the decision's numbers. */
   card: {
     whatIf: "What-if",
+    actExit: (v) => `Sell all ${v} now.`,
+    actStay: "Keep the position.",
+    actStayLoss: "Keep the position: selling costs more than it saves.",
     badge: { STAY: "Stay", EXIT: "Exit", sell: (v) => `Sell ${v}` },
     noLoss: "no direct loss",
     ofPosition: (p) => `${p} of the position`,
@@ -210,6 +213,8 @@ const COPY = {
   position: {
     notYours: (label) => `Position: ${label}. A real borrower of this market, read on chain, not your position.`,
     wallet: (label, block) => `Position: ${label}, read on chain at block ${block}.`,
+    realTag: "Real borrower, not your position",
+    walletTag: "Your wallet, read on chain",
     holding: "PT holding type",
   },
 

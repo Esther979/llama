@@ -527,9 +527,6 @@
           `<tr class="${sv.weakest && c === sv.weakest ? "best" : ""} ${c.flips ? "flip" : ""}"><td>${c.alternative}</td><td>${vw(c.verdict)}${c.flips ? ` <span class="note">(${T.flips})</span>` : ""}${c.comparison && c.loss_if_stay_usd > 0 ? `<span class="note"> · ${T.loses(money(c.loss_if_stay_usd))}</span>` : ""}</td></tr>`;
         const own = sv.candidates.filter((c) => !c.comparison),
           other = sv.candidates.filter((c) => c.comparison);
-        const head = sv.weakest
-          ? T.hinges(sv.weakest.alternative, sv.weakest.grade, vw(sv.weakest.verdict))
-          : T.robust;
         const sevFlip =
           m.start === null
             ? T.stayAll(sevText(f.max))
@@ -538,8 +535,7 @@
         return det(
           "d-flip",
           T.title,
-          `<p class="sens-head">${head}</p>
-      <div class="tw"><table class="sens"><thead><tr>${T.cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${own.map(row).join("")}${
+          `<div class="tw"><table class="sens"><thead><tr>${T.cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${own.map(row).join("")}${
         other.length ? `<tr class="grp"><th colspan="2">${T.others}</th></tr>${other.map(row).join("")}` : ""
       }</tbody></table></div>
       <dl><dt>${T.severity}</dt><dd>${sevFlip}</dd><dt>${T.rule}</dt><dd>${T.ruleText}</dd></dl>`,
@@ -581,16 +577,16 @@
               : xa * (RM.slippageAt(xa, CURVE) + m.cy) * C,
             actKept = m.x ? s.loss_kept_usd : (1 - xa) * s.loss_if_stay_usd,
             max = Math.max(s.loss_if_stay_usd, actCost + actKept);
-          body += `<div class="bars">${bar(K.doNothing, [["b-loss", s.loss_if_stay_usd, K.tipLoss(money(s.loss_if_stay_usd))]], money(s.loss_if_stay_usd), max)}${bar(
+          /* the bars carry the amounts (exact in their tooltips); their key only when "Act" has two parts (point 5) */
+          body += `<div class="bars">${bar(K.doNothing, [["b-loss", s.loss_if_stay_usd, K.tipLoss("$" + fullUsd(s.loss_if_stay_usd))]], money(s.loss_if_stay_usd), max)}${bar(
             m.x ? K.act : K.sellPc(pc(xa, 0)),
             [
-              ["b-cost", actCost, K.tipCost(money(actCost))],
-              ["b-loss", actKept, K.tipKept(money(actKept))],
+              ["b-cost", actCost, K.tipCost("$" + fullUsd(actCost))],
+              ["b-loss", actKept, K.tipKept("$" + fullUsd(actKept))],
             ],
             money(actCost + actKept),
             max,
-          )}</div>
-      <div class="bkey"><span><i class="b-loss"></i>${K.keyLoss}</span><span><i class="b-cost"></i>${K.keyCost}</span></div>`;
+          )}</div>${actCost > 0 && actKept > 0 ? `<div class="bkey"><span><i class="b-loss"></i>${K.keyLoss}</span><span><i class="b-cost"></i>${K.keyCost}</span></div>` : ""}`;
           if (v === "SELL_TO_CAP" && stuckUsd > 0)
             body += `<div class="stuck">${K.stuckLine(money(stuckUsd), money(s.loss_kept_usd))}</div>`;
         }
@@ -600,9 +596,18 @@
       <p class="note">${ng(t.hinges_on)}</p>`;
         if (s.L_low !== s.L_high) body += `<p class="note">${K.range(pc(s.L_low, 1), pc(s.L_high, 1))}</p>`;
         body += sensBlock(m);
+        /* No repeats of what the page already shows (user decision, 11 Oct): the incident and severity are in the steps,
+   so only a past event's name stays (it is a pattern, not this position's history); whose position it is becomes a
+   tag; the sentence says the action only, since the bars carry the amounts (the backend's full headline is its
+   tooltip). The reasons stay. */
+        const tags =
+          (S.past ? `<span class="tag det">${COPY.past.band(pastOf().label.replace(/ \(.*\)$/, ""))}</span>` : "") +
+          (isWallet(S.pos) ? `<span class="tag own">${COPY.position.walletTag}</span>` : isReal(S.pos) ? `<span class="tag own">${COPY.position.realTag}</span>` : "");
+        const act =
+          v === "EXIT" ? K.actExit(money(s.sell_usd)) : v === "STAY" ? (hasLoss ? K.actStayLoss : K.actStay) : "";
         $("#decision").innerHTML =
-          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : K.whatIf} · ${t.title}</span>
-    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${t.headline}</p></div><div class="dbody">${isWallet(S.pos) ? `<p class="note">${COPY.position.wallet(PRE[S.pos].label, BW.block)}</p>` : isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;
+          `<div class="vband ${VCLASS[v]}">${tags ? `<div class="vtags">${tags}</div>` : ""}
+    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div>${act ? `<p class="why" title="${t.headline.replace(/"/g, "&quot;")}">${act}</p>` : ""}</div><div class="dbody">${body}</div>`;
       }
       /* "How it spreads": propagation's steps in causal order, each with its grade (null = the manager's input); the last
    one, the result, equals the decision card. */

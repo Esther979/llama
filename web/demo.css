@@ -2155,3 +2155,16 @@
         color: var(--muted);
         font-weight: 400;
       }
+      /* decision card head: a past event's name and whose position it is, as tags */
+      .vtags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 6px;
+        margin-bottom: 6px;
+      }
+      .vtags .tag {
+        margin-left: 0;
+      }
+      .tag.own {
+        color: var(--muted);
+      }

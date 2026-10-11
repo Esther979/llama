@@ -252,7 +252,7 @@ try {
     return { past: S.past, pos: S.pos, verdict: model().verdict, banner: !!b && !b.hidden && /Pattern from/.test(b.textContent),
       hours: S.hours, recovers: S.recovers, toggle: !!document.querySelector("#rec [data-rec]"),
       reason: (document.querySelector("#rec .rwhy") || { title: "" }).title,
-      cardPattern: /Pattern from/.test(card.querySelector(".lbl").textContent),
+      cardPattern: /Pattern from/.test((card.querySelector(".vtags") || { textContent: "" }).textContent),
       notYours: /not your position/.test(card.textContent),
       replay: document.querySelector("#replay").value };
   })()`);
@@ -366,7 +366,7 @@ try {
     const whatIf = S.mode === "manual" && S.past === null && [S.node, S.fail, S.sev].join() === before && wrap.hidden && still
       && !document.querySelector("#casc").hidden && !document.querySelector("#sevRow").hidden && document.querySelector("#ro1").hidden
       && document.querySelector("#pastBanner").hidden && ["#incBtn", "#sev"].every((q) => !document.querySelector(q).disabled)
-      && /What-if/.test(document.querySelector("#decision .lbl").textContent);
+      && !/Pattern from/.test(document.querySelector("#decision").textContent);
     document.querySelector('[data-mode="past"]').click();
     const back = S.mode === "past" && S.past === PAST[0].key;
     document.querySelector('[data-mode="manual"]').click();
@@ -600,12 +600,16 @@ try {
       if (JSON.stringify(m.pg) !== JSON.stringify(pg)) bad.push(tag + ": propagation differs from the model");
       if (!(m.verdict === t.verdict && t.verdict === pg.verdict)) bad.push(tag + ": verdicts " + [m.verdict, t.verdict, pg.verdict].join("/"));
       if (t.unchecked.length || pg.unchecked.length) bad.push(tag + ": unchecked numbers");
-      const why = document.querySelector("#decision .why").textContent;
-      if (why !== t.headline) bad.push(tag + ": card sentence is not the headline");
+      /* the card repeats nothing the page shows (user decision, 11 Oct): no incident / severity label, an action-only
+         sentence (Exit: the amount sold; Stay: keep), the backend's headline as its tooltip, no position paragraph */
+      const whyEl = document.querySelector("#decision .why"), r0 = m.sev;
+      if (r0.verdict === "EXIT" ? !whyEl || !whyEl.textContent.includes(money(r0.sell_usd)) || whyEl.title !== t.headline
+          : r0.verdict === "STAY" ? !whyEl || !/^Keep the position/.test(whyEl.textContent) : !!whyEl)
+        bad.push(tag + ": action line '" + (whyEl ? whyEl.textContent : "") + "'");
+      if (document.querySelector("#decision .lbl") || /^Position: /m.test(document.querySelector("#decision .dbody").innerText)) bad.push(tag + ": incident label or position paragraph still on the card");
       /* not on the card (user decision, 11 Oct): the break-even sentence, the propagation rule, the model / source note */
       const card = document.querySelector("#decision .dbody").textContent;
       if (card.includes(t.break_even) || card.includes(cap1(t.rule)) || /come from the backend model/.test(card)) bad.push(tag + ": break-even, rule or source note still on the card");
-      if (!document.querySelector("#decision .lbl").textContent.includes(t.title)) bad.push(tag + ": card label lacks the title");
       const lis = [...document.querySelectorAll("#spread li")];
       if (lis.length !== pg.steps.length) bad.push(tag + ": spread list " + lis.length + " vs " + pg.steps.length + " steps");
       pg.steps.forEach((x, i) => { if (lis[i] && !lis[i].textContent.startsWith(x.text)) bad.push(tag + ": spread step " + i); });
@@ -697,8 +701,9 @@ try {
       });
       const grp = !!box.querySelector("table.sens tr.grp"), hasCmp = want.candidates.some((c) => c.comparison);
       if (grp !== hasCmp) bad.push(tag + ": other-positions group " + grp + " vs " + hasCmp);
-      const head = (box.querySelector(".sens-head") || { textContent: "" }).textContent;
-      if (want.weakest ? !head.includes(want.weakest.alternative) : head !== (COPY.sens || {}).robust) bad.push(tag + ": weakest line '" + head + "'");
+      /* the weakest assumption is said once, on the card (the fold's own line repeated it) */
+      const head = [...document.querySelectorAll("#decision .dbody > p.note")].map((x) => x.textContent).join(" | ");
+      if (box.querySelector(".sens-head") || (want.weakest ? !head.includes(want.weakest.alternative) : !head.includes((COPY.sens || {}).robust))) bad.push(tag + ": weakest line '" + head + "'");
       if (/Position preset/.test(box.textContent)) bad.push(tag + ": the page-built 'Position preset' row is still there");
     };
     document.querySelector('[data-mode="manual"]').click();
