@@ -78,14 +78,16 @@ const COPY = {
   /* Time rail: how long the incident lasts (guide sections 5b and 6). Event texts are RiskModel.propagationEvents'
      own; the recovers reason is RiskModel.recoveryToggle's. */
   rail: {
-    lasted: (dur) => `The incident has lasted <b>${dur}</b>`,
+    q: "How long?",
+    lasted: "The incident has lasted:",
+    durHint: "Drag the rail or type a duration: 16, 16h, 3d, 1w (1 hour to 180 days)",
     play: "Play",
     pause: "Pause",
     after: "After the incident",
     recovers: "Recovers",
     stays: "Stays",
     stepLine: (dur, rec) =>
-      `Lasts ${dur}${rec === null ? "" : rec ? ", recovers" : ", stays"}: drag the time rail on the chain below.`,
+      `Lasts ${dur}${rec === null ? "" : rec ? ", recovers" : ", stays"}: set in step 3 below.`,
     oracle: (dur) => `oracle switch ${dur}`,
     expiry: "PT expiry",
     pastMark: (dur) => `the past event: ${dur}`,
@@ -245,7 +247,7 @@ const COPY = {
         : "No analysed credit incident: the locked part carries no modelled loss.",
     issuerNote: "Second-order effects on borrowers (their debt is in the same asset) are not modelled.",
     assumption: (alt) =>
-      `Alternative yield ${alt} a year (D); the yield given up is counted over the incident's duration, set on the rail over the chain.`,
+      `Alternative yield ${alt} a year (D); the yield given up is counted over the incident's duration, set in step 3.`,
     /* Duration of a vault incident (guide 3, "Timeline"). */
     dur: {
       recWhy: "Whether the token comes back after the incident is your assumption (D); liquidations during it stay.",

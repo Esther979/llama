@@ -215,16 +215,6 @@
         text-overflow: ellipsis;
         flex: 0 1 300px;
       }
-      header .stamp {
-        margin-left: auto;
-        font-size: 12.5px;
-        color: var(--muted);
-      }
-      header .stamp {
-        margin-left: 0;
-        flex-basis: 100%;
-        text-align: right;
-      }
       /* The page's two views (Position / Vaults): each view's header inputs and body sit in a .view-part, which keeps
    the surrounding layout as if it were not there; the hidden one is display: none ([hidden] rule). */
       .view-part {
@@ -274,10 +264,6 @@
       #hdr-pt .wmsg[data-state="bad"],
       #hdr-pt .wmsg[data-state="unread"] {
         color: var(--warn);
-      }
-      #hdr-pt .stamp {
-        flex: 0 1 auto;
-        margin: -4px 0 0 auto;
       }
       .hin input {
         width: 100%;
@@ -496,13 +482,15 @@
       .step:first-child {
         border-left: 0;
       }
-      .step .q {
+      .step .q,
+      .rhead .q {
         display: flex;
         gap: 8px;
         align-items: baseline;
         font-weight: 600;
       }
-      .step .q i {
+      .step .q i,
+      .rhead .q i {
         font: 600 13px/1 var(--cond);
         font-style: normal;
         color: var(--surface);
@@ -1388,12 +1376,9 @@
       }
       /* Time rail (to-do 7): how long the incident lasts, on the chain it drives. Log scale; grey dashed marks are
    references (oracle switch, expiry, the past event), red marks the durations where the path changes. */
+      /* step 3 is its own panel above the dependency chain (user decision, 11 Oct), not inside it */
       .rail {
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--sunk);
-        padding: 10px 12px 8px;
-        margin-bottom: 12px;
+        padding: 12px 14px 10px;
       }
       .rhead {
         display: flex;
@@ -1403,6 +1388,20 @@
       }
       .rlbl {
         font-size: 13px;
+      }
+      .rlbl {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .rdur {
+        width: 7.5em;
+        font: 600 16px/1.2 var(--cond);
+        padding: 3px 6px;
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--ink);
       }
       .rlbl b {
         font: 600 18px/1 var(--cond);

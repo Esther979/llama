@@ -388,7 +388,11 @@
       sum = RM.vaultTimelineSummary(inc, rows),
       vb = (x) => `<span class="vb ${VCLS[x]}">${vword(x)}</span>`;
     LAST.timeline = { rows, sum };
-    $("#v-durLbl").innerHTML = R.lasted(durText(VS.hours));
+    document.querySelectorAll("#v-rail .rq").forEach((x) => (x.textContent = R.q));
+    document.querySelectorAll("#v-rail .rlt").forEach((x) => (x.textContent = R.lasted));
+    const di = $("#v-durIn");
+    di.title = di.placeholder = R.durHint;
+    if (document.activeElement !== di) di.value = durText(VS.hours);
     $("#v-rec").innerHTML = both
       ? `<span class="note">${R.after}</span><span class="mode sm" role="group" aria-label="${R.after}"><button data-vrec="1" aria-pressed="${VS.recovers}">${R.recovers}</button><button data-vrec="0" aria-pressed="${!VS.recovers}">${R.stays}</button></span><span class="note rwhy">${T.recWhy}</span>`
       : `<span class="note rwhy">${T.noRec}</span>`;
@@ -623,6 +627,16 @@
     if (ev.target.id !== "v-share") return;
     VS.share = +ev.target.value / 100;
     runOut();
+  });
+  /* a typed duration, as in the PT view: hours, or with h / d / w; clamped to the rail */
+  $("#v-durIn").addEventListener("change", (ev) => {
+    const m = String(ev.target.value).trim().replace(",", ".").match(/^(\d*\.?\d+)\s*(h|hr|hrs|hours?|d|days?|w|wk|weeks?)?$/i);
+    if (m && +m[1] > 0) {
+      const u = (m[2] || "h")[0].toLowerCase();
+      VS.hours = Math.min(H_MAX, Math.max(H_MIN, +m[1] * (u === "w" ? 168 : u === "d" ? 24 : 1)));
+    }
+    ev.target.value = durText(VS.hours);
+    render();
   });
   $("#v-dur").addEventListener("input", (ev) => {
     VS.hours = hOf(+ev.target.value);

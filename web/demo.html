@@ -34,7 +34,6 @@
           /></label>
           <p class="note hline wmsg" id="walletMsg" hidden></p>
           <p class="note hline" id="sizeLine"></p>
-          <span class="stamp" id="stamp"></span>
         </div>
         <div class="view-part" id="hdr-vault" hidden>
           <label class="hin wide" for="v-addr"
@@ -77,7 +76,7 @@
           <span class="note" id="n1"></span>
         </div>
         <div class="step">
-          <label class="q" for="fail"><i>2</i>What happens, how bad, how long?</label>
+          <label class="q" for="fail"><i>2</i>What happens, and how bad?</label>
           <select id="fail"></select>
           <div class="slide">
             <div class="tcol">
@@ -93,6 +92,35 @@
 
       <main class="cols">
         <div class="main">
+          <section class="panel rail" id="rail" role="group" aria-label="How long the incident lasts">
+            <div class="rhead">
+              <span class="q"><i>3</i><span class="rq"></span></span>
+              <label class="rlbl" for="durIn"><span class="rlt"></span>
+                <input id="durIn" class="rdur" type="text" autocomplete="off" spellcheck="false"
+              /></label>
+              <button class="btn rplay" id="play" aria-pressed="false"></button>
+              <span class="rrec" id="rec"></span>
+            </div>
+            <div class="rtrack" id="rtrack">
+              <div class="rline"></div>
+              <div id="rmarks"></div>
+              <div
+                class="rthumb"
+                id="rthumb"
+                role="slider"
+                tabindex="0"
+                aria-label="How long the incident lasts"
+                aria-valuemin="1"
+                aria-valuemax="4320"
+              ></div>
+            </div>
+            <div class="raxis" id="raxis"></div>
+            <ul class="revents" id="revents"></ul>
+            <details class="tl" id="d-tl">
+              <summary id="tlSum"></summary>
+              <div id="tl"></div>
+            </details>
+          </section>
           <section class="panel">
             <div class="phead">
               <h2>What this position depends on</h2>
@@ -107,32 +135,6 @@
                   Graph
                 </button>
               </div>
-            </div>
-            <div class="rail" id="rail" role="group" aria-label="How long the incident lasts">
-              <div class="rhead">
-                <span class="rlbl" id="railLbl"></span>
-                <button class="btn rplay" id="play" aria-pressed="false"></button>
-                <span class="rrec" id="rec"></span>
-              </div>
-              <div class="rtrack" id="rtrack">
-                <div class="rline"></div>
-                <div id="rmarks"></div>
-                <div
-                  class="rthumb"
-                  id="rthumb"
-                  role="slider"
-                  tabindex="0"
-                  aria-label="How long the incident lasts"
-                  aria-valuemin="1"
-                  aria-valuemax="4320"
-                ></div>
-              </div>
-              <div class="raxis" id="raxis"></div>
-              <ul class="revents" id="revents"></ul>
-              <details class="tl" id="d-tl">
-                <summary id="tlSum"></summary>
-                <div id="tl"></div>
-              </details>
             </div>
             <div class="chain" id="chain"></div>
             <details class="spread" id="d-spread">
@@ -187,17 +189,13 @@
           </div>
         </section>
         <div class="cols" id="v-cols">
-          <section class="panel">
-            <div class="phead">
-              <h2 id="v-chainHead"></h2>
-              <div class="mode sm" role="group" aria-label="How to show the vault's dependencies">
-                <button data-vdisp="list" aria-pressed="true">Layers</button
-                ><button data-vdisp="graph" aria-pressed="false">Graph</button>
-              </div>
-            </div>
-            <div class="rail" id="v-rail" role="group" aria-label="How long the incident lasts" hidden>
+          <div class="main">
+            <section class="panel rail" id="v-rail" role="group" aria-label="How long the incident lasts" hidden>
               <div class="rhead">
-                <span class="rlbl" id="v-durLbl"></span>
+                <span class="q"><i>3</i><span class="rq"></span></span>
+                <label class="rlbl" for="v-durIn"><span class="rlt"></span>
+                  <input id="v-durIn" class="rdur" type="text" autocomplete="off" spellcheck="false"
+                /></label>
                 <span class="rrec" id="v-rec"></span>
               </div>
               <div class="vrtrack">
@@ -210,10 +208,19 @@
                 <summary id="v-tlSum"></summary>
                 <div id="v-tl"></div>
               </details>
+            </section>
+          <section class="panel">
+            <div class="phead">
+              <h2 id="v-chainHead"></h2>
+              <div class="mode sm" role="group" aria-label="How to show the vault's dependencies">
+                <button data-vdisp="list" aria-pressed="true">Layers</button
+                ><button data-vdisp="graph" aria-pressed="false">Graph</button>
+              </div>
             </div>
             <div class="vchain" id="v-chain"></div>
             <div id="v-more"></div>
           </section>
+          </div>
           <aside class="side">
             <section class="panel decision" id="v-decision" aria-live="polite"></section>
           </aside>

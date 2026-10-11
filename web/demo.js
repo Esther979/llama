@@ -50,10 +50,6 @@
           "en-GB",
           Object.assign({ timeZone: "UTC" }, o),
         );
-      const STAMP =
-        utc({ hour: "2-digit", minute: "2-digit" }) +
-        " UTC, " +
-        utc({ day: "numeric", month: "short", year: "numeric" });
       const DAY = utc({ day: "numeric", month: "short" });
       const EXPIRY = new Date(d.position.expiry + "T00:00:00Z").toLocaleString(
         "en-GB",
@@ -733,7 +729,12 @@
           rt = RM.recoveryToggle(d, S.node, S.fail),
           p = pastOf(),
           vb = (v) => `<span class="vb ${VCLASS[v]}">${COPY.sens.verdict[v] || v}</span>`;
-        $("#railLbl").innerHTML = T.lasted(durText(S.hours));
+        document.querySelectorAll("#rail .rq").forEach((x) => (x.textContent = T.q));
+        document.querySelectorAll("#rail .rlt").forEach((x) => (x.textContent = T.lasted));
+        const di = $("#durIn");
+        di.title = di.placeholder = T.durHint;
+        /* the typed duration is rewritten only when the field is not being edited */
+        if (document.activeElement !== di) di.value = durText(S.hours);
         $("#play").textContent = PLAY.on ? T.pause : T.play;
         $("#play").setAttribute("aria-pressed", PLAY.on);
         $("#rec").innerHTML =
@@ -811,6 +812,13 @@
    <div class="raxis">${COPY.rail.ticks.map(([h, t]) => `<span style="left:${at(h)}">${t}</span>`).join("")}</div>
    <p class="note">${T.assume} ${gr("D")}</p>`;
       }
+      /* A typed duration: a number (hours), or with a unit: h, d, w ("16", "16h", "3 d", "2 days", "1w"). */
+      const durOf = (t) => {
+        const m = String(t).trim().replace(",", ".").match(/^(\d*\.?\d+)\s*(h|hr|hrs|hours?|d|days?|w|wk|weeks?)?$/i);
+        if (!m) return null;
+        const u = (m[2] || "h")[0].toLowerCase();
+        return +m[1] * (u === "w" ? 168 : u === "d" ? 24 : 1);
+      };
       function setHours(h, live) {
         S.hours = Math.min(H_MAX, Math.max(H_MIN, h));
         live ? frame() : render();
@@ -1401,6 +1409,11 @@
           render();
         }
         if (t.id === "wallet") setWallet(t.value);
+        if (t.id === "durIn") {
+          const h = durOf(t.value);
+          if (h !== null && h > 0) setHours(h);
+          t.value = durText(S.hours);
+        }
         if (t.id === "size" && !t.readOnly) {
           /* "3,000,000", "3m", "3.5M", "250k" are read and shown back as k / m; anything else restores the last size */
           const m = String(t.value).trim().replace(/[\s,_]/g, "").match(/^(\d*\.?\d+)([kKmM]?)$/),
@@ -1520,8 +1533,6 @@
       $("#replay").innerHTML = PAST.map((p) => `<option value="${p.key}">${p.label}</option>`).join("");
       $("#pastInfo").setAttribute("aria-label", COPY.past.info);
       if (!PAST.length) document.querySelector("#steps .smode").hidden = true;
-      $("#stamp").innerHTML =
-        `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""}`;
       $("#size-lbl").innerHTML = COPY.size.label;
       $("#alt-lbl").innerHTML = COPY.size.altLabel(gr("D"));
       $("#alt").value = S.alt.toFixed(2);

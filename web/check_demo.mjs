@@ -771,7 +771,7 @@ try {
     }
     /* b. one duration control on the page: the rail's thumb; the only range input is the severity */
     const sliders = document.querySelectorAll("#view-pt [role=slider]").length, ranges = document.querySelectorAll("#view-pt input[type=range]").length;
-    if (sliders !== 1 || ranges !== 1 || !/drag the time rail/.test(document.querySelector("#durNote").textContent))
+    if (sliders !== 1 || ranges !== 1 || !/set in step 3/.test(document.querySelector("#durNote").textContent))
       out.bad.push("duration controls: " + sliders + " sliders, " + ranges + " range inputs");
     /* c. keys: arrows 1% of the rail, PageUp 10% */
     fire(document.querySelector("#pos"), "lev_closest_to_liquidation");
@@ -786,6 +786,15 @@ try {
     if (Math.abs(uOf(S.hours) - u0 - 0.11) > 1e-9) out.bad.push("PageUp: u " + uOf(S.hours));
     key("ArrowLeft"); key("PageDown");
     if (Math.abs(S.hours - 6) > 1e-6) out.bad.push("back to 6 h: " + S.hours);
+    /* the duration can be typed too: hours, or h / d / w; clamped to 1 h .. 180 days; unreadable text restores it */
+    const di = document.querySelector("#durIn");
+    for (const [typed, want] of [["16", 16], ["16h", 16], ["3d", 72], ["2 days", 48], ["1w", 168], ["400d", 4320], ["0.2h", 1], ["abc", 1], ["6 h", 6]]) {
+      fire(di, typed);
+      if (Math.abs(S.hours - want) > 1e-9 || di.value !== durText(S.hours) || th.getAttribute("aria-valuetext") !== durText(S.hours))
+        out.bad.push("typed duration '" + typed + "': " + S.hours + " h, field '" + di.value + "'");
+    }
+    if (!/How long/.test(document.querySelector("#rail .q").textContent) || !/lasted:$/.test(document.querySelector("#rail .rlt").textContent))
+      out.bad.push("step 3 heading or label");
     /* d. the guide's main example (section 6): the 3% USDe depeg on the closest borrower, recovers on, cash 4%: one
        event at 16 h, layers 3 and 5 unchanged -> hit, STAY -> EXIT; a click on it moves the thumb past it, the layers
        it names change, and they flash */
@@ -849,7 +858,7 @@ try {
     thumb: document.querySelector("#rthumb").style.left, now: +document.querySelector("#rthumb").getAttribute("aria-valuenow") }))))`);
   if (Math.abs(atPress - 0.2) > 0.01 || Math.abs(dragged.u - 0.6) > 0.01 || Math.abs(parseFloat(dragged.thumb) - 60) > 1)
     rail.bad.push(`pointer drag: pressed at u ${atPress.toFixed(3)}, released at u ${dragged.u.toFixed(3)}, thumb ${dragged.thumb}`);
-  gate(rail.bad.length === 0, `7. time rail (pointer drag included): ${rail.marks} event marks and the two reference marks as the model's events (48 cases), recovers toggle on ${rail.toggles} of them, one duration control, keys, event click (thumb, layers, verdict, flash), guide examples ${JSON.stringify(rail.example)} and ${JSON.stringify(rail.example2)}, Play ${!rail.play ? "-" : rail.play.quick ? "started and stopped (--quick: not swept)" : rail.play.ms + " ms"}`);
+  gate(rail.bad.length === 0, `7. time rail (pointer drag included): ${rail.marks} event marks and the two reference marks as the model's events (48 cases), recovers toggle on ${rail.toggles} of them, one duration control, keys, typed durations, event click (thumb, layers, verdict, flash), guide examples ${JSON.stringify(rail.example)} and ${JSON.stringify(rail.example2)}, Play ${!rail.play ? "-" : rail.play.quick ? "started and stopped (--quick: not swept)" : rail.play.ms + " ms"}`);
   rail.bad.slice(0, 8).forEach((x) => console.log("           " + x));
 
   /* 7b. timeline chart (guide 5b): RiskModel.timeline's points, timelineSummary's lines, one band per answer between
@@ -896,7 +905,7 @@ try {
       line = () => document.querySelector("#sizeLine").textContent, hdr = document.querySelector("header");
     if (!hdr.contains(f) || !hdr.contains(document.querySelector("#alt"))) bad.push("size and cash yield are not in the header");
     if (document.querySelector("#d-adv, #book") || /Assumptions you can change/.test(document.body.innerText)) bad.push("the assumptions section is still there");
-    if (/position size \\$/i.test(document.querySelector("#stamp").textContent)) bad.push("static position size in the stamp");
+    if (document.querySelector("#stamp")) bad.push("the snapshot stamp is still in the header");
     /* real borrowers: on-chain size, read-only, grade A, with the hint */
     for (const k of Object.keys(PRE).filter((k) => PRE[k].sized === false)) {
       fire(document.querySelector("#pos"), k);
@@ -1132,6 +1141,15 @@ try {
           if (document.querySelector("#v-rail").hidden || Math.abs(+document.querySelector("#v-dur").value - Math.log(st.hours) / Math.log(4320) * 1000) > 1) G.bad.push(tag + ": duration rail");
         }
       }
+      /* the vault duration can be typed too */
+      const ti = v.incidents.find((i) => i.analyzed !== false && i.type !== "liquidity_run");
+      if (ti) VV.set({ inc: ti.key });
+      const vdi = document.querySelector("#v-durIn");
+      if (ti) for (const [typed, want] of [["7d", 168], ["36", 36], ["2w", 336], ["x", 336]]) {
+        fire(vdi, typed);
+        if (VV.state.hours !== want || !eqJ(VV.last().r, RiskModel.vaultDecideAt(VV.last().inc, ex, amt, VV.last().inc.default_severity, VV.state.alt, null, false, want, VV.state.recovers)))
+          G.bad.push(e.vault_name + ": typed duration '" + typed + "' -> " + VV.state.hours);
+      }
       VV.set({ hours: ex.horizon_days * 24, recovers: false });
       /* layer-6 off-chain relations: one source link per relation */
       for (const it of v.dependency_chain.flatMap((L) => L.items).filter((x) => x.offchain && v.offchain && v.offchain[x.offchain])) {
@@ -1180,7 +1198,7 @@ try {
     `6f. vault graph: ${vault.graph ? vault.graph.vaults : 0} vaults, ${vault.graph ? vault.graph.incidents : 0} incidents: one node per item, exactly dependency_edges drawn (D dashed), the path = chain_items in both displays, same card`);
   if (vault.graph) vault.graph.bad.slice(0, 5).forEach((x) => console.log("           " + x));
   gate(vault.g && vault.g.n > 0 && vault.g.bad.length === 0,
-    `6g. vault details: ${vault.g ? vault.g.n : 0} incident x duration cases (card = vaultDecideAt with the duration; default = static decision; tranches, sensitivity and its note, loss chart, markets, timeline, recovers toggle, rail), ${vault.g ? vault.g.off : 0} off-chain items, run slider`);
+    `6g. vault details: ${vault.g ? vault.g.n : 0} incident x duration cases (card = vaultDecideAt with the duration; default = static decision; tranches, sensitivity and its note, loss chart, markets, timeline, recovers toggle, rail, typed durations), ${vault.g ? vault.g.off : 0} off-chain items, run slider`);
   if (vault.g) vault.g.bad.slice(0, 6).forEach((x) => console.log("           " + x));
   gate(vault.ptSame, "6a. switching back restores the PT view exactly (state, text, controls)");
   vault.bad.forEach((x) => console.log("           " + x));
