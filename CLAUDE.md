@@ -93,6 +93,7 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 | `llama_graph.py` | DeFiLlama free endpoints: protocol edges, price and stablecoin replay |
 | `FRONTEND_GUIDE.md`, `FRONTEND_VAULT_GUIDE.md` | Step-by-step instructions for the front-end colleague (to give to Claude), with acceptance tables |
 | `offchain.py`, `offchain_deps.json` | Off-chain dependencies (USDe, sUSDe, EURCV, mGLOeuro, PST): 102 relations, each with URL + verbatim quote, re-checked by `python3 offchain.py`; attached to the PT graph (`offchain`, `offchain:*` nodes) and to vault details (layer 6, `offchain`); grade D |
+| `DEMO_SCRIPT.md` | 3-minute demo script: scenes, clicks, numbers (from the current sample), what not to click, judges' questions |
 | `README.md` | Data contracts of `dashboard.json`, `vaults_report.json`, vault details; run order |
 | `sample_data/` | `dashboard.sample.json/.js` (+ levered, borrower), `vaults.sample.js`, `vaults_report.sample.json`, `vault_detail.sample.json`, `rockawayx_vaults.csv` (the 33 RockawayX vaults) |
 
@@ -195,9 +196,10 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
 4. **Front-end integration**: checked `frontend` at b8fb353 (11 Oct): `check_js_port.py` 30/30, `check_demo.mjs` all
    pass (size rows skipped). Open on the page, in order: duration slider + dynamic propagation + recovers toggle
    (to-do 9), `propagation` path (6b), `decisionText` (6), vault exit tranches / sensitivity / timeline / edges (8),
-   `atSize` (7), wallet (10). Status table: FRONTEND_GUIDE section 0. Still to write: a 2–3 minute demo script
-   (Belem vault → mGLOeuro → chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command
-   for refresh + checks.
+   `atSize` (7), wallet (10). Status table: FRONTEND_GUIDE section 0. Demo script: `DEMO_SCRIPT.md` (3 minutes:
+   USDe 3% depeg on the closest borrower, STAY at 6 h → EXIT at the 16 h oracle timelock, Graph + evidence drawer;
+   same incident outright / at $10M; Belem vault → mGLOeuro → "exit above 20.09%" → tranches; numbers from the
+   10 Oct sample, re-read after a refresh). Still to write: one command for refresh + checks.
 5. Liquidation feasibility for RWA collateral without DEX liquidity (bad debt if liquidators cannot sell).
 6. Admin / upgrade risk from the crawler's role edges (who can change an oracle or a vault, timelock, EOA vs multisig).
 7. Vault timeline: PT collateral pull-to-par and borrower interest; swap cost for asset-issuer incidents (REVIEW).
