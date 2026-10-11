@@ -103,6 +103,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   - The input replaces the header's static "position size $10.00M" text; do not show both.
   - Size and "cash earns" are the manager's only two assumptions; there is no separate "Assumptions you can
     change" section.
+- Every text field (both views) is 28 px tall like the selects (user decision, 11 Oct): header fields at 12.5 px,
+  the duration field's bold value at 14 px; the Play button beside it is 28 px too.
 - Every select (both views) is as tall as the segmented switches, 28 px, with 12.5 px text (user decision, 11 Oct),
   and opens downward under its box like step 2's (user decision, 11 Oct): Chrome's customizable select
   (`appearance: base-select`, under `@supports`), list styled with tokens, at least as wide as the box, flipping up
@@ -278,7 +280,8 @@ What is on the branch:
   amounts (exact in their tooltips), their key only when "Act" has two parts; the weakest assumption said once, on
   the card (the fold's own line is gone). The reasons stay for now. The verdict word (EXIT, STAY, SELL $X) is
   92 px, twice its former size, with more space above and below; the line under it stays 14 px (PT card only; the
-  vault card keeps its 46 px verdict).
+  vault card keeps its 46 px verdict). The verdict and the line under it are centred in the band; the tags above stay
+  left-aligned.
 - Decision card, trimmed (user decision, 11 Oct): the break-even sentence (`t.break_even`; it is on the severity
   slider and under the exit chart), the propagation rule (`t.rule`; the reasons say it) and the "Losses, the decision
   and these texts come from the backend model …" source note are no longer on the card (gate 2g). The headline,
@@ -341,6 +344,12 @@ What is on the branch:
   expiry as a fraction of the value sold (today (5.01% - 4%) x 46.3 / 365 = 0.128%), never an annual rate, and 0
   when cash earns more than the PT. Pass it unscaled to `decideAt`, `breakEvenSeverity` and `sensitivity`: the
   model scales it by value / equity for levered positions. The guide's acceptance tables use carry 0.
+- "Can you get out?" is about liquidity (user decision, 11 Oct, plan A): today and "if this plays out" as text and
+  as two bars (sellable today / after); the cost-of-acting chart (below), its break-even line and the cash-yield line
+  sit in the "Cost of selling, by share sold" fold; no verdict caption (the decision card says it). The cash line
+  shows only when cash earns less than the PT and is always the APY slider's tooltip. The decision card no longer
+  repeats the sellable-now / later bars when there is no loss. The liquidation-curve row is named as the curve's
+  nearest row ("a 3.0% oracle drop" for a 2.77% shock).
 - The exit chart, its tooltip and the "All sale sizes" table are `RiskModel.actCostCurve(d, S.pos, S.node, S.fail,
   S.sev, r.carry, o)` (added 11 Oct; user report: the chart ignored the cash yield and step 2), drawn as the
   explainer's "balance" (ported 11 Oct): the sale cost, the loss on the part kept and their total against the share
