@@ -71,7 +71,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   Everything else opens on demand (folds, evidence drawer).
 - Inputs run in thinking order, left to right: where, what and how bad. Sliders update live; no Run button.
 - How long the incident lasts is set on a time rail directly above the five-layer chain, playable and draggable
-  (user decision, 11 Oct; to-do 9): the control sits on the thing it drives. Step 2 only repeats the value as a
+  (user decision, 11 Oct; to-do 7): the control sits on the thing it drives. Step 2 only repeats the value as a
   read-only line. One duration control on the page, never two.
 - One mode: any dependency can be failed by hand. Preview was removed on 10 Oct.
 - No detector and no invented incidents (team decision). An incident is set by hand (node, failure, severity), or
@@ -80,7 +80,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults. In both views
   the header's first row holds only the title and the switch, and the view's own inputs take the second row, so the
   switch does not move when the view changes.
-- Header of the PT view, left to right, once to-do 7 is done: title; the position select; "Position size (USD)";
+- Header of the PT view, left to right, once to-do 8 is done: title; the position select; "Position size (USD)";
   "Cash earns after selling, % APY"; "Load a past incident pattern…"; the view switch at the far right.
   - The position select and the size input answer different questions and must not look like two size controls.
     The select says how the PT is held (labels from `position_presets[*].label`: "PT held outright", "PT as
@@ -100,7 +100,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   event is a pattern applied to this position, not something that happened to it: the banner and the card label must
   say so ("Pattern from …"), and the PT-reUSD event must never read as an incident on PT-sUSDe. The opening preset
   is likewise someone else's position (a real borrower of this market), not the manager's: say so on the card.
-  Because it is a real-borrower preset, the size field is read-only on the first screen (to-do 7): show next to it
+  Because it is a real-borrower preset, the size field is read-only on the first screen (to-do 8): show next to it
   that choosing "PT held outright" or the market-average preset makes the size editable.
 - In both views, the dependency chain has two displays: Layers (default) and Graph. Same incident and numbers in
   both. In this file "view" means a page view (Position / Vaults); Layers and Graph are "displays".
@@ -158,7 +158,7 @@ What is on the branch:
   break-even zones; badge from `vaultDecideAt`, the backend's sentence (amounts in short form), stay vs exit bars;
   liquidity run as a `vaultRun` table (0 / 50 / 100%); the six-layer chain in Layers and Graph, the incident's path
   marked in both. Not yet: markets, exit tranches, sensitivity, the run's share slider, layer-6 off-chain relations,
-  timeline, "share of my portfolio" input (to-do 8).
+  timeline, "share of my portfolio" input (to-do 9).
 - The vault graph's edges are derived by the page from data fields (`markets[].collateral`, "{symbol} issuer" /
   `offchain`, a depeg incident's `affected_markets`, the vault-asset issuer), because the vault details carry no
   edge list (`dependency_graph` holds counts only; its edges are in a git-ignored CSV). Ask the backend for a
@@ -263,7 +263,7 @@ Answered by the backend (guide section 0b, merged):
   and recovery). Existing calls are unchanged. Merged in `74993e8`; the 8 acceptance rows of guide 3c were
   reproduced with the model on that data (size 10M, carry 0).
 - Recovers toggle (`281b27d`, guide 5b, merged in `b8fb353`): `RiskModel.recoveryToggle(d, node, fail)` returns
-  `{show, reason}`; the toggle exists only for failures with an off-chain cause (to-do 9).
+  `{show, reason}`; the toggle exists only for failures with an off-chain cause (to-do 7).
 
 This file loads when a file in `web/` is opened; otherwise read it at the start of the session.
 
@@ -284,9 +284,9 @@ gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would c
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
 the new 3 (past incidents), 4 (vault view, first cut) and 5 (sensitivity) are done.
 
-Order of the remaining items (user decision, 11 Oct): 6, 6b, 9, 7, 8, 10. They are listed in that order; the
-numbers do not give the order. 9 comes right after 6b because it builds on `propagation` and is the demo's main
-point (how the incident spreads over time); the size input (7) and the rest of the vault view (8) follow.
+Order of the remaining items (user decision, 11 Oct): 6, 6b, 7, 8, 9, 10, as listed. The time rail (7) comes right
+after 6b because it builds on `propagation` and is the demo's main point (how the incident spreads over time); the
+size input (8) and the rest of the vault view (9) follow.
 
 6. Decision sentence and reasons from `RiskModel.decisionText` (guide section 5); with a past event selected, pass
    its `opts` (the reasons then say when the shock is over). It also removes page-built sentences, so fewer strings
