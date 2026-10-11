@@ -251,68 +251,21 @@ What is on the branch:
 - `main` was merged again at `48e5ab9` (in `74993e8`: `d.past_incidents`, the optional `opts` argument) and at
   `f1a44c5` (in `642e57b`: guide 3c, the first-screen rule, docs only).
 
-Checked after to-do 8: `node web/check_demo.mjs` passes (39 gates, nothing skipped): gate 4 now runs all 19 rows of
-guide 9 (1M / 7M / 50M included), the model at each size exactly (`atSize`, `decideAt`, carry 0) and the screen with
-the size typed into the header field (16 h, recovers off, amounts within 0.1%); gate 8 (on a fresh page: default
-10,000,000 assumed; typed 1,000,000 / 5M / 250k / 50 000 000 set `d`, both sized presets, the card and the PT
-units line; invalid text restored; real borrowers read-only at their on-chain size; cash yield in the header with
-"4,5"; no assumptions section, no static size in the stamp). Gate 8 runs after the rail gates and closes its tab:
-a second tab in front throttles the first one's timers and animation frames, and Play (gate 7) then never ends.
-Screenshots: header with a real borrower and with 7,000,000 typed (64% sellable, as guide 9).
-Checked after to-do 7: `node web/check_demo.mjs` passes (38 gates) and `python3 check_js_port.py` 30/30. The gates
-compare the page with the duration path: 1b (first screen at 1 h, recovers, the reason instead of a toggle), 2d
-(each past event sets duration and recovers; the page equals `decideAtDuration`), 2e (guide 3c rows, amounts within
-0.1%, the page values the PT at the end of the incident: $164,900 vs $164,903; oracle / liquidated compared only for
-events with a stated duration), 2f (6/6, the 6 h and 24 h rows set on the rail, no longer skipped; position-step
-numbers within 0.2%), 2g (400 cases at 6 h and 24 h, recovers on and off: card = `decideAtDuration`, zones,
-`decisionText` and `propagation` = the model with its inputs), 3b (`sensitivity` with the same inputs), 4 (the model
-rows exactly with `decideAt`, carry 0; the screen at 16 h, recovers off, amounts within 0.1%), 7 (48 cases: red marks
-= events, the two grey marks, recovers toggle exactly where `show`, one duration control, arrows / PageUp, a real
-pointer drag, event click moves the thumb and changes and flashes layers 3 and 5, STAY -> EXIT, the guide's 16 h and
-4,190.4 h examples, Play reaches 180 days and stops, a key stops it) and 7b (96 cases: chart points, summary, bands,
-duration line). The new checks crash on the page before to-do 7 (no duration path). Screenshots: first screen,
-USDe 3% at 6 h and just past 16 h (Layers and Graph), a past event at a 390px viewport, dark mode, the timeline fold
-open (desktop and 390px dark). Not checked: by eye with a real mouse in a desktop browser (drag via CDP mouse events
-only).
-Checked at `b47402c`: `node web/check_demo.mjs` passes: no console errors, load-error banner hidden, 1b (first
-screen: PT-reUSD on the closest borrower, EXIT, event banner, "Pattern from", "not your position"), 18/18 drawers,
-2b (no detector or invented-incident wording, no prototype bar), 2c (off-chain links ethena 31/31, susde 4/4, usde
-links to Ethena, quote wording by `quote_found` true 34 / null 1 / false 0, on-chain members only), 2d (4 past
-events listed, each sets its incident and passes its opts; opts change the USDe result; moving the severity makes
-a what-if), 2e (guide 3c rows 8/8, model and screen), 48 preset x failure combinations, 15/15 of the guide's 10M
-acceptance rows, 4b 192/192, no horizontal scroll at 390px, dark background in dark mode. On the page before
-`b47402c`, gates 1b, 2b, 2d and 2e fail (8 failures); gate 2c's quote wording failed before `0c71c3f`. Screenshots
-checked: the first screen on desktop and at a real 390px viewport (device emulation; a plain `--window-size=390`
-screenshot crops the page and is not a valid phone check). `python3 check_js_port.py` passes all 22 gates at the
-`48e5ab9` merge (`f1a44c5` changed docs only).
-Checked at `52df261`: everything below, plus 2f (guide 6 propagation rows in both displays: layer states, position
-step, verdict, lit graph nodes, origin node; 4/4, the two rows needing `{hours: 6}` / `{hours: 24}` SKIPPED until the
-time rail), 2g (112 cases: the page's `decisionText` and `propagation` equal the model's, one verdict across card,
-text and path, card sentence = headline, spread list = steps ending with the answer, position row = position step)
-and 2b now also checks that guide 6's old texts are absent. On the page before: 2f 0/4, 2g 0/112; the other gates
-print the same. Screenshots: first screen with the spread list open, Graph display, cascade (`not_modelled`
-layers), dark mode.
-Checked at `778bf71`: everything below, plus gate 3b ("What would change the answer" is `sensitivity`: 112 cases,
-every preset x failure at two severities and every past event on every preset; the page's result equals the
-model's and the screen shows its rows, flips, groups and weakest line; 0/112 on the page before, the other gates
-print the same). Screenshots: the first screen, "PT held outright" (STAY, block now shown) and a case where no
-assumption flips.
-Checked at `7df75da`: everything above, plus vault gates 6a (switch; PT view exactly the same after switching
-back), 6b (the guide's 9 decision rows give its verdict and badge and exactly the model's numbers), 6c (run rows
-3/3), 6d (sentence equals `decision_text` with amounts converted to the short form, 41/41; the old full format
-fails it), 6e (not analysed / unknown address / amount above the vault), 6f (graph: 12 vaults, 41 incidents, one
-node per item, every derived edge drawn, same marks as Layers, same card) and the phone width in the vault graph
-display. The PT gates print the same before and after the vault view. NOTE from 6b, to raise with the backend: 5
-of the vault guide's rows differ slightly from the model on today's `vaults.sample.js` (same verdicts; e.g.
-Confidential PST at 30%: loss if stay 123,807 vs the guide's 123,819; YIELD at 50%: 182,150 vs 182,023); the table
-looks older than the `4f5e9b9` data. Screenshots checked: Belem (default), NUVA (partial exit), EURCV (REVIEW), the
-run table, the graph for Belem, YIELD (25 nodes) and the EURCV path, dark mode, a 390px viewport.
-Earlier: screenshots of the ethena drawer collapsed and expanded, the usde drawer and the graph view.
-Gate 4b failed on the page before its fix (114/192, every failure with a real-borrower preset). Screenshots checked: the closest
-borrower at a 2% and a 0.5% USDe depeg, and the $10M position. Not checked: the guide's 1M / 7M / 50M rows (no size
-input yet; reported as SKIPPED), layout by eye in dark mode (first screen and the expanded off-chain row
-included). Earlier: the carry change was
-compared old vs new on 564 cases: no verdict changed, 9 REDUCE sizes moved by 1-3 points.
+Check status (after to-do 8): `node web/check_demo.mjs` passes, 39 gates, nothing skipped (one NOTE: guide 3c's
+oracle / liquidated columns are not compared for the two events without a stated duration); `python3
+check_js_port.py` 30/30. What each gate covers is in its comment in `check_demo.mjs`; the history is in `git log`.
+Not checked: dragging the rail with a real mouse by eye (only CDP mouse events), layout by eye in dark mode beyond the
+screenshots taken.
+
+Lessons worth keeping:
+
+- A second tab in front throttles the first one's timers and animation frames: Play (gate 7) then never ends. A
+  gate on a fresh page runs after the rail gates and closes its tab; every page step fails after 90 s instead of
+  hanging.
+- A phone check needs device emulation (`check_demo.mjs` does it); a plain `--window-size=390` screenshot crops
+  the page and proves nothing.
+- Before to-do 7 the page's numbers came from `decideAt` with a past event's `opts`; now from `decideAtDuration`,
+  so the guide's tables (computed with `decideAt`) match the screen within 0.1%, the model exactly.
 
 Gaps, most visible first: none from the guide's list besides the open to-do items (wallet input, vault view rest).
 
@@ -481,19 +434,27 @@ Update the state, gaps and to-do when an item is done or the backend answers.
 
 ## How to verify
 
-Checking against the data files is not enough; the drawer crash was missed that way. Before saying a change works:
+Checking against the data files is not enough; the drawer crash was missed that way. `node web/check_demo.mjs`
+opens the page in the installed Chrome (DevTools protocol, no packages, no server; `CHROME=` to override), drives
+its own controls and prints one `GATE PASS` / `GATE FAIL` line per check, exit 1 on any failure, console error or a
+step hanging over 90 s. It reads the acceptance tables from `../FRONTEND_GUIDE.md` and `../FRONTEND_VAULT_GUIDE.md`
+at run time. It covers: load without errors, every node's drawer in both displays, every preset x failure, the
+guides' tables on screen, card / zones / path / sensitivity / exit panel against the model, the time rail, the
+header inputs, the vault view, phone width and dark mode.
 
-1. Open the page in a browser with the console open. No errors on load.
-2. Click every one of the 9 nodes, in both displays (Layers and Graph). Each drawer opens.
-3. Switch through all position presets and every failure type of each node.
-4. Compare the rows of the guide's acceptance table with what the page shows, and check that the decision card
-   and the exit panel agree for every preset.
-5. Check phone width and dark mode for any visual change.
+When to run what:
 
-`node web/check_demo.mjs [page.html]` automates 1 to 5 (no packages; installed Chrome over the DevTools protocol,
-`CHROME=` to override). It reads the acceptance table from `../FRONTEND_GUIDE.md` at run time, prints one
-`GATE PASS` / `GATE FAIL` line per check and exits 1 on any failure or console error. Run it before each commit;
-for a refactor, run it on the old and the new page and compare the output. It runs from disk: no server and no
-deployment. It does not judge layout by eye. Gate 4b checks one pair of screen parts (exit panel against the
-decision card); other parts are not cross-checked, so a full pass is not proof that the page is consistent.
-State plainly what was checked and what was not.
+1. While working: `node web/check_demo.mjs --quick` (about 15 s: the big sweeps sampled, Play not swept). Run it
+   once when a step is done, not after every edit.
+2. Before each commit: `node web/check_demo.mjs` once (about 35 s). After merging `main`, also
+   `python3 check_js_port.py` (30 gates).
+3. Only for a refactor or a new gate: run the old page too (`git archive HEAD web` into the scratchpad with a
+   `sample_data` symlink, then `node web/check_demo.mjs <old>/web/demo.html`) to show the gate catches the old
+   behaviour.
+4. Screenshots only for a visible change: desktop, 390px (device emulation) and dark mode of the part that changed;
+   not for logic-only changes.
+5. A new feature gets its gate in the same commit; keep each gate's description in its comment, not here.
+
+It does not judge layout by eye, and its cross-checks are pairs (e.g. exit panel against card): a full pass is not
+proof the page is consistent. State plainly what was checked and what was not, in the reply and in one line of
+"Check status" above (replace it, do not append a history).
