@@ -429,6 +429,41 @@ def main():
           f"missed between events" + (f"  first {ereal[0]}" if ereal else ""))
     bad = bad + ebad + ereal
 
+    # recovers / stays toggle: shown only for off-chain causes; where hidden, the toggle changes nothing
+    from frontend_contract import recovery_toggle
+    keys = list(d["ui"]["injections"])
+    with tempfile.TemporaryDirectory() as tmp:
+        sf = os.path.join(tmp, "r.js")
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);"
+                            "console.log(JSON.stringify(Object.keys(d.ui.injections).map(k=>{const [n,f]=k.split(':');"
+                            "return M.recoveryToggle(d,n,f);})));")
+        jr = json.loads(subprocess.run(["node", sf, JS, dpath], check=True, capture_output=True, text=True).stdout)
+    rbad = [k for k, j in zip(keys, jr) if recovery_toggle(d, *k.split(":")) != j]
+    rhidden, rshown = [], []
+    for k in keys:
+        node, fail = k.split(":")
+        changes = False
+        for pk in dz["position_presets"]:
+            for sev in (0.5, 3, 20):
+                for h in (1, 6, 24, 720, 4320):
+                    a = decide_at_duration(dz, pk, node, fail, sev, h, True, 0.04)
+                    b = decide_at_duration(dz, pk, node, fail, sev, h, False, 0.04)
+                    if a["verdict"] != b["verdict"] or not same(a["loss_if_stay_usd"], b["loss_if_stay_usd"]) or \
+                            not same(a["total_if_act_usd"], b["total_if_act_usd"]):
+                        changes = True
+        show = recovery_toggle(d, node, fail)["show"]
+        if not show and changes:
+            rhidden.append(k)
+        if show and not changes:
+            rshown.append(k)
+    shown = [k for k in keys if recovery_toggle(d, *k.split(":"))["show"]]
+    print(f"GATE {'PASS' if not rbad else 'FAIL'}  recoveryToggle: {len(keys)} failures give the same answer in JS and "
+          f"Python (shown for {', '.join(shown)})" + (f"  mismatch {rbad}" if rbad else ""))
+    print(f"GATE {'PASS' if not (rhidden or rshown) else 'FAIL'}  recoveryToggle: hidden where recovers / stays changes "
+          f"nothing, shown where it changes the loss (4 presets x 3 severities x 5 durations)"
+          + (f"  hidden but changes: {rhidden}" if rhidden else "") + (f"  shown but no effect: {rshown}" if rshown else ""))
+    bad = bad + rbad + rhidden + rshown
+
     # one duration mechanism (guide 5b): decideAt with the inputs decideAtDuration used equals decideAtDuration
     from frontend_contract import decide_at_duration
     dur_bad, n_dur = [], 0
