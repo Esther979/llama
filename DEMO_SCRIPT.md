@@ -16,9 +16,10 @@ window (outside a text field); ← repeats the step's cue in the terminal, Esc q
 
 ```bash
 npm i --no-save playwright          # once, repo root: the package only, it drives your installed Google Chrome
-node web/demo_autopilot.mjs         # 15 steps, → to advance
+node web/demo_autopilot.mjs         # 16 steps, → to advance
 node web/demo_autopilot.mjs --auto 12 --captions   # rehearsal: advances every 12 s, the cue in a bar at the bottom
-node web/demo_autopilot.mjs --from 9               # start at the vault scene (steps 1-8 run at once, unpaused)
+node web/demo_autopilot.mjs --from 11              # start at the vault scene (steps 1-10 run at once, unpaused)
+node web/demo_autopilot.mjs --skip 12,14,15        # the 5-minute talk (PRESENTATION.md): PT view in full, vault in two steps
 ```
 
 The cues printed in the terminal are the short form of the scenes below. Keep the terminal on the laptop screen and

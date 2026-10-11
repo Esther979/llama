@@ -9,7 +9,9 @@
    Advance: press → (or Space, Enter) in the browser window, outside a text field; ← repeats the current cue in the
    terminal; Esc or closing the window quits. --auto N advances by itself every N seconds (rehearsal with a timer).
    --captions shows the step's cue in a small bar at the bottom of the page (rehearsal; leave it off for the judges).
-   --from N runs steps 0..N-1 at once, without waiting, then waits at step N.
+   --from N runs steps 1..N-1 at once, without waiting, then waits at step N.
+   --skip 12,14,15 leaves those steps out (not run, not paused): the 5-minute talk of PRESENTATION.md uses
+   --skip 12,14,15 (PT view in full, the vault view in two steps).
    --headless --shots DIR: no window, a screenshot per step in DIR (used to check the script here; CHROME=/path
    overrides the browser). Node 18+. */
 
@@ -24,6 +26,7 @@ const opt = (n, d) => (ARGS.includes(n) ? ARGS[ARGS.indexOf(n) + 1] : d);
 const AUTO = +opt("--auto", 0) * 1000;
 const CAPTIONS = flag("--captions");
 const FROM = +opt("--from", 0);
+const SKIP = new Set((opt("--skip", "") || "").split(",").filter(Boolean).map(Number));
 const HEADLESS = flag("--headless");
 const SHOTS = opt("--shots", null);
 const PAGE = pathToFileURL(resolve(opt("--page", join(HERE, "demo.html")))).href;
@@ -122,8 +125,16 @@ const STEPS = [
     run: async () => {},
   },
   {
+    cue: "The stack behind it, as discovered: five layers, nine nodes, the edges the crawler found. 82 contracts and 96 links behind one position, read from verified source; 35 quoted off-chain relations for Ethena.",
+    run: async () => {
+      await page.locator('#view-pt [aria-label="Graph"]').click();
+      await wait(600);
+    },
+  },
+  {
     cue: "Scene 1 · A 3% USDe depeg, like the daily low of 1 Feb. Six hours in: layer 2 origin, layer 4 affected, layer 3 unchanged (the meta-oracle switches only after 0.75% for 16 h), layer 5 unchanged. STAY: visible everywhere, not yet in this book.",
     run: async () => {
+      await page.locator('#view-pt [aria-label="Layers"]').click();
       await modeButton("How to set the incident", "Manual");
       await page.click("#incBtn");
       await wait(500);
@@ -298,6 +309,7 @@ async function next(i) {
 console.log(`${STEPS.length} steps. In the browser: → next, ← repeat the cue, Esc quit.${AUTO ? ` Auto-advance every ${AUTO / 1000} s.` : ""}\n`);
 let i = 0;
 for (; i < STEPS.length; i++) {
+  if (SKIP.has(i + 1)) continue;
   console.log(`\n[${i + 1}/${STEPS.length}] ${STEPS[i].cue}`);
   try {
     await STEPS[i].run();
@@ -309,7 +321,7 @@ for (; i < STEPS.length; i++) {
     await wait(500);
     await page.screenshot({ path: join(SHOTS, `${String(i + 1).padStart(2, "0")}.png`) });
   }
-  if (i < FROM) continue;
+  if (i + 1 < FROM) continue;
   if (i === STEPS.length - 1 && HEADLESS) break;
   let a = await next(i);
   while (a === "back") {

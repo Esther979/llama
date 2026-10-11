@@ -94,7 +94,8 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 | `FRONTEND_GUIDE.md`, `FRONTEND_VAULT_GUIDE.md` | Step-by-step instructions for the front-end colleague (to give to Claude), with acceptance tables |
 | `offchain.py`, `offchain_deps.json` | Off-chain dependencies (USDe, sUSDe, EURCV, mGLOeuro, PST): 102 relations, each with URL + verbatim quote, re-checked by `python3 offchain.py`; attached to the PT graph (`offchain`, `offchain:*` nodes) and to vault details (layer 6, `offchain`); grade D |
 | `DEMO_SCRIPT.md` | 3-minute demo script: scenes, clicks, numbers (from the current sample), what not to click, judges' questions |
-| `web/demo_autopilot.mjs` | Drives `web/demo.html` through the script's 15 steps in a visible Chrome (Playwright, `npm i --no-save playwright`); → advances, `--auto N`, `--captions`, `--headless --shots DIR` |
+| `web/demo_autopilot.mjs` | Drives `web/demo.html` through the script's 16 steps in a visible Chrome (Playwright, `npm i --no-save playwright`); → advances, `--auto N`, `--captions`, `--from N`, `--skip 12,14,15` (the talk), `--headless --shots DIR` |
+| `PRESENTATION.md` | 5-minute talk: timing table (13 stops of the autopilot), the speech, likely questions |
 | `README.md` | Data contracts of `dashboard.json`, `vaults_report.json`, vault details; run order |
 | `sample_data/` | `dashboard.sample.json/.js` (+ levered, borrower), `vaults.sample.js`, `vaults_report.sample.json`, `vault_detail.sample.json`, `rockawayx_vaults.csv` (the 33 RockawayX vaults) |
 
