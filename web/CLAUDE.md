@@ -145,7 +145,7 @@ liquidity-run table) decide behaviour.
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `52df261`)
+## Current state (`frontend` after to-do 7)
 
 What is on the branch:
 
@@ -167,9 +167,9 @@ What is on the branch:
   and the off-chain row. The other user-facing strings are still in `demo.js` and move step by step (see
   "Separation rules").
 - No detector and no invented incidents: the prototype bar, the two examples and the page-built `REPLAYS` are gone.
-  "Load a past incident pattern…" lists `d.past_incidents` (4 events). Selecting one sets node, failure and
-  severity and passes its `opts` to `decideAt` and `breakEvenSeverity` (`S.past`); moving the dependency, failure
-  or severity drops it (what-if), changing the position keeps it. Its text is in `#pastBanner` ("Pattern from …,
+  "Load a past incident pattern…" lists `d.past_incidents` (4 events). Selecting one sets node, failure, severity,
+  the duration and the recovers toggle (`S.past`; `p.opts` is no longer used, guide 5b); moving the dependency,
+  failure or severity drops it (what-if), changing the position keeps it. Its text is in `#pastBanner` ("Pattern from …,
   applied to this position. It did not happen to PT-sUSDe."); `#banner` is only the load error. The origin layer
   and node carry a "Past pattern" tag, the card label "Pattern from …".
 - First screen: `pt_reusd_aug_2026` on `lev_closest_to_liquidation` (EXIT, doing nothing loses $165k, selling
@@ -186,8 +186,31 @@ What is on the branch:
 - Incident path from `RiskModel.propagation` (`52df261`, guide section 6): layer states and texts (`data-state` on
   each row; layers 1 and 2 included), the "Your position" row, the Graph's lit nodes and edges (steps in state
   origin / hit, `pathOf`), and the "How it spreads" fold below the chain (steps with grades, null = "your input",
-  ending with the answer). The page-built `story` / `effects` / `flow` / `nodeFx` are gone. Not yet: the path does
-  not follow a duration (to-do 7).
+  ending with the answer). The page-built `story` / `effects` / `flow` / `nodeFx` are gone. The path follows the
+  duration (to-do 7, below). In the Graph display an edge lights only when its source is already on the path: the
+  position step lists both its edges (holding, liquidation) even when nobody is liquidated (a USDe depeg under 16 h),
+  and lighting both lit the liquidation arrow at 6 h (found by gate 2f's 6 h row).
+- Time rail (to-do 7, guide 5b and 6): one panel directly above the chain, in both displays: "The incident has
+  lasted {duration}", Play / Pause, the recovers toggle (only where `recoveryToggle(...).show`; otherwise its
+  `reason` in small print), the log rail 1 h to 180 days (thumb `role="slider"`, pointer capture, a click on the
+  track jumps there, arrows 1%, PageUp / PageDown 10%, Home / End), grey marks at the oracle switch and expiry (and
+  an accent mark at a past event's own duration), one red mark per `propagationEvents` event, and the event list
+  (click: thumb to `hours * 1.0005`; passed events marked). Step 2 only repeats the duration as a read-only line
+  ("Lasts 6 h, recovers: drag the time rail on the chain below"). One mechanism: the card is
+  `decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100)`; `breakEvenSeverity`,
+  `sensitivity`, `decisionText` and `propagation` get its inputs (`durInputs`) and `r.carry`. Events and the
+  timeline are cached by position, node, failure, severity, recovers and cash APY, never computed on drag; a drag
+  renders once per animation frame. A layer whose state changes flashes about 1 s (outline with reduced motion),
+  only while the incident stays the same. Play sweeps in about 9 s, pauses 1.4 s just past each event, stops at
+  180 days; any other input stops it. `S.hours` / `S.recovers` belong to the PT view (kept across a Vaults switch).
+  Default duration `DEF_H` = 6 h (the guide names none; the explainer opens at 6 h): a manual incident keeps the
+  rail where it is; a past event sets `p.hours` and `p.recovers`, or 6 h and stays when `hours` is null (Stream
+  xUSD, Elixir deUSD). Moving the rail or the toggle keeps a past event selected; moving dependency, failure or
+  severity drops it (what-if), as before.
+- Timeline chart (to-do 7, second part): a fold under the rail ("Loss if staying, by how long the incident lasts"),
+  on the rail's axis: `RiskModel.timeline` points, background by answer between the events' exact durations, grey
+  marks at 16 h and expiry, the rail's duration as a line, `timelineSummary` lines above it, the held-constant
+  assumptions (D) below. A picture, not a control.
 - Off-chain dependencies (guide section 8): the `ethena` and `susde` drawers have an "Off-chain (issuer documents)"
   row from `d.offchain.USDe` (31 relations) and `d.offchain.sUSDe` (4): issuer, summary and count per kind,
   relations grouped by kind on demand, each with a source link, grade D and the quote ("re-checked" when
@@ -200,8 +223,9 @@ What is on the branch:
   "selling starts at / pool limit from" from `breakEvenSeverity`. Wide % sliders use a log scale shared with the
   zone bar.
 - Edges come from `ui.edges` only (data id `position` drawn as the page's `pos`).
-- Carry comes from `RiskModel.carryOf(d, S.alt / 100)`; the "cash earns" field is a text field
-  (`inputmode="decimal"`) that accepts "4,5" as well as "4.5".
+- Carry is `r.carry` from `decideAtDuration` (yield given up over the incident only, at most until expiry; the
+  model converts `S.alt / 100` itself); the "cash earns" field is a text field (`inputmode="decimal"`) that accepts
+  "4,5" as well as "4.5". Before to-do 7 it was `RiskModel.carryOf(d, S.alt / 100)` until expiry.
   Keep that field: it is the manager's assumption (grade D, e.g. 4% for USD). `carry` is the yield given up until
   expiry as a fraction of the value sold (today (5.01% - 4%) x 46.3 / 365 = 0.128%), never an annual rate, and 0
   when cash earns more than the PT. Pass it unscaled to `decideAt`, `breakEvenSeverity` and `sensitivity`: the
@@ -216,6 +240,21 @@ What is on the branch:
 - `main` was merged again at `48e5ab9` (in `74993e8`: `d.past_incidents`, the optional `opts` argument) and at
   `f1a44c5` (in `642e57b`: guide 3c, the first-screen rule, docs only).
 
+Checked after to-do 7: `node web/check_demo.mjs` passes (38 gates) and `python3 check_js_port.py` 30/30. The gates
+compare the page with the duration path: 1b (first screen at 1 h, recovers, the reason instead of a toggle), 2d
+(each past event sets duration and recovers; the page equals `decideAtDuration`), 2e (guide 3c rows, amounts within
+0.1%, the page values the PT at the end of the incident: $164,900 vs $164,903; oracle / liquidated compared only for
+events with a stated duration), 2f (6/6, the 6 h and 24 h rows set on the rail, no longer skipped; position-step
+numbers within 0.2%), 2g (400 cases at 6 h and 24 h, recovers on and off: card = `decideAtDuration`, zones,
+`decisionText` and `propagation` = the model with its inputs), 3b (`sensitivity` with the same inputs), 4 (the model
+rows exactly with `decideAt`, carry 0; the screen at 16 h, recovers off, amounts within 0.1%), 7 (48 cases: red marks
+= events, the two grey marks, recovers toggle exactly where `show`, one duration control, arrows / PageUp, a real
+pointer drag, event click moves the thumb and changes and flashes layers 3 and 5, STAY -> EXIT, the guide's 16 h and
+4,190.4 h examples, Play reaches 180 days and stops, a key stops it) and 7b (96 cases: chart points, summary, bands,
+duration line). The new checks crash on the page before to-do 7 (no duration path). Screenshots: first screen,
+USDe 3% at 6 h and just past 16 h (Layers and Graph), a past event at a 390px viewport, dark mode, the timeline fold
+open (desktop and 390px dark). Not checked: by eye with a real mouse in a desktop browser (drag via CDP mouse events
+only).
 Checked at `b47402c`: `node web/check_demo.mjs` passes: no console errors, load-error banner hidden, 1b (first
 screen: PT-reUSD on the closest borrower, EXIT, event banner, "Pattern from", "not your position"), 18/18 drawers,
 2b (no detector or invented-incident wording, no prototype bar), 2c (off-chain links ethena 31/31, susde 4/4, usde
@@ -293,17 +332,19 @@ when `quote_found` is null (`0c71c3f`); past incidents replace the invented exam
 with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`); vault view first cut with the header switch and
 gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would change the answer" from
 `RiskModel.sensitivity`, gate 3b (`778bf71`); decision card from `decisionText` and incident path from
-`propagation`, gates 2f / 2g (`52df261`).
+`propagation`, gates 2f / 2g (`52df261`); time rail with events, recovers toggle, Play and flash, the timeline
+chart in a fold, gates 7 / 7b (to-do 7).
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
-the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText) and 6b (propagation) are
-done.
+the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText), 6b (propagation) and 7
+(time rail, timeline chart) are done.
 
-Order of the remaining items (user decision, 11 Oct): 7, 8, 9, 10, as listed (6 and 6b done). The time rail (7) comes right
-after 6b because it builds on `propagation` and is the demo's main point (how the incident spreads over time); the
-size input (8) and the rest of the vault view (9) follow.
+Order of the remaining items (user decision, 11 Oct): 8, 9, 10, as listed (6, 6b and 7 done).
 
-7. PT view time rail (duration), recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
+To raise with the backend: `propagation`'s `position` step lists the `lending -> position` (liquidation) edge even
+when the position is not liquidated; the page filters it (see "Current state"), the data could drop it.
+
+7. Done (kept for reference). PT view time rail (duration), recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
    `timelineSummary`; guide section 5b). Decided by the backend: from this step on there is one mechanism, the
    duration controls.
    - The card uses `decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100)`, not
