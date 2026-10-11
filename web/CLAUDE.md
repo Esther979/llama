@@ -44,7 +44,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   how each state looks.
 - Script may set inline values only for computed geometry: bar widths, SVG coordinates, chart points.
 - Every colour comes from a token. Light and dark values are defined together. Colour means verdict state only
-  (stay / reduce / exit); dashed means assumption (grade D).
+  (stay / reduce / exit); dashed means assumption (grade D). One exception (user decision, 11 Oct): the exit chart's
+  three cost lines, ported from the explainer, use their own tokens `--c-sale`, `--c-kept`, `--c-total`.
 - A visual change should produce a diff in `demo.css` only. If it needs more files than that, say so before
   making it.
 - Wording moves to `demo.copy.js` step by step, not in one rewrite: a sentence that is new or being changed goes
@@ -71,7 +72,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   Everything else opens on demand (folds, evidence drawer).
 - Inputs run in thinking order, left to right: where, what and how bad. Sliders update live; no Run button.
 - How long the incident lasts is set on a time rail, playable and draggable (user decision, 11 Oct; to-do 7), in its
-  own panel directly above the dependency panel (user decision, 11 Oct: above it, not inside it). It is step 3, "How long?" (numbered
+  the right column of the steps panel (user decision, 11 Oct: steps 1 and 2 share the left column, step 3 takes
+  the right one; one column on a phone; the vault view keeps step 3 as its own panel above its chain). It is step 3, "How long?" (numbered
   like steps 1 and 2; step 2 is "What happens, and how bad?" and only repeats the duration as a read-only line
   pointing to step 3). The duration is dragged on the rail or typed into the field after "The incident has lasted:"
   (hours, or h / d / w: "16", "3d", "1w"; clamped to 1 h .. 180 days; unreadable text restores it). One duration
@@ -89,8 +91,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   switch does not move when the view changes.
 - Header of the PT view, left to right (to-dos 8 and 10, done): title; the position select, captioned "PT holding
   type"; "Wallet (optional)";
-  "Position size (USD)";
-  "Cash earns after selling, % APY"; the view switch at the far right. The past-event select is not in the header:
+  "Position size (USD)"; the view switch at the far right. The cash yield is not in the header any more: it is step
+  2's second slider (user decision, 11 Oct; see below). The past-event select is not in the header:
   it sits in the steps' "Simulate" row.
   - The position select and the size input answer different questions and must not look like two size controls.
     The select says how the PT is held (labels from `position_presets[*].label`: "PT held outright", "PT as
@@ -101,6 +103,26 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   - The input replaces the header's static "position size $10.00M" text; do not show both.
   - Size and "cash earns" are the manager's only two assumptions; there is no separate "Assumptions you can
     change" section.
+- Every select (both views) is as tall as the segmented switches, 28 px, with 12.5 px text (user decision, 11 Oct),
+  and opens downward under its box like step 2's (user decision, 11 Oct): Chrome's customizable select
+  (`appearance: base-select`, under `@supports`), list styled with tokens, at least as wide as the box, flipping up
+  only when the viewport has no room below; the closed box's arrow sits on its own background strip so long text ends
+  under it. Browsers without it (Safari, Firefox today) keep their native menu. Native macOS menus centre the
+  selected option on the box, which is why lists with a later selection opened upward.
+- Sliders show their position only, no progress fill (user decision, 11 Oct): a neutral 4 px track and an 18 px ring thumb, the weight of step 3's rail. The
+  severity sliders (PT and vault) carry the break-even zones on their own track (green stay / amber sell part or
+  withdraw the free part / red sell to the pool limit or force out), split at `--za` / `--zb` set by script (a split
+  outside the scale is pushed past the track); the separate zone bar is gone. Its text is the slider's tooltip.
+- Inputs lighter than results (user decision, 11 Oct, plans B and C): a past event's steps 1 and 2 are text
+  (`#ro1`, `#ro2`; the controls hidden and disabled); no step-1 hint, no severity note (the break-even text is the
+  zone bar's tooltip and sits under the exit chart), no "Lasts … : set in step 3" line; the recovery reason is an ⓘ
+  with a tooltip; the duration events list (`#revents`) and the timeline chart (`#d-tl`) are in the dependency panel,
+  the rail's red marks carry their change as a tooltip; the wallet field opens from "+ Wallet (optional)" (or when a
+  wallet is set). Steps panel 252 px tall for a past event (was about 620).
+- Step 2 has two sliders (user decision, 11 Oct): the severity (what the loss L follows) and "And if you sell: cash
+  earns, % APY" (0 to 10%, 0.01% steps, default the PT's implied APY, value shown next to it; grade D). The cash
+  slider is a manager's assumption, not part of the incident: it stays enabled for a past event while step 2's
+  failure and severity are locked. Both update the card, the chart and the rest live.
 - These header inputs belong to the PT view. In the Vaults view the same place shows the vault's own inputs:
   vault address, amount invested, and the vault's alternative yield (`exit.alt_apy`, default per currency from
   `VAULTS.report.assumptions.alt_apy_by_currency`). The horizon field is gone (to-do 9): the vault view's duration
@@ -121,7 +143,10 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   3.00M; PT with "$"). The two amount fields (PT "Position size (USD)", vault "Amount invested") read and show k / m
   units (user decision, 11 Oct): 3,000 = 3k, 3,000,000 = 3m, up to three decimals (3,249,472 = 3.249m); "3,000,000",
   "3m", "3.5M", "250k" are all read; the full number is the field's tooltip.
-- Every number in the drawer shows its source and its evidence grade (A to D).
+- Every number in the drawer shows its source. Evidence grades (A to D) are not shown anywhere on the page (user
+  decision, 11 Oct): `gr()` returns nothing in both views, the sensitivity tables have no Grade column, the edge
+  drawer no Grade row, the legend no A–D item, and "(grade X)" is dropped from the model's texts on display (`ng()`;
+  the model and the data keep their grades). Grade D still draws dashed (an assumption). Gate 9 checks it.
 - Works at phone width; the graph may scroll sideways inside its own container.
 
 ## Second view: Vaults (`../FRONTEND_VAULT_GUIDE.md`)
@@ -211,8 +236,8 @@ What is on the branch:
   position"). Messages under the inputs: not an address; not read on chain, with the `--wallet` command to rerun;
   read but no PT-sUSDe at the block; read, with its presets (A). Clearing the field removes the presets (back to
   `spot` if one was selected). Nothing is typed in by hand. Events and flashes are keyed by the wallet too.
-- Position size (to-do 8, guide 3b): "Position size (USD)" and "Cash earns after selling, % APY" sit in the header
-  after the position select; the "Assumptions you can change" fold and the "share of the book" field are gone, and
+- Position size (to-do 8, guide 3b): "Position size (USD)" sits in the header after the position select ("Cash earns"
+  sat next to it until it became step 2's slider); the "Assumptions you can change" fold and the "share of the book" field are gone, and
   so is the stamp's static "position size $10.00M"; the "Snapshot … · block …" stamp itself was removed later (user
   decision, 11 Oct; the block stays in the drawers' evidence). `d` is `RiskModel.atSize(window.DASHBOARD, S.size)` (`resize()`,
   on load and on every size change; `PRE` follows it); every model call takes this `d`. The size sets `spot` and
@@ -227,10 +252,21 @@ What is on the branch:
   a past event's `opts` included: the weakest assumption that flips the verdict (or "No tested assumption changes
   the answer"), this position's own assumptions, the other positions as their own group (they never count as the
   weakest), then the severity break-even and the rule. Shown with or without a loss.
+- Decision card, trimmed (user decision, 11 Oct): the break-even sentence (`t.break_even`; it is on the severity
+  slider and under the exit chart), the propagation rule (`t.rule`; the reasons say it) and the "Losses, the decision
+  and these texts come from the backend model …" source note are no longer on the card (gate 2g). The headline,
+  reasons, hinge and the "What would change the answer" fold stay.
 - Decision card from `RiskModel.decisionText` (`52df261`, guide section 5): its title, headline, reasons,
   break-even, hinge and rule, with a past event's `opts`. The badge, bars, stuck line and oracle-range note are built
   from the decision's numbers (wording in `COPY.card`). The amounts in the backend's sentences are written in full
   ("$164,903"), the bars in short form ("$165k"): the texts are the backend's, numbers checked there.
+- Layers display in the explainer's propagation form (user decision, 11 Oct): each layer row is "Layer n · name", a
+  state badge (Origin / Affected / Unchanged / Not applicable / Not modelled / Unknown, `COPY.layers.state`) and
+  `propagation`'s text for that layer; then "Your position" (its step) and a result card (the verdict and the result
+  step), both on an accent tint. The static layer heads and facts of guide section 6's "Layer facts" table (the
+  oracle's contract name and note, "You can sell … today", the borrower count…) are gone from this display; the
+  drawers still show them. Rows stay buttons (manual mode) with "Show dependencies and evidence". Gate 2g checks each
+  row's head, badge and text, and the result card, against the model.
 - Incident path from `RiskModel.propagation` (`52df261`, guide section 6): layer states and texts (`data-state` on
   each row; layers 1 and 2 included), the "Your position" row, the Graph's lit nodes and edges (steps in state
   origin / hit, `pathOf`), and the "How it spreads" fold below the chain (steps with grades, null = "your input",
@@ -238,14 +274,14 @@ What is on the branch:
   duration (to-do 7, below). In the Graph display an edge lights only when its source is already on the path: the
   position step lists both its edges (holding, liquidation) even when nobody is liquidated (a USDe depeg under 16 h),
   and lighting both lit the liquidation arrow at 6 h (found by gate 2f's 6 h row).
-- Time rail (to-do 7, guide 5b and 6): its own panel (`section.panel.rail`) above the dependency panel, the same for
+- Time rail (to-do 7, guide 5b and 6): `#rail` in the steps panel's right column (`.step.s3`), the same for
   both displays: "3 How long?", "The
   incident has lasted: [field]", Play / Pause, the recovers toggle (only where `recoveryToggle(...).show`; otherwise its
   `reason` in small print), the log rail 1 h to 180 days (thumb `role="slider"`, pointer capture, a click on the
   track jumps there, arrows 1%, PageUp / PageDown 10%, Home / End), grey marks at the oracle switch and expiry (and
   an accent mark at a past event's own duration), one red mark per `propagationEvents` event, and the event list
   (click: thumb to `hours * 1.0005`; passed events marked). Step 2 only repeats the duration as a read-only line
-  ("Lasts 6 h, recovers: set in step 3 below"). One mechanism: the card is
+  ("Lasts 6 h, recovers: set in step 3"). One mechanism: the card is
   `decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100)`; `breakEvenSeverity`,
   `sensitivity`, `decisionText` and `propagation` get its inputs (`durInputs`) and `r.carry`. Events and the
   timeline are cached by position, node, failure, severity, recovers and cash APY, never computed on drag; a drag
@@ -272,16 +308,23 @@ What is on the branch:
   zone bar.
 - Edges come from `ui.edges` only (data id `position` drawn as the page's `pos`).
 - Carry is `r.carry` from `decideAtDuration` (yield given up over the incident only, at most until expiry; the
-  model converts `S.alt / 100` itself); the "cash earns" field is a text field (`inputmode="decimal"`) that accepts
-  "4,5" as well as "4.5". Before to-do 7 it was `RiskModel.carryOf(d, S.alt / 100)` until expiry.
+  model converts `S.alt / 100` itself); "cash earns" is step 2's slider (`#alt`, 0 to 10%; before 11 Oct a
+  header text field). Before to-do 7 it was `RiskModel.carryOf(d, S.alt / 100)` until expiry.
   Keep that field: it is the manager's assumption (grade D, e.g. 4% for USD). `carry` is the yield given up until
   expiry as a fraction of the value sold (today (5.01% - 4%) x 46.3 / 365 = 0.128%), never an annual rate, and 0
   when cash earns more than the PT. Pass it unscaled to `decideAt`, `breakEvenSeverity` and `sensitivity`: the
   model scales it by value / equity for levered positions. The guide's acceptance tables use carry 0.
 - The exit chart, its tooltip and the "All sale sizes" table are `RiskModel.actCostCurve(d, S.pos, S.node, S.fail,
-  S.sev, r.carry, o)` (added 11 Oct; user report: the chart ignored the cash yield and step 2): the total if you sell
-  each share (sale cost + loss on the rest) and the sale cost alone, money on the y axis, the recommended sale on the
-  lowest total; it moves with the cash yield, the incident and its duration (gate 4c). The panel's text, the
+  S.sev, r.carry, o)` (added 11 Oct; user report: the chart ignored the cash yield and step 2), drawn as the
+  explainer's "balance" (ported 11 Oct): the sale cost, the loss on the part kept and their total against the share
+  sold now, money on the y axis, the lowest total marked (dashed guide, ring, "Lowest $X at x = Y%") = the card's
+  sale, the part Pendle refuses hatched; above it a verdict badge and the explainer's sentence (sell x, sale cost,
+  loss on the rest, total, saving against keeping it all; from `r`), below it the break-even severities (`m.be`).
+  It moves with the cash yield (step 2's slider, live), the incident and its duration (gate 4c).
+  A line under the caption states what the cash yield does here: cash vs the PT's implied APY, and the yield given up
+  over this incident (`r.carry`, its share and its amount on a full sale), or that it gives up nothing when cash earns
+  at least the PT. Without it the input looked dead (user report, 11 Oct): on the first screen's 1 h incident the
+  yield given up is about $4, which does not move the chart. The panel's text, the
   sellable share and the layer-4 fact use the selected preset's own curve,
   `RiskModel.sizeCurve(d, P.collateral_usd)`; "Today" is the model's `sellable_now`. The two real borrowers can
   sell 100% today, so their chart has no "Pendle refuses" band.
