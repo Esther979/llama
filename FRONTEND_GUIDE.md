@@ -1,35 +1,37 @@
 # Risk Desk v2: connecting the front end to the backend
 
-> For the front-end colleague: give this file together with `Dependency_Risk_Desk_v2.html` to Claude and say "edit this page following FRONTEND_GUIDE.md".
+> For the front-end colleague: give this file together with the page (`web/demo.html`, `web/demo.js`, `web/demo.css`) to Claude and say "edit this page following FRONTEND_GUIDE.md".
 > Keep the layout, but **remove step 3 (probability)**: the organisers consider that the probability p of a sudden incident cannot be predicted, so the core method is now "assume the incident has happened and decide by its severity".
 > Step 1 picks a node (the fixed 9 nodes; incidents are set by hand, there is no detector), step 2 drags the severity by hand; the verdict follows from the severity alone, with "above which fall you should exit" (the break-even severity).
 > What changes: the data are read from the backend files, losses and verdicts are computed by the backend model, and outdated texts are removed.
 > New: the position size is the manager's input (USD, default $10M); a wallet address can also be entered (a wallet read on chain at the same block by `onchain_positions.py --wallet`, or a borrower of this Morpho market, at its real on-chain size; numbers are never typed in by hand). The two real-borrower presets use their real sizes.
 > The "Cash earns after selling, % APY" input is annual: convert it with `RiskModel.carryOf(d, S.alt / 100)` into the yield given up until expiry before passing it to the model (4% -> 0.128%); never pass the annual difference.
 
-Instructions for Claude. Edit `Dependency_Risk_Desk_v2.html` so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls. Remove step 3 (the probability slider) and everything that uses a probability: the decision is made given the incident, at the severity chosen in step 2.
+Instructions for Claude. Edit the page (`web/demo.html` with `web/demo.js` and `web/demo.css`) so that it reads the backend's data and computes every number with the backend's model. Keep the layout, the five-layer chain, the decision card, the exit panel, the drawer and the prototype controls. Remove step 3 (the probability slider) and everything that uses a probability: the decision is made given the incident, at the severity chosen in step 2.
 
-## 0. Next steps for the page (backend main at 33833eb)
+## 0. Next steps for the page (backend `main` at 30450ef, page checked at `frontend` b8fb353, 11 Oct)
 
-The page passes the 15 rows at $10M of section 9, but it lags this guide in three places. Do these in order:
+The page is `web/demo.html` (with `demo.js`, `demo.css`, `vault.js`); it loads `../sample_data/dashboard.sample.js`
+and `risk_model.js` in place. At b8fb353 `python3 check_js_port.py` gives 30/30 and `node web/check_demo.mjs` passes
+(1 skipped: no size input). Before each step: merge `main`, run both checks.
 
-1. Pull `main` again and merge it into `frontend`.
-2. Run `python3 check_js_port.py`. No package is needed (standard library only; the vault checks are skipped when
-   `data/vaults/` is absent, it is git-ignored). Every line must say `GATE PASS`.
-3. Fix the three places where the page computes things itself instead of calling the model:
-
-| Priority | Page today | Replace with | Why |
+| Item | State | What to do | Guide |
 |---|---|---|---|
-| 1 | Computes `carry` itself: (implied APY - cash APY) x whole days to expiry (47) / 365 | `const carry = () => RiskModel.carryOf(d, S.alt / 100);` (section 4) | The page's formula is right in kind (it already converts the annual input to the time left); `carryOf` uses the exact `d.time_model.days_to_expiry` (46.2) like the timeline functions, so the page and the backend give the same carry |
-| 2 | Builds "What would change the answer" itself | `RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Same candidates, flips and weakest assumption as the backend; its "cash earns 1% a year less" step is converted to the time left to expiry |
-| 3 | No `RiskModel.atSize` | `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)` on load and on every size / wallet change (section 3b) | Position size (USD) and wallet presets; then check the $1M, $7M and $50M rows of section 9 |
-| 4 | Builds the decision sentence itself | `RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, carry())` (section 5) | Headline, reasons, break-even and the assumption it hinges on, with every number from the model and the same wording as the backend |
-| 5 | Builds `REPLAYS` from `failure_types` anchors; shows two invented examples and a "Prototype control" bar | `d.past_incidents` (section 3c); remove the invented examples and the prototype bar (user decision) | Four real past incidents, each with its node, failure, severity and the duration / recovery to pass to the model (`opts`); statistics are not listed as events |
-| 6 | Builds the red path of the five-layer chain itself from `r` (origin, layer 3, 4, 5) | `RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, r.carry, o)` (section 6) | How the failure travels layer by layer (origin -> PT value -> oracle -> liquidation -> exit liquidity -> position -> verdict), each step with its text, grade and the edges it crosses; layers 1 and 2 included; numbers checked |
+| `carryOf` | done | | 4 |
+| `sensitivity` ("What would change the answer") | done | | 5 |
+| `past_incidents` (no invented examples, no prototype bar) | done | | 3c |
+| Off-chain quotes by `quote_found` | done | | 8 |
+| Duration slider, timeline, dynamic propagation, recovers toggle | **open, first** | `decideAtDuration` drives the card; pass its inputs `o` and `r.carry` to every other function (one mechanism); `propagation` recomputed on every drag; `propagationEvents` marks on the slider; the recovers toggle only when `recoveryToggle(...).show` | 5b, 6 |
+| Incident path from `propagation` + "How it spreads" | **open** | one call replaces the page-built red path; layers 1 and 2 get a state | 6 |
+| Sentence and reasons from `decisionText` | **open** | replaces the page-built sentence | 5 |
+| Vault view: exit tranches (free / `forceDeallocate` / locked), sensitivity, timeline; links from `dependency_edges`, incident path from `chain_items` | **open** | | vault guide 3 |
+| Position size `atSize` (header still shows a fixed $10.00M, also for real borrowers) | **open** | then the 1M / 7M / 50M rows of section 9 | 3b |
+| Wallet input | last, only if time remains | | 3b |
 
-Open point: the merge report says the page has no position-size input yet, while the team was told the input is now
-"Position size (USD)". Check which is true on `frontend`, and which file is the page (`demo.html` or
-`Dependency_Risk_Desk_v2.html`) so that this guide names the right one.
+The first three open items are the demo's main point and the judges' "reasoning": the same 3% USDe depeg on the
+closest borrower stays at layer 4 for 6 h and reaches layers 3 and 5 after the oracle's 16 h switch (STAY -> EXIT).
+Wire `propagation` and `decisionText` with section 5b's `r.carry, o` from the start, so the duration step needs no
+rework.
 
 ## 0b. Answers from the backend (questions from the front end)
 
@@ -46,13 +48,13 @@ From the repo (`git pull`):
 |---|---|
 | `sample_data/dashboard.sample.js` | The data as `window.DASHBOARD = {...};`. Load it with a `<script>` tag (works when the page is opened from disk) |
 | `sample_data/dashboard.sample.json` | Same data as JSON, if the page is served over HTTP (`fetch`) |
-| `web/risk_model.js` | The model: `RiskModel.atSize` (position size and wallet, call first), `carryOf` (annual cash yield -> carry), `decideAt`, `breakEvenSeverity`, `sensitivity`, `decideAtDuration`, `timeline`, `timelineSummary`, `inject`, `walletPresets`, `positionLoss`, `oracleFalls`, `slippageAt`. Checked equal to the Python backend (`python3 check_js_port.py`) |
+| `web/risk_model.js` | The model: `RiskModel.atSize` (position size and wallet, call first), `carryOf` (annual cash yield -> carry), `decideAt`, `breakEvenSeverity`, `sensitivity`, `decisionText`, `propagation`, `decideAtDuration`, `propagationEvents`, `recoveryToggle`, `timeline`, `timelineSummary`, `inject`, `sizeCurve`, `walletPresets`, `positionLoss`, `oracleFalls`, `slippageAt`. Checked equal to the Python backend (`python3 check_js_port.py`) |
 | `README.md`, section "Frontend integration" | Field-by-field contract of `dashboard.json` |
 
-Copy `sample_data/dashboard.sample.js` and `web/risk_model.js` next to the HTML file (or adjust the paths), and put the two scripts before the page's own script:
+The page `web/demo.html` loads both in place, before its own scripts:
 
 ```html
-<script src="dashboard.sample.js"></script>
+<script src="../sample_data/dashboard.sample.js"></script>
 <script src="risk_model.js"></script>
 ```
 
