@@ -70,9 +70,12 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - First screen shows only: the verdict, one comparison (do nothing vs act), and the incident path.
   Everything else opens on demand (folds, evidence drawer).
 - Inputs run in thinking order, left to right: where, what and how bad. Sliders update live; no Run button.
-- How long the incident lasts is set on a time rail directly above the five-layer chain, playable and draggable
-  (user decision, 11 Oct; to-do 7): the control sits on the thing it drives. Step 2 only repeats the value as a
-  read-only line. One duration control on the page, never two.
+- How long the incident lasts is set on a time rail, playable and draggable (user decision, 11 Oct; to-do 7), in its
+  own panel directly above the dependency panel (user decision, 11 Oct: above it, not inside it). It is step 3, "How long?" (numbered
+  like steps 1 and 2; step 2 is "What happens, and how bad?" and only repeats the duration as a read-only line
+  pointing to step 3). The duration is dragged on the rail or typed into the field after "The incident has lasted:"
+  (hours, or h / d / w: "16", "3d", "1w"; clamped to 1 h .. 180 days; unreadable text restores it). One duration
+  control on the page (the rail and its field), never two. The vault view's rail is the same step 3.
 - One mode: any dependency can be failed by hand. Preview was removed on 10 Oct.
 - No detector and no invented incidents (team decision). The incident is set one way or the other, never both
   (user decision, 11 Oct): a row "Simulate: A past incident | Manual" on top of the steps. Past: a select of the real
@@ -166,7 +169,7 @@ What is on the branch:
   input; above the vault's assets: message, model gets the capped amount), alternative yield; incidents grouped (not
   analysed ones greyed); severity on a log slider with historical anchors and the break-even zones; badge from
   `vaultDecideAt` on the duration path, the backend's sentence (amounts in short form), stay vs exit bars. To-do 9
-  added: a duration rail over the chain (native log range 1 h to 180 days, default `exit.horizon_days`, reference
+  added: a duration rail as step 3, its own panel above the chain (native log range 1 h to 180 days, default `exit.horizon_days`, reference
   marks at `duration_grids` switch points, none today), the recovers / stays toggle where the incident has grids for
   both (default stays), `vaultTimelineSummary` lines under it and the `vaultTimeline` chart in a fold; folds under the
   card: exit tranche by tranche (free / with penalty / locked for this amount, loss if stay / cost / kept / avoided,
@@ -208,7 +211,8 @@ What is on the branch:
   `spot` if one was selected). Nothing is typed in by hand. Events and flashes are keyed by the wallet too.
 - Position size (to-do 8, guide 3b): "Position size (USD)" and "Cash earns after selling, % APY" sit in the header
   after the position select; the "Assumptions you can change" fold and the "share of the book" field are gone, and
-  so is the stamp's static "position size $10.00M". `d` is `RiskModel.atSize(window.DASHBOARD, S.size)` (`resize()`,
+  so is the stamp's static "position size $10.00M"; the "Snapshot … · block …" stamp itself was removed later (user
+  decision, 11 Oct; the block stays in the drawers' evidence). `d` is `RiskModel.atSize(window.DASHBOARD, S.size)` (`resize()`,
   on load and on every size change; `PRE` follows it); every model call takes this `d`. The size sets `spot` and
   `lev_market_avg`; for a real borrower the field shows its on-chain size, read-only, "read on chain" (A), with a hint
   to pick a sized preset; switching back shows the typed size again. Default `size_input.default_usd`, "assumed"
@@ -232,13 +236,14 @@ What is on the branch:
   duration (to-do 7, below). In the Graph display an edge lights only when its source is already on the path: the
   position step lists both its edges (holding, liquidation) even when nobody is liquidated (a USDe depeg under 16 h),
   and lighting both lit the liquidation arrow at 6 h (found by gate 2f's 6 h row).
-- Time rail (to-do 7, guide 5b and 6): one panel directly above the chain, in both displays: "The incident has
-  lasted {duration}", Play / Pause, the recovers toggle (only where `recoveryToggle(...).show`; otherwise its
+- Time rail (to-do 7, guide 5b and 6): its own panel (`section.panel.rail`) above the dependency panel, the same for
+  both displays: "3 How long?", "The
+  incident has lasted: [field]", Play / Pause, the recovers toggle (only where `recoveryToggle(...).show`; otherwise its
   `reason` in small print), the log rail 1 h to 180 days (thumb `role="slider"`, pointer capture, a click on the
   track jumps there, arrows 1%, PageUp / PageDown 10%, Home / End), grey marks at the oracle switch and expiry (and
   an accent mark at a past event's own duration), one red mark per `propagationEvents` event, and the event list
   (click: thumb to `hours * 1.0005`; passed events marked). Step 2 only repeats the duration as a read-only line
-  ("Lasts 6 h, recovers: drag the time rail on the chain below"). One mechanism: the card is
+  ("Lasts 6 h, recovers: set in step 3 below"). One mechanism: the card is
   `decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100)`; `breakEvenSeverity`,
   `sensitivity`, `decisionText` and `propagation` get its inputs (`durInputs`) and `r.carry`. Events and the
   timeline are cached by position, node, failure, severity, recovers and cash APY, never computed on drag; a drag
