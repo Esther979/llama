@@ -80,7 +80,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults. In both views
   the header's first row holds only the title and the switch, and the view's own inputs take the second row, so the
   switch does not move when the view changes.
-- Header of the PT view, left to right, once to-do 8 is done: title; the position select; "Position size (USD)";
+- Header of the PT view, left to right (to-do 8, done): title; the position select; "Position size (USD)";
   "Cash earns after selling, % APY"; "Load a past incident pattern…"; the view switch at the far right.
   - The position select and the size input answer different questions and must not look like two size controls.
     The select says how the PT is held (labels from `position_presets[*].label`: "PT held outright", "PT as
@@ -145,7 +145,7 @@ liquidity-run table) decide behaviour.
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` after to-do 7)
+## Current state (`frontend` after to-do 8)
 
 What is on the branch:
 
@@ -174,7 +174,18 @@ What is on the branch:
   and node carry a "Past pattern" tag, the card label "Pattern from …".
 - First screen: `pt_reusd_aug_2026` on `lev_closest_to_liquidation` (EXIT, doing nothing loses $165k, selling
   costs $5.7k). With a real-borrower preset the card says it is "a real borrower of this market, read on chain, not
-  your position". The header still shows "position size $10.00M" (gap 1).
+  your position". The size field then shows that borrower's on-chain size, read-only (to-do 8).
+- Position size (to-do 8, guide 3b): "Position size (USD)" and "Cash earns after selling, % APY" sit in the header
+  after the position select; the "Assumptions you can change" fold and the "share of the book" field are gone, and
+  so is the stamp's static "position size $10.00M". `d` is `RiskModel.atSize(window.DASHBOARD, S.size)` (`resize()`,
+  on load and on every size change; `PRE` follows it); every model call takes this `d`. The size sets `spot` and
+  `lev_market_avg`; for a real borrower the field shows its on-chain size, read-only, "read on chain" (A), with a hint
+  to pick a sized preset; switching back shows the typed size again. Default `size_input.default_usd`, "assumed"
+  (D, source in the title) until typed, then "your input". The field keeps the text as typed ("7,000,000", "5M",
+  "250k" are read); anything else restores the last size. Under the inputs: "{pt_units} PT at {pt_price_usd};
+  sellable now: {share} ({capacity_usd} pool limit)" for the selected preset. The exit table's refused rows stay
+  shares of the quotes' notional (`N0`, the backend file's `position.notional_usd`); the market drawer's "Largest
+  sale quoted" is `size_input.capacity_usd`. Events and the timeline are cached by size too.
 - "What would change the answer" is `RiskModel.sensitivity` (`778bf71`), called with the same inputs as `decideAt`,
   a past event's `opts` included: the weakest assumption that flips the verdict (or "No tested assumption changes
   the answer"), this position's own assumptions, the other positions as their own group (they never count as the
@@ -240,6 +251,14 @@ What is on the branch:
 - `main` was merged again at `48e5ab9` (in `74993e8`: `d.past_incidents`, the optional `opts` argument) and at
   `f1a44c5` (in `642e57b`: guide 3c, the first-screen rule, docs only).
 
+Checked after to-do 8: `node web/check_demo.mjs` passes (39 gates, nothing skipped): gate 4 now runs all 19 rows of
+guide 9 (1M / 7M / 50M included), the model at each size exactly (`atSize`, `decideAt`, carry 0) and the screen with
+the size typed into the header field (16 h, recovers off, amounts within 0.1%); gate 8 (on a fresh page: default
+10,000,000 assumed; typed 1,000,000 / 5M / 250k / 50 000 000 set `d`, both sized presets, the card and the PT
+units line; invalid text restored; real borrowers read-only at their on-chain size; cash yield in the header with
+"4,5"; no assumptions section, no static size in the stamp). Gate 8 runs after the rail gates and closes its tab:
+a second tab in front throttles the first one's timers and animation frames, and Play (gate 7) then never ends.
+Screenshots: header with a real borrower and with 7,000,000 typed (64% sellable, as guide 9).
 Checked after to-do 7: `node web/check_demo.mjs` passes (38 gates) and `python3 check_js_port.py` 30/30. The gates
 compare the page with the duration path: 1b (first screen at 1 h, recovers, the reason instead of a toggle), 2d
 (each past event sets duration and recovers; the page equals `decideAtDuration`), 2e (guide 3c rows, amounts within
@@ -295,10 +314,7 @@ input yet; reported as SKIPPED), layout by eye in dark mode (first screen and th
 included). Earlier: the carry change was
 compared old vs new on 564 cases: no verdict changed, 9 REDUCE sizes moved by 1-3 points.
 
-Gaps, most visible first:
-
-1. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
-   assumed $10M; the header's "position size $10.00M" stays even when a real-borrower preset is selected.
+Gaps, most visible first: none from the guide's list besides the open to-do items (wallet input, vault view rest).
 
 Answered by the backend (guide section 0b, merged):
 
@@ -333,13 +349,14 @@ with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`); vault view first
 gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would change the answer" from
 `RiskModel.sensitivity`, gate 3b (`778bf71`); decision card from `decisionText` and incident path from
 `propagation`, gates 2f / 2g (`52df261`); time rail with events, recovers toggle, Play and flash, the timeline
-chart in a fold, gates 7 / 7b (to-do 7).
+chart in a fold, gates 7 / 7b (to-do 7: `e8ef479`, `5e436b9`); position size and cash yield in the header through
+`atSize`, gate 8, all guide 9 sizes (to-do 8).
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
 the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText), 6b (propagation) and 7
-(time rail, timeline chart) are done.
+(time rail, timeline chart) and 8 (position size) are done.
 
-Order of the remaining items (user decision, 11 Oct): 8, 9, 10, as listed (6, 6b and 7 done).
+Order of the remaining items (user decision, 11 Oct): 9, 10, as listed (6, 6b, 7 and 8 done).
 
 To raise with the backend: `propagation`'s `position` step lists the `lending -> position` (liquidation) edge even
 when the position is not liquidated; the page filters it (see "Current state"), the data could drop it.
@@ -436,7 +453,7 @@ when the position is not liquidated; the page filters it (see "Current state"), 
      toggle is present exactly for the failures where `recoveryToggle(...).show` is true and the reason text is
      shown for the others; the two examples of
      guide section 6 (16 h; 4,190.4 h for `susde:discount` 0.5%).
-8. Position size input in the header through `RiskModel.atSize` (default `size_input.default_usd`, marked D until
+8. Done (kept for reference). Position size input in the header through `RiskModel.atSize` (default `size_input.default_usd`, marked D until
    typed). It replaces "share of the book", which is then removed: the manager types US dollars directly
    ("Position size (USD)"). In the same change, move "Cash earns after selling, % APY" into the header next to it
    (same field, same state `S.alt`, same decimal-comma parsing, grade D mark) and remove the "Assumptions you can
