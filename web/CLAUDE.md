@@ -142,7 +142,7 @@ liquidity-run table) decide behaviour.
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `7df75da`)
+## Current state (`frontend` at `50d2c16`; page code last changed in `7df75da`)
 
 What is on the branch:
 
@@ -237,6 +237,8 @@ Gaps, most visible first:
    must-sell and carry alternatives and the weakest assumption.
 2. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
    assumed $10M; the header's "position size $10.00M" stays even when a real-borrower preset is selected.
+3. The incident path is built by the page, not by `propagation` (to-do 6b): layers 1 and 2 have no state, there
+   is no "How it spreads" list, and the path does not change with the incident's duration.
 
 Answered by the backend (guide section 0b, merged):
 
@@ -276,6 +278,27 @@ the new 3 (past incidents) and 4 (vault view, first cut) are done.
 6. Decision sentence and reasons from `RiskModel.decisionText` (guide section 5); with a past event selected, pass
    its `opts` (the reasons then say when the shock is over). It also removes page-built sentences, so fewer strings
    are left to move into `COPY`.
+   6b. Incident path from `RiskModel.propagation` (guide section 0 priority 6, section 6; on `main` since `8fd22bb`,
+   merged in `50d2c16`). The page builds the red path itself today (the per-layer effects in the Layers display,
+   the hot nodes and edges in the Graph display, "Your position"); replace all of it with one call:
+   `RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, carry(), p ? p.opts : null)` (`p` = the selected past
+   event, `null` for a what-if).
+   - Layers display: `pg.layers` gives the five rows (`n`, `name`, `nodes`, `state`, `text`). Show `text` under the
+     layer head and style the row by `state` through a data attribute, colours in `demo.css`: `origin` and `hit`
+     red; `unchanged` grey; `not_applicable` grey ("no debt: nothing to liquidate"); `not_modelled` dashed grey;
+     `unknown` amber. Layers 1 and 2 now get a state too.
+   - Graph display: light the nodes and the `d.ui.edges` named in `pg.steps[].edges` for the steps whose state is
+     `origin` or `hit`. Same call, same result as the Layers display.
+   - New "How it spreads" list next to the chain: `pg.steps` in order (origin, PT value, lending oracle,
+     liquidation, exit liquidity, `position`, `result`), each with its `text` and grade badge (`grade: null` = the
+     manager's input). It opens on demand if it does not fit the first screen. The `result` step must equal the
+     decision card.
+   - No page-built path sentences are left afterwards: this also covers the path texts for `navLoss` and
+     `discount`. Remove the old texts listed at the end of guide section 6 ("Type unknown", "Upstream feeds are
+     not resolved yet", …) if any is still on the page.
+   - `check_demo.mjs`: the 6 acceptance rows of guide section 6 (layer states, the `position` step, the verdict) in
+     both displays; one gate that the `result` step and the decision card agree for every preset x failure.
+   - Checked on the branch's data: the 6 rows are reproduced by the model, `pg.unchecked` is empty.
 7. Position size input in the header through `RiskModel.atSize` (default `size_input.default_usd`, marked D until
    typed). It replaces "share of the book", which is then removed: the manager types US dollars directly
    ("Position size (USD)"). In the same change, move "Cash earns after selling, % APY" into the header next to it
@@ -287,16 +310,60 @@ the new 3 (past incidents) and 4 (vault view, first cut) are done.
 8. Vault view, rest: markets, exit tranches, sensitivity, liquidity-run slider and table, off-chain relations of
    layer 6, timeline.
 9. PT view duration slider, recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
-   `timelineSummary`). `decideAtDuration` and `timeline` take `altApy = S.alt / 100` (an annual rate, not `carry`)
-   and compute the carry themselves over the incident's duration, capped at expiry; `null` means cash earns the
-   same as the PT. A past event then sets these controls from `p.hours` and `p.recovers` (`hours: null` = not
-   stated); ask the backend whether the result should come from `decideAtDuration` or from `decideAt` with `opts`
-   in that case: the two differ slightly (closest borrower, PT-reUSD event: $164,900 against $164,903).
+   `timelineSummary`; guide section 5b). Decided by the backend: from this step on there is one mechanism, the
+   duration controls.
+   - The card uses `decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100)`, not
+     `decideAt`. `decideAtDuration` and `timeline` take `altApy = S.alt / 100` (an annual rate, not `carry`) and
+     compute the carry themselves over the incident's duration, capped at expiry; `null` means cash earns the same
+     as the PT.
+   - A past event only presets the controls: node, failure, severity, the duration slider (`p.hours`) and the
+     recovers toggle (`p.recovers`); events with `hours: null` (Stream xUSD, Elixir deUSD) leave the duration at its
+     default and recovers off. `p.opts` is no longer passed.
+   - `breakEvenSeverity`, `sensitivity`, `decisionText` and `propagation` have no duration version. Pass them the
+     inputs `decideAtDuration` used, and its carry, so that all five agree:
+     ```js
+     const r = RiskModel.decideAtDuration(
+       d,
+       S.pos,
+       S.node,
+       S.fail,
+       S.sev,
+       S.hours,
+       S.recovers,
+       S.alt / 100,
+     );
+     const o = {
+       hours: S.hours,
+       collateral_usd: r.position_value_usd,
+       collateral_oracle_usd: r.collateral_usd,
+       debt_usd: r.debt_usd,
+       sale_value_usd: d.position_presets[S.pos].collateral_usd,
+     };
+     if (S.recovers) o.permanent = 0;
+     // breakEvenSeverity(d, S.pos, S.node, S.fail, r.carry, lo, hi, 400, o); sensitivity(..., r.carry, o);
+     // decisionText(d, S.pos, S.node, S.fail, S.sev, r.carry, o); propagation(d, S.pos, S.node, S.fail, S.sev, r.carry, o)
+     ```
+     The carry here is `r.carry` (yield given up over the incident only), not `carryOf` until expiry. Numbers move
+     slightly (first screen $164,900 instead of $164,903); merge `main` and re-read the acceptance rows first.
+   - The chain follows the slider: recompute `propagation` on every drag, so the layers change while dragging.
+   - Marks on the slider from `RiskModel.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers,
+S.alt / 100)` (on `main` since `97d9450`). It runs the model about 300 times (about 50 ms here): call it only
+     when the position, node, failure, severity, recovers or cash APY change, never on drag. `ev.events[]` gives the
+     exact durations (1 h to 180 days, the slider's range) at which a layer, a step or the verdict changes: one red
+     mark per event (they replace the fixed 16 h and expiry ticks, which stay as grey reference marks), the events
+     listed under the slider ("16 h: layer 3 unchanged -> hit: {text}", with the verdict change), a click on an
+     event moves the slider just past it. When a drag crosses an event, flash the layers whose state changed.
+     The play button is optional: skip it unless everything else is done.
+   - This is the demo's main point (guide section 6): the same 3% USDe depeg on the closest borrower stops at
+     layer 4 for 6 h and reaches layers 3 and 5 after the oracle's 16 h switch, verdict STAY -> EXIT. Checked on the
+     branch's data: one event at 16 h, STAY -> EXIT.
+   - `check_demo.mjs`: the card, the zones, the sensitivity table, the decision text and the path use the same
+     loss for every preset and past event; the slider shows one mark per `ev.events` entry; the two examples of
+     guide section 6 (16 h; 4,190.4 h for `susde:discount` 0.5%).
 10. Last, only if time remains: PT wallet input (guide section 3b: an address read on chain, never typed-in
     collateral or debt). Until then the header has no wallet field.
 
-Alongside, when the code is touched anyway: path texts for `navLoss` and `discount`; the three inline swatch
-styles; strings into `COPY`.
+Alongside, when the code is touched anyway: the three inline swatch styles; strings into `COPY`.
 
 Update the state, gaps and to-do when an item is done or the backend answers.
 
