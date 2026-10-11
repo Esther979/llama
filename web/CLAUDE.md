@@ -70,6 +70,9 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - First screen shows only: the verdict, one comparison (do nothing vs act), and the incident path.
   Everything else opens on demand (folds, evidence drawer).
 - Inputs run in thinking order, left to right: where, what and how bad. Sliders update live; no Run button.
+- How long the incident lasts is set on a time rail directly above the five-layer chain, playable and draggable
+  (user decision, 11 Oct; to-do 9): the control sits on the thing it drives. Step 2 only repeats the value as a
+  read-only line. One duration control on the page, never two.
 - One mode: any dependency can be failed by hand. Preview was removed on 10 Oct.
 - No detector and no invented incidents (team decision). An incident is set by hand (node, failure, severity), or
   loaded from a past event through "Load a past incident pattern…" at the top right: the real events in
@@ -142,7 +145,7 @@ liquidity-run table) decide behaviour.
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `778bf71`)
+## Current state (`frontend` at `b8fb353`; page code last changed in `778bf71`)
 
 What is on the branch:
 
@@ -259,6 +262,8 @@ Answered by the backend (guide section 0b, merged):
   `breakEvenSeverity`, `sensitivity` and `decisionText` take an optional last argument `opts` (the event's duration
   and recovery). Existing calls are unchanged. Merged in `74993e8`; the 8 acceptance rows of guide 3c were
   reproduced with the model on that data (size 10M, carry 0).
+- Recovers toggle (`281b27d`, guide 5b, merged in `b8fb353`): `RiskModel.recoveryToggle(d, node, fail)` returns
+  `{show, reason}`; the toggle exists only for failures with an off-chain cause (to-do 9).
 
 This file loads when a file in `web/` is opened; otherwise read it at the start of the session.
 
@@ -278,6 +283,10 @@ gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would c
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
 the new 3 (past incidents), 4 (vault view, first cut) and 5 (sensitivity) are done.
+
+Order of the remaining items (user decision, 11 Oct): 6, 6b, 9, 7, 8, 10. They are listed in that order; the
+numbers do not give the order. 9 comes right after 6b because it builds on `propagation` and is the demo's main
+point (how the incident spreads over time); the size input (7) and the rest of the vault view (8) follow.
 
 6. Decision sentence and reasons from `RiskModel.decisionText` (guide section 5); with a past event selected, pass
    its `opts` (the reasons then say when the shock is over). It also removes page-built sentences, so fewer strings
@@ -303,17 +312,7 @@ the new 3 (past incidents), 4 (vault view, first cut) and 5 (sensitivity) are do
    - `check_demo.mjs`: the 6 acceptance rows of guide section 6 (layer states, the `position` step, the verdict) in
      both displays; one gate that the `result` step and the decision card agree for every preset x failure.
    - Checked on the branch's data: the 6 rows are reproduced by the model, `pg.unchecked` is empty.
-7. Position size input in the header through `RiskModel.atSize` (default `size_input.default_usd`, marked D until
-   typed). It replaces "share of the book", which is then removed: the manager types US dollars directly
-   ("Position size (USD)"). In the same change, move "Cash earns after selling, % APY" into the header next to it
-   (same field, same state `S.alt`, same decimal-comma parsing, grade D mark) and remove the "Assumptions you can
-   change" section, which is then empty. With a real-borrower preset the size field shows the on-chain size and is
-   read-only (details in "UX decisions to keep"). Under the inputs show the guide's line: "{pt_units} PT at
-   {pt_price_usd}; sellable now: {max_exit_fraction} ({capacity_usd} pool limit)". Update the selectors in
-   `check_demo.mjs` in the same commit. Then the 1M / 7M / 50M acceptance rows must pass instead of being skipped.
-8. Vault view, rest: markets, exit tranches, sensitivity, liquidity-run slider and table, off-chain relations of
-   layer 6, timeline.
-9. PT view duration slider, recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
+7. PT view time rail (duration), recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
    `timelineSummary`; guide section 5b). Decided by the backend: from this step on there is one mechanism, the
    duration controls.
    - The card uses `decideAtDuration(d, S.pos, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100)`, not
@@ -349,21 +348,72 @@ the new 3 (past incidents), 4 (vault view, first cut) and 5 (sensitivity) are do
      ```
      The carry here is `r.carry` (yield given up over the incident only), not `carryOf` until expiry. Numbers move
      slightly (first screen $164,900 instead of $164,903); merge `main` and re-read the acceptance rows first.
-   - The chain follows the slider: recompute `propagation` on every drag, so the layers change while dragging.
-   - Marks on the slider from `RiskModel.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers,
-S.alt / 100)` (on `main` since `97d9450`). It runs the model about 300 times (about 50 ms here): call it only
-     when the position, node, failure, severity, recovers or cash APY change, never on drag. `ev.events[]` gives the
-     exact durations (1 h to 180 days, the slider's range) at which a layer, a step or the verdict changes: one red
-     mark per event (they replace the fixed 16 h and expiry ticks, which stay as grey reference marks), the events
-     listed under the slider ("16 h: layer 3 unchanged -> hit: {text}", with the verdict change), a click on an
-     event moves the slider just past it. When a drag crosses an event, flash the layers whose state changed.
-     The play button is optional: skip it unless everything else is done.
-   - This is the demo's main point (guide section 6): the same 3% USDe depeg on the closest borrower stops at
-     layer 4 for 6 h and reaches layers 3 and 5 after the oracle's 16 h switch, verdict STAY -> EXIT. Checked on the
-     branch's data: one event at 16 h, STAY -> EXIT.
+   - **Time rail: the duration control is a playable, draggable rail on the five-layer chain** (backend's
+     suggestion, approved by the user on 11 Oct, with the three choices below). Reference: the backend's explainer page, section "五层传导：事故怎么一层层传到头寸"
+     (a standalone `index.html` shared with the user, not in this repo; ask for it). Copy its behaviour, listed
+     below, not its looks or texts: it has its own fonts and colour tokens, Chinese wording and page-made labels
+     and notes. Here the style comes from `demo.css` tokens and every string from `COPY`.
+     - Where: one panel directly above the chain, so the control sits on the thing it drives: "The incident has
+       lasted {duration}", a Play / Pause button, the recovers toggle ("the shock is gone after the incident"; see the next
+       point), the rail, the event list. Step 2 keeps the order "what, how bad, how long" with a read-only line ("lasts
+       6 h, recovers: drag the time rail below") instead of a second slider. Guide 5b puts the slider in step 2;
+       the user chose the explainer's placement. There is one duration control on the page, never two.
+     - Recovers toggle: shown only when `RiskModel.recoveryToggle(d, S.node, S.fail).show` is true (backend
+       `281b27d`, guide 5b): today `usde:depeg`, `ethena:shortfall` and `susde:navLoss`, the failures with an
+       off-chain cause, where recovery is the manager's assumption (grade D). For every other failure hide the
+       toggle and show the returned `reason` in small print in its place (`pt:depeg`: "Recovers by contract: the PT
+       redeems at expiry, whatever its market price before."). The reason text comes from the model, not from
+       `COPY`. Keep passing `S.recovers` unchanged everywhere: where the toggle is hidden it changes nothing. A past
+       event still sets `S.recovers` from `p.recovers`; the first-screen event (`oracle:oracleLow`) therefore shows
+       the reason, not the toggle.
+     - Scale: log, 1 h to 180 days (4,320 h): `hours = 1 * exp(ln(4320) * u)`, `u` in 0..1. Axis labels at 1 h,
+       6 h, 1 d, 7 d, 30 d, 90 d, 180 d; durations under 48 h read in hours, longer ones in days.
+     - Marks: grey reference marks with a label at the oracle switch (`d.oracle.challenge_timelock_s / 3600`, 16 h)
+       and at expiry (`d.time_model.days_to_expiry * 24`); one red mark per entry of `ev.events`.
+     - Dragging: a track with a thumb (`role="slider"`, `aria-valuemin` / `max` / `now`, `aria-valuetext` = the
+       formatted duration); pointer events with pointer capture and `touch-action: none`; a click on the track
+       jumps there; keys: arrows 1% of the rail, PageUp / PageDown 10%. A native `<input type="range">` is fine if
+       the marks can be laid over it. Position is the only inline style (computed geometry).
+     - On every drag step recompute `decideAtDuration`, then with the same `r.carry` and `o`: the card, the zones,
+       `propagation` (layers, "How it spreads", Graph display) and the decision text. If a frame gets slow, limit
+       updates to one per animation frame and refresh the fold contents (sensitivity, exit panel) on release.
+     - Events: `RiskModel.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100)` (on `main`
+       since `97d9450`). It runs the model about 300 times (about 50 ms here): cache it by position, node, failure,
+       severity, cash APY and recovers, and never call it on drag. List the events under the rail: the duration,
+       then per changed step "layer {n}: {from} -> {to}: {text}", and the verdict change with both badges. Events
+       already passed are marked. A click on an event moves the thumb just past it (`hours * 1.0005`). With no
+       events: "Between 1 hour and 180 days the path does not change with the duration" (never "always stay").
+     - Flash: when a render changes a layer's state, that layer flashes (about 1 s, twice); with
+       `prefers-reduced-motion` an outline instead of the animation.
+     - Play: sweeps the rail in about 9 s, pauses about 1.4 s just past each event, stops at the end; pressing it
+       at the end restarts from 1 h; any drag, key, event click or other input stops it; the label toggles
+       Play / Pause. Play is part of this step, not optional: it is how the demo shows the incident spreading.
+     - State: `S.hours` and `S.recovers` belong to the PT view and survive a switch to Vaults and back. A past
+       event sets them (the first screen opens at 1 h, the left end); the default for a manual incident is the
+       guide's (ask the backend if it names none; the explainer opens at 6 h).
+   - The demo's main point (guide section 6): the same 3% USDe depeg on the closest borrower stops at layer 4 for
+     6 h and reaches layers 3 and 5 after the oracle's 16 h switch, verdict STAY -> EXIT. Checked on the branch's
+     data: one event at 16 h, STAY -> EXIT. The explainer's `risk_model.js` and data are byte-identical to the
+     branch's at `50d2c16`, so its numbers are the page's numbers.
+   - Do the rail and its events first, then the timeline chart (`timeline`, `timelineSummary`, guide 5b) as a
+     second commit: the chart shares the rail's log axis and sits in a fold, it is not a second control.
    - `check_demo.mjs`: the card, the zones, the sensitivity table, the decision text and the path use the same
-     loss for every preset and past event; the slider shows one mark per `ev.events` entry; the two examples of
+     loss for every preset and past event; the rail shows one red mark per `ev.events` entry and the two grey
+     reference marks; keyboard arrows move the thumb; a click on an event moves the thumb past it and changes the
+     layer states it names; Play reaches the end and stops; no second duration control exists; the recovers
+     toggle is present exactly for the failures where `recoveryToggle(...).show` is true and the reason text is
+     shown for the others; the two examples of
      guide section 6 (16 h; 4,190.4 h for `susde:discount` 0.5%).
+8. Position size input in the header through `RiskModel.atSize` (default `size_input.default_usd`, marked D until
+   typed). It replaces "share of the book", which is then removed: the manager types US dollars directly
+   ("Position size (USD)"). In the same change, move "Cash earns after selling, % APY" into the header next to it
+   (same field, same state `S.alt`, same decimal-comma parsing, grade D mark) and remove the "Assumptions you can
+   change" section, which is then empty. With a real-borrower preset the size field shows the on-chain size and is
+   read-only (details in "UX decisions to keep"). Under the inputs show the guide's line: "{pt_units} PT at
+   {pt_price_usd}; sellable now: {max_exit_fraction} ({capacity_usd} pool limit)". Update the selectors in
+   `check_demo.mjs` in the same commit. Then the 1M / 7M / 50M acceptance rows must pass instead of being skipped.
+9. Vault view, rest: markets, exit tranches, sensitivity, liquidity-run slider and table, off-chain relations of
+   layer 6, timeline.
 10. Last, only if time remains: PT wallet input (guide section 3b: an address read on chain, never typed-in
     collateral or debt). Until then the header has no wallet field.
 
