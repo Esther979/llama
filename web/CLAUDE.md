@@ -145,7 +145,7 @@ liquidity-run table) decide behaviour.
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `b8fb353`; page code last changed in `778bf71`)
+## Current state (`frontend` at `52df261`)
 
 What is on the branch:
 
@@ -178,8 +178,16 @@ What is on the branch:
 - "What would change the answer" is `RiskModel.sensitivity` (`778bf71`), called with the same inputs as `decideAt`,
   a past event's `opts` included: the weakest assumption that flips the verdict (or "No tested assumption changes
   the answer"), this position's own assumptions, the other positions as their own group (they never count as the
-  weakest), then the severity break-even and the rule. Shown with or without a loss. `decisionText` is not called
-  yet (to-do 6); pass it the same `opts`.
+  weakest), then the severity break-even and the rule. Shown with or without a loss.
+- Decision card from `RiskModel.decisionText` (`52df261`, guide section 5): its title, headline, reasons,
+  break-even, hinge and rule, with a past event's `opts`. The badge, bars, stuck line and oracle-range note are built
+  from the decision's numbers (wording in `COPY.card`). The amounts in the backend's sentences are written in full
+  ("$164,903"), the bars in short form ("$165k"): the texts are the backend's, numbers checked there.
+- Incident path from `RiskModel.propagation` (`52df261`, guide section 6): layer states and texts (`data-state` on
+  each row; layers 1 and 2 included), the "Your position" row, the Graph's lit nodes and edges (steps in state
+  origin / hit, `pathOf`), and the "How it spreads" fold below the chain (steps with grades, null = "your input",
+  ending with the answer). The page-built `story` / `effects` / `flow` / `nodeFx` are gone. Not yet: the path does
+  not follow a duration (to-do 7).
 - Off-chain dependencies (guide section 8): the `ethena` and `susde` drawers have an "Off-chain (issuer documents)"
   row from `d.offchain.USDe` (31 relations) and `d.offchain.sUSDe` (4): issuer, summary and count per kind,
   relations grouped by kind on demand, each with a source link, grade D and the quote ("re-checked" when
@@ -219,6 +227,13 @@ acceptance rows, 4b 192/192, no horizontal scroll at 390px, dark background in d
 checked: the first screen on desktop and at a real 390px viewport (device emulation; a plain `--window-size=390`
 screenshot crops the page and is not a valid phone check). `python3 check_js_port.py` passes all 22 gates at the
 `48e5ab9` merge (`f1a44c5` changed docs only).
+Checked at `52df261`: everything below, plus 2f (guide 6 propagation rows in both displays: layer states, position
+step, verdict, lit graph nodes, origin node; 4/4, the two rows needing `{hours: 6}` / `{hours: 24}` SKIPPED until the
+time rail), 2g (112 cases: the page's `decisionText` and `propagation` equal the model's, one verdict across card,
+text and path, card sentence = headline, spread list = steps ending with the answer, position row = position step)
+and 2b now also checks that guide 6's old texts are absent. On the page before: 2f 0/4, 2g 0/112; the other gates
+print the same. Screenshots: first screen with the spread list open, Graph display, cascade (`not_modelled`
+layers), dark mode.
 Checked at `778bf71`: everything below, plus gate 3b ("What would change the answer" is `sensitivity`: 112 cases,
 every preset x failure at two severities and every past event on every preset; the page's result equals the
 model's and the screen shows its rows, flips, groups and weakest line; 0/112 on the page before, the other gates
@@ -245,8 +260,6 @@ Gaps, most visible first:
 
 1. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
    assumed $10M; the header's "position size $10.00M" stays even when a real-borrower preset is selected.
-2. The incident path is built by the page, not by `propagation` (to-do 6b): layers 1 and 2 have no state, there
-   is no "How it spreads" list, and the path does not change with the incident's duration.
 
 Answered by the backend (guide section 0b, merged):
 
@@ -279,39 +292,17 @@ position's own curve, with gate 4b in `check_demo.mjs` (`8291329`, `098d44c`); `
 when `quote_found` is null (`0c71c3f`); past incidents replace the invented examples, first screen on PT-reUSD
 with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`); vault view first cut with the header switch and
 gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would change the answer" from
-`RiskModel.sensitivity`, gate 3b (`778bf71`).
+`RiskModel.sensitivity`, gate 3b (`778bf71`); decision card from `decisionText` and incident path from
+`propagation`, gates 2f / 2g (`52df261`).
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
-the new 3 (past incidents), 4 (vault view, first cut) and 5 (sensitivity) are done.
+the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText) and 6b (propagation) are
+done.
 
-Order of the remaining items (user decision, 11 Oct): 6, 6b, 7, 8, 9, 10, as listed. The time rail (7) comes right
+Order of the remaining items (user decision, 11 Oct): 7, 8, 9, 10, as listed (6 and 6b done). The time rail (7) comes right
 after 6b because it builds on `propagation` and is the demo's main point (how the incident spreads over time); the
 size input (8) and the rest of the vault view (9) follow.
 
-6. Decision sentence and reasons from `RiskModel.decisionText` (guide section 5); with a past event selected, pass
-   its `opts` (the reasons then say when the shock is over). It also removes page-built sentences, so fewer strings
-   are left to move into `COPY`.
-   6b. Incident path from `RiskModel.propagation` (guide section 0 priority 6, section 6; on `main` since `8fd22bb`,
-   merged in `50d2c16`). The page builds the red path itself today (the per-layer effects in the Layers display,
-   the hot nodes and edges in the Graph display, "Your position"); replace all of it with one call:
-   `RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, carry(), p ? p.opts : null)` (`p` = the selected past
-   event, `null` for a what-if).
-   - Layers display: `pg.layers` gives the five rows (`n`, `name`, `nodes`, `state`, `text`). Show `text` under the
-     layer head and style the row by `state` through a data attribute, colours in `demo.css`: `origin` and `hit`
-     red; `unchanged` grey; `not_applicable` grey ("no debt: nothing to liquidate"); `not_modelled` dashed grey;
-     `unknown` amber. Layers 1 and 2 now get a state too.
-   - Graph display: light the nodes and the `d.ui.edges` named in `pg.steps[].edges` for the steps whose state is
-     `origin` or `hit`. Same call, same result as the Layers display.
-   - New "How it spreads" list next to the chain: `pg.steps` in order (origin, PT value, lending oracle,
-     liquidation, exit liquidity, `position`, `result`), each with its `text` and grade badge (`grade: null` = the
-     manager's input). It opens on demand if it does not fit the first screen. The `result` step must equal the
-     decision card.
-   - No page-built path sentences are left afterwards: this also covers the path texts for `navLoss` and
-     `discount`. Remove the old texts listed at the end of guide section 6 ("Type unknown", "Upstream feeds are
-     not resolved yet", …) if any is still on the page.
-   - `check_demo.mjs`: the 6 acceptance rows of guide section 6 (layer states, the `position` step, the verdict) in
-     both displays; one gate that the `result` step and the decision card agree for every preset x failure.
-   - Checked on the branch's data: the 6 rows are reproduced by the model, `pg.unchecked` is empty.
 7. PT view time rail (duration), recovers / stays toggle and the timeline chart (`decideAtDuration`, `timeline`,
    `timelineSummary`; guide section 5b). Decided by the backend: from this step on there is one mechanism, the
    duration controls.
