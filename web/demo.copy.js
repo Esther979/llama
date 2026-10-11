@@ -39,6 +39,38 @@ const COPY = {
       "Assume the incident has happened at this severity. Pick the share x that minimises x × (slippage + yield given up) + (1 − x) × loss. Never beyond the largest size Pendle quoted.",
   },
 
+  /* Decision card (guide section 5). The sentence, reasons, break-even, hinge and rule are RiskModel.decisionText's
+     own texts; these are only the card's labels and the few lines built from the decision's numbers. */
+  card: {
+    whatIf: "What-if",
+    badge: { STAY: "Stay", EXIT: "Exit", sell: (v) => `Sell ${v}` },
+    noLoss: "no direct loss",
+    ofPosition: (p) => `${p} of the position`,
+    allPool: "all the pool will take",
+    stuck: (v) => `${v} stuck`,
+    sellableToday: "Sellable today",
+    ifPlaysOut: "If this plays out",
+    noneFor: (s) => `None for ${s}`,
+    none: "None",
+    doNothing: "Do nothing",
+    act: "Act",
+    sellPc: (p) => `Sell ${p}`,
+    tipLoss: (v) => `Loss if you do nothing ${v}`,
+    tipCost: (v) => `Cost of selling ${v}`,
+    tipKept: (v) => `Loss on the part you keep ${v}`,
+    keyLoss: "Loss",
+    keyCost: "Cost of selling",
+    stuckLine: (a, b) => `<b>${a} cannot be sold through Pendle now.</b> With the rest you keep, ${b} stays at risk.`,
+    range: (lo, hi) => `Loss is between ${lo} and ${hi} depending on the oracle; the decision uses the high end.`,
+    source: (src) => `Losses, the decision and these texts come from the backend model (RiskModel.decideAt, decisionText). ${src}`,
+  },
+
+  /* "How it spreads": RiskModel.propagation's steps in causal order (guide section 6). */
+  spread: {
+    title: (n) => `How it spreads, step by step (${n})`,
+    input: "your input",
+  },
+
   /* The real-borrower presets are someone else's position, read on chain. */
   position: {
     notYours: (label) => `Position: ${label}. A real borrower of this market, read on chain, not your position.`,

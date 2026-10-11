@@ -101,6 +101,22 @@ function vaultRows() {
   return { dec, run, runVault: m ? m[1].trim() : null, runAmount: m ? n(m[2]) : null };
 }
 
+/* ---- the guide's propagation table (section 6), read at run time */
+function propRows() {
+  const md = readFileSync(GUIDE, "utf8");
+  const i = md.indexOf("## 6. "), sec = i < 0 ? "" : md.slice(i, md.indexOf("\n## ", i + 5));
+  const rows = [];
+  for (const line of sec.split("\n")) {
+    const c = line.split("|").slice(1, -1).map((x) => x.trim().replace(/`/g, ""));
+    if (c.length !== 7 || !/^(spot|lev_)/.test(c[0])) continue;
+    const [node, fail] = c[1].split(":");
+    const opts = c[3] === "null" ? null : Function("return (" + c[3] + ")")();
+    rows.push({ preset: c[0], node, fail, sev: +c[2].replace("%", ""), opts, states: c[4].split("·").map((x) => x.trim()),
+      position: c[5], verdict: c[6] });
+  }
+  return rows;
+}
+
 /* ---- minimal DevTools client */
 async function launch() {
   const profile = mkdtempSync(join(tmpdir(), "check-demo-"));
@@ -258,7 +274,13 @@ try {
     if (typeof pastOf === "function" && pastOf()) nodeEvidence(pastOf().node);
     const txt = document.body.innerText + " | " + opts;
     closeDrawer();
-    const hits = (txt.match(/[^.|\\n]*(detect|anomal|sample alert|invented)[^.|\\n]*/gi) || [])
+    const OLD = ["Type unknown", "Upstream feeds are not resolved yet", "Not resolved. Needs the on-chain crawler",
+      "Not verified. Planned: on-chain read from the sUSDe contract", "Starting probabilities are samples"];
+    const oldHits = [];
+    for (const k of Object.keys(NODES)) { nodeEvidence(k); const tx = document.querySelector("#drawer").innerText; OLD.forEach((o) => tx.includes(o) && oldHits.push(k + ": " + o)); }
+    closeDrawer();
+    OLD.forEach((o) => document.body.innerText.includes(o) && oldHits.push("page: " + o));
+    const hits = oldHits.concat(txt.match(/[^.|\\n]*(detect|anomal|sample alert|invented)[^.|\\n]*/gi) || [])
       .concat(txt.match(/[^.|\\n]*\\bExamples?\\b[^.|\\n]*/g) || []);
     return { hits: hits.slice(0, 4), proto: !!document.querySelector("#proto, #feed") };
   })()`);
@@ -376,6 +398,93 @@ try {
   gate(off.quoteBad.length === 0,
     `2c. quote wording by quote_found (true ${off.quoteN.true}, null ${off.quoteN.null}, false ${off.quoteN.false})${off.quoteBad.length ? ": " + off.quoteBad.join("; ") : ""}`);
   gate(off.offIds.length === 0, `2c. "Contracts behind it" lists on-chain members only${off.offIds.length ? ": " + off.offIds.join(", ") : ""}`);
+
+  /* 2f. the guide's propagation rows (section 6), in both displays. A row whose opts only a duration control can set
+     is SKIPPED until the time rail (to-do 7); one whose opts are a past event's is set through that event. */
+  const prow = propRows();
+  const prop = await p.ev(`(() => {
+    const rows = ${JSON.stringify(prow)}, out = [];
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    for (const r of rows) {
+      const tag = r.preset + " " + r.node + ":" + r.fail + " " + r.sev + "% " + JSON.stringify(r.opts);
+      fire(document.querySelector("#replay"), "");
+      fire(document.querySelector("#pos"), r.preset);
+      if (r.opts) {
+        const ev = PAST.find((x) => x.node === r.node && x.fail === r.fail && Math.abs(x.sev - r.sev) < 1e-9 && same(x.opts, r.opts));
+        if (!ev) { out.push({ tag, skip: true }); continue; }
+        fire(document.querySelector("#replay"), ev.key);
+      } else setNode(r.node, r.fail, r.sev);
+      const d2 = [], pg = model().pg;
+      if (!pg) { out.push({ tag, d: ["no propagation on the page"] }); continue; }
+      for (const view of ["list", "graph"]) {
+        document.querySelector('[data-view="' + view + '"]').click();
+        if (view === "list") {
+          const st = [...document.querySelectorAll("#chain .lay:not(.pos)")].map((x) => x.dataset.state);
+          if (st.join() !== r.states.join()) d2.push("layers " + st.join(" · "));
+          const pos = document.querySelector("#chain .lay.pos .eff");
+          if (!pos || pos.textContent !== r.position) d2.push("position row '" + (pos && pos.textContent) + "'");
+        } else {
+          const lit = [...document.querySelectorAll("#graph .node.hot")].map((x) => x.dataset.g);
+          const hotLayers = new Set(pg.layers.filter((l) => l.state === "origin" || l.state === "hit").map((l) => l.n));
+          const layerOf = (k) => (k === "pos" ? 0 : NODES[k].layer);
+          lit.filter((k) => k !== "pos" && !hotLayers.has(layerOf(k))).forEach((k) => d2.push("graph lights " + k + " on an unchanged layer"));
+          hotLayers.forEach((n) => { if (!lit.some((k) => layerOf(k) === n)) d2.push("graph: no node lit on layer " + n); });
+          const o = document.querySelector('#graph .node.origin');
+          if (!o || o.dataset.g !== pg.origin.node) d2.push("graph origin " + (o && o.dataset.g));
+        }
+      }
+      if (model().verdict !== r.verdict) d2.push("verdict " + model().verdict);
+      document.querySelector('[data-view="list"]').click();
+      out.push({ tag, d: d2 });
+    }
+    fire(document.querySelector("#replay"), "");
+    return out;
+  })()`);
+  const pdone = prop.filter((r) => !r.skip), prok = pdone.filter((r) => !r.d.length).length;
+  gate(pdone.length > 0 && prok === pdone.length, `2f. guide 6 propagation rows: ${prok}/${pdone.length} match in both displays (layer states, position step, verdict, lit graph)`);
+  pdone.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.tag}: ${r.d.join("; ")}`));
+  const pskip = prop.filter((r) => r.skip);
+  if (pskip.length) console.log(`SKIPPED    2f. ${pskip.length} rows need a duration the page cannot set yet (time rail, to-do 7): ${pskip.map((r) => r.tag).join(", ")}`);
+
+  /* 2g. card, path and spread list agree, for every preset x failure (two severities) and every past event: the page's
+     decisionText and propagation equal the model's with the same inputs; card, decisionText and propagation give one
+     verdict; the card's sentence is the headline; the spread list is the steps, ending with the result */
+  const agree2 = await p.ev(`(() => {
+    const bad = []; let n = 0, failed = 0;
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    const one = (tag) => {
+      const m = model(), o = pastOf() ? pastOf().opts : null, cy = carry();
+      if (!m.pg || !m.t) { bad.push(tag + ": no propagation / decisionText on the page"); return; }
+      const t = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, cy, o), pg = RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, cy, o);
+      if (JSON.stringify(m.t) !== JSON.stringify(t)) bad.push(tag + ": decisionText differs from the model");
+      if (JSON.stringify(m.pg) !== JSON.stringify(pg)) bad.push(tag + ": propagation differs from the model");
+      if (!(m.verdict === t.verdict && t.verdict === pg.verdict)) bad.push(tag + ": verdicts " + [m.verdict, t.verdict, pg.verdict].join("/"));
+      if (t.unchecked.length || pg.unchecked.length) bad.push(tag + ": unchecked numbers");
+      const why = document.querySelector("#decision .why").textContent;
+      if (why !== t.headline) bad.push(tag + ": card sentence is not the headline");
+      if (!document.querySelector("#decision .lbl").textContent.includes(t.title)) bad.push(tag + ": card label lacks the title");
+      const lis = [...document.querySelectorAll("#spread li")];
+      if (lis.length !== pg.steps.length) bad.push(tag + ": spread list " + lis.length + " vs " + pg.steps.length + " steps");
+      pg.steps.forEach((x, i) => { if (lis[i] && !lis[i].textContent.startsWith(x.text)) bad.push(tag + ": spread step " + i); });
+      const res = pg.steps[pg.steps.length - 1];
+      if (res.node !== "result" || !res.text.startsWith(pg.verdict)) bad.push(tag + ": last step is not the result");
+      const pos = pg.steps.find((x) => x.node === "position"), row = document.querySelector("#chain .lay.pos .eff");
+      if (pos && (!row || row.textContent !== pos.text)) bad.push(tag + ": position row differs from the position step");
+    };
+    const check = (tag) => { n++; const b = bad.length; try { one(tag); } catch (e) { bad.push(tag + ": " + e); } if (bad.length > b) failed++; };
+    document.querySelector('[data-view="list"]').click();
+    fire(document.querySelector("#replay"), "");
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const k of Object.keys(NODES)) for (const f of fails(k))
+        for (const sv of [FAIL[f].def, FAIL[f].max]) { setNode(k, f, sv); check(pk + " " + k + ":" + f + " @" + sv); }
+      for (const x of (typeof PAST !== "undefined" ? PAST : [])) { fire(document.querySelector("#replay"), x.key); check(pk + " past " + x.key); fire(document.querySelector("#replay"), ""); }
+    }
+    return { n, failed, bad };
+  })()`);
+  gate(agree2.n > 0 && agree2.bad.length === 0, `2g. card, path and spread list agree with decisionText and propagation: ${agree2.n - agree2.failed}/${agree2.n} cases`);
+  agree2.bad.slice(0, 5).forEach((x) => console.log("           " + x));
 
   /* 3. every preset x every failure of every node, through the page's own controls */
   const sweep = await p.ev(`(() => {

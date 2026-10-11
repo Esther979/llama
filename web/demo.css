@@ -617,6 +617,55 @@
       .lay.pos .eff {
         color: inherit;
       }
+      /* Layer rows by propagation state (guide section 6): origin and hit are .hot (red); unchanged and
+   not_applicable keep the plain grey row; not_modelled is dashed grey; unknown is amber. The layer's text sits under
+   its head. */
+      .lt .eff {
+        text-align: left;
+        max-width: none;
+        margin-top: 3px;
+        font-size: 12.5px;
+      }
+      .lay[data-state="not_modelled"] .lrow {
+        border-style: dashed;
+      }
+      .lay[data-state="unknown"] .lrow {
+        border-color: var(--warn);
+        background: var(--warn-tint);
+      }
+      .lay[data-state="unknown"] .ln,
+      .lay[data-state="unknown"] .eff {
+        border-color: var(--warn);
+        color: var(--warn);
+      }
+      /* "How it spreads": the path as a numbered list; steps that change something are red, the answer is bold. */
+      .spread {
+        margin-top: 10px;
+      }
+      .spread ol {
+        margin: 6px 0 0;
+        padding-left: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 13px;
+      }
+      .spread li[data-state="origin"],
+      .spread li[data-state="hit"] {
+        color: var(--crit);
+      }
+      .spread li[data-state="result"] {
+        font-weight: 600;
+      }
+      /* The card's reasons (decisionText) */
+      .reasons {
+        margin: 0;
+        padding-left: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+      }
       .tag {
         display: inline-block;
         font-size: 10px;

@@ -275,6 +275,9 @@
             : m.be.cap;
         /* "What would change the answer" (guide section 5): the backend's candidates, flips and weakest assumption */
         m.sv = RM.sensitivity(d, posKey, S.node, S.fail, S.sev, cy, o);
+        /* The card's texts (guide section 5) and the incident's path through the five layers (section 6) */
+        m.t = RM.decisionText(d, posKey, S.node, S.fail, S.sev, cy, o);
+        m.pg = RM.propagation(d, posKey, S.node, S.fail, S.sev, cy, o);
         return m;
       }
       const VCLASS = {
@@ -284,101 +287,17 @@
         EXIT: "cap",
       };
 
-      /* What the incident does at each step of the path, read from the inject result (guide, section 6). */
-      function story(m) {
-        const s = m.sev,
-          f = S.fail,
-          sv = sevText(),
-          C = m.C,
-          lev = m.P.debt_usd > 0,
-          nlab = NODES[S.node].label;
-        const origin =
-          {
-            depeg: `${nlab} down ${sv}`,
-            shortfall: `Reserves short by ${sv}`,
-            oracleLow: `Price understated by ${sv}`,
-            stale: `No update for ${sv}`,
-            drain: `${sv} of liquidity gone`,
-            cascade: `Other borrowers liquidated at a ${sv} oracle drop`,
-            halt: `Halted for ${sv}`,
-          }[f] || `${FAIL[f].label}: ${sv}`;
-        const orc =
-          s.oracle_falls === true
-            ? f === "oracleLow"
-              ? "Oracle reports the low price"
-              : `Oracle follows${TL ? ` (after the ${TL} h switch)` : ""}`
-            : s.oracle_falls === false
-              ? "Oracle does not move (linear discount, no market input)"
-              : s.type === "loss_model"
-                ? "Oracle behaviour unknown: both cases counted"
-                : null;
-        const shrinks = s.sellable_later < s.sellable_now - 1e-9;
-        const exit = shrinks
-          ? `Sellable falls from ${money(s.sellable_now * C)} to ${money(s.sellable_later * C)}`
-          : null;
-        const L = s.liquidated || [];
-        const liq = L.includes(true)
-          ? L.includes(false)
-            ? "Liquidated if the oracle follows"
-            : "Your position is liquidated"
-          : lev && L.length
-            ? "Not liquidated"
-            : null;
-        const pos =
-          s.loss_usd > 0
-            ? `Lose ${money(s.loss_usd)}`
-            : s.type === "not_modelled"
-              ? f === "halt"
-                ? "No exit while halted"
-                : "No direct loss modelled"
-              : shrinks
-                ? "No direct loss, but the exit shrinks"
-                : "No direct loss";
-        return {
-          origin,
-          orc,
-          exit,
-          liq,
-          pos,
-          shrinks,
-          forced: shrinks && s.type !== "exit_only",
-          follows: s.oracle_falls === true && S.node !== "oracle",
-        };
-      }
-
-      /* Layer list: one row per layer. */
-      function effects(m) {
-        const st = story(m),
-          fl = flow(st),
-          o = {},
-          note = {},
-          lay = NODES[S.node].layer;
-        LAY.forEach((L) => {
-          if (L.nodes.some((k) => fl.nodes.has(k))) o[L.n] = "";
-        }); /* layers the incident reaches */
-        o[lay] = st.origin;
-        if (S.fail !== "halt") {
-          if (st.orc && lay !== 3) {
-            if (m.sev.oracle_falls === false) note[3] = st.orc;
-            else o[3] = st.orc;
-          }
-          if (st.exit && lay !== 4) o[4] = st.exit;
-          if (st.liq && lay !== 5) {
-            if (st.liq === "Not liquidated") note[5] = st.liq;
-            else o[5] = st.liq;
-          }
-        }
-        o[6] = lay === 4 && st.exit && !(m.sev.loss_usd > 0) ? st.exit : st.pos;
-        return { o, note };
-      }
+      /* Layers display: each row's state and text are RiskModel.propagation's (guide section 6). */
+      const HOT = (st) => st === "origin" || st === "hit";
       function renderList(m, idle) {
-        const efr = idle ? { o: {}, note: {} } : effects(m),
-          ef = efr.o,
-          org = idle ? 0 : NODES[S.node].layer,
-          P = m.P;
+        const pg = m.pg,
+          org = idle ? 0 : pg.origin.layer,
+          P = m.P,
+          posStep = pg.steps.find((x) => x.node === "position");
         let h = LAY.map((L) => {
           const ids = L.nodes,
-            hot = ef[L.n] !== undefined,
+            pl = pg.layers.find((x) => x.n === L.n) || { state: "unchanged", text: "" },
+            hot = !idle && HOT(pl.state),
             open = !!S.more[L.n],
             lf = LFACT[L.n];
           const past = org === L.n && !!S.past,
@@ -387,10 +306,9 @@
             (past ? `<span class="tag det">${COPY.past.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
           const fact = lf.fact;
-          return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}"><span class="ln">${L.n}</span>
+          return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}" data-state="${pl.state}"><span class="ln">${L.n}</span>
       <button class="lrow" data-layer="${L.n}" aria-label="Test an incident at layer ${L.n}, ${L.name}">
-        <span class="lt"><span class="lbl">${L.name}</span><b>${lf.head}${tags}</b><span class="fact">${fact}</span></span>
-        ${hot && ef[L.n] ? `<span class="eff">${ef[L.n]}</span>` : efr.note[L.n] ? `<span class="eff n">${efr.note[L.n]}</span>` : ""}</button>
+        <span class="lt"><span class="lbl">${L.name}</span><b>${lf.head}${tags}</b><span class="fact">${fact}</span>${idle ? "" : `<span class="eff ${hot ? "" : "n"}">${pl.text}</span>`}</span></button>
       <button class="more" data-more="${L.n}" aria-expanded="${open}">${open ? "Hide" : "Show"} ${ids.length} ${ids.length > 1 ? "dependencies" : "dependency"} and evidence</button>
       ${
         open
@@ -405,7 +323,8 @@
       }
     </div>`;
         }).join("");
-        h += `<div class="lay pos ${idle ? "" : "hot"}"><span class="ln">◆</span><div class="lrow"><span class="lt"><span class="lbl">Your position</span><b>${isLev() ? "PT posted as collateral" : "PT held outright"}</b><span class="fact">${isLev() ? `Collateral ${money(P.collateral_usd)}, debt ${money(P.debt_usd)}` : money(P.collateral_usd)}</span></span>${ef[6] ? `<span class="eff">${ef[6]}</span>` : ""}</div></div>`;
+        const ph = !idle && posStep && HOT(posStep.state);
+        h += `<div class="lay pos ${ph ? "hot" : ""}" data-state="${posStep ? posStep.state : "unchanged"}"><span class="ln">◆</span><div class="lrow"><span class="lt"><span class="lbl">Your position</span><b>${isLev() ? "PT posted as collateral" : "PT held outright"}</b><span class="fact">${isLev() ? `Collateral ${money(P.collateral_usd)}, debt ${money(P.debt_usd)}` : money(P.collateral_usd)}</span>${posStep && !idle ? `<span class="eff">${posStep.text}</span>` : ""}</span></div></div>`;
         $("#chain").innerHTML = h;
       }
 
@@ -440,89 +359,44 @@
       const nl = (id) => (id === "pos" ? "Your position" : NODES[id].label);
       let FLOW = { nodes: new Set(), edges: new Set() },
         IDLE = false;
-      function flow(st) {
-        if (S.fail === "halt")
-          return {
-            nodes: new Set([...Object.keys(NODES), "pos"]),
-            edges: new Set(),
-          };
-        const nodes = new Set([S.node]),
+      /* The red path: the nodes and d.ui.edges of propagation's steps whose state is origin or hit (data id "position"
+   is the page's "pos"). */
+      function pathOf(pg) {
+        const nodes = new Set(),
           edges = new Set(),
-          q = [S.node];
-        if (st.follows) {
-          nodes.add("oracle");
-          q.push("oracle");
-        } /* the oracle follows, so liquidations run through it */
-        while (q.length) {
-          const n = q.shift();
-          EDGES.forEach((e, i) => {
-            if (e.from !== n || !edgeOn(e)) return;
-            if (e.from === "lending" && e.to === "market" && !st.forced) return;
-            edges.add(i);
-            if (!nodes.has(e.to)) {
-              nodes.add(e.to);
-              q.push(e.to);
-            }
+          id = (k) => (k === "position" ? "pos" : k);
+        pg.steps
+          .filter((x) => HOT(x.state))
+          .forEach((x) => {
+            if (x.node !== "result") nodes.add(id(x.node));
+            (x.edges || []).forEach((e) => {
+              const i = EDGES.findIndex((g) => g.from === e.from && id(g.to) === id(e.to) && g.type === e.type);
+              if (i >= 0) {
+                edges.add(i);
+                nodes.add(id(e.from));
+                nodes.add(id(e.to));
+              }
+            });
           });
-        }
         return { nodes, edges };
       }
-      function nodeFx(m, st, fl) {
-        const f = S.fail,
-          sv = sevText(),
-          o = {},
-          note = {};
-        if (f === "halt") {
-          o.eth = st.origin;
-          o.pos = st.pos;
-          return { o, note };
-        }
-        if (f === "depeg" || f === "shortfall")
-          ["usde", "susde", "pt"].forEach((k) => {
-            if (fl.nodes.has(k)) o[k] = `Down ${sv}`;
-          });
-        o[S.node] = f === "depeg" ? `Down ${sv}` : st.origin;
-        if (st.orc && S.node !== "oracle") {
-          if (m.sev.oracle_falls === false) note.oracle = st.orc;
-          else {
-            o.oracle = st.orc;
-            if (m.sev.oracle_falls === true) fl.nodes.add("oracle");
-          }
-        }
-        if (st.exit && S.node !== "market") o.market = st.exit;
-        if (st.liq && S.node !== "lending") {
-          if (st.liq === "Not liquidated") note.lending = st.liq;
-          else o.lending = st.liq;
-        }
-        o.pos =
-          S.node === "market" && st.exit && !(m.sev.loss_usd > 0)
-            ? st.exit
-            : st.pos;
-        return { o, note };
-      }
       function renderGraph(m, idle) {
-        const st = idle ? null : story(m),
-          fl = idle ? { nodes: new Set(), edges: new Set() } : flow(st),
-          fxr = idle ? { o: {}, note: {} } : nodeFx(m, st, fl),
-          fx = fxr.o,
+        const fl = idle ? { nodes: new Set(), edges: new Set() } : pathOf(m.pg),
+          posStep = m.pg.steps.find((x) => x.node === "position"),
           P = m.P;
         FLOW = fl;
         IDLE = !!idle;
         const node = (id) => {
           const n = NODES[id],
             hot = fl.nodes.has(id),
-            org = !idle && id === S.node,
+            org = !idle && id === m.pg.origin.node,
             past = org && !!S.past,
             hyp = org && !S.past,
             g = n.evidence && n.evidence.grade;
           const tags =
             (past ? `<span class="tag det">${COPY.past.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
-          const sub = fx[id]
-            ? `<b>${fx[id]}</b>`
-            : fxr.note[id]
-              ? fxr.note[id]
-              : GSUB[id];
+          const sub = GSUB[id];
           return `<button class="node ${g === "D" ? "doc" : ""} ${hot ? "hot" : ""} ${org ? "origin" : ""} ${hyp ? "hyp" : ""}" data-n="${id}" data-g="${id}" style="grid-column:${GCOL[id]}"><span class="nm">${n.label}</span>${tags}<span class="sub">${sub}</span></button>`;
         };
         let h = '<svg id="edges" aria-hidden="true"></svg>';
@@ -530,7 +404,7 @@
           h += `<div class="band"><div class="lname"><b>${L.n}</b>${L.name}</div><div class="grow">${L.nodes.map(node).join("")}</div></div>`;
         });
         const ph = fl.nodes.has("pos");
-        h += `<div class="band"><div class="lname">Your position</div><div class="grow"><div class="node pos ${ph ? "hot" : ""}" data-g="pos" style="grid-column:${isLev() ? 3 : 4}"><span class="nm">${isLev() ? "PT posted as collateral" : "PT held outright"}</span><span class="sub">${isLev() ? `Collateral ${money(P.collateral_usd)}, debt ${money(P.debt_usd)}` : money(P.collateral_usd)}</span>${fx.pos ? `<span class="sub"><b>${fx.pos}</b></span>` : ""}${!idle && !ph ? '<span class="sub">The incident does not reach your position.</span>' : ""}</div></div></div>`;
+        h += `<div class="band"><div class="lname">Your position</div><div class="grow"><div class="node pos ${ph ? "hot" : ""}" data-g="pos" style="grid-column:${isLev() ? 3 : 4}"><span class="nm">${isLev() ? "PT posted as collateral" : "PT held outright"}</span><span class="sub">${isLev() ? `Collateral ${money(P.collateral_usd)}, debt ${money(P.debt_usd)}` : money(P.collateral_usd)}</span>${posStep && !idle ? `<span class="sub"><b>${posStep.text}</b></span>` : ""}</div></div></div>`;
         $("#chain").innerHTML =
           `<div class="gscroll"><div class="graph" id="graph">${h}<div id="elabels"></div></div></div>`;
         paint();
@@ -648,53 +522,35 @@
       <dl><dt>${T.severity}</dt><dd>${sevFlip}</dd><dt>${T.rule}</dt><dd>${T.ruleText}</dd></dl>`,
         );
       }
+      /* Decision card (guide section 5): the badge and the bars from the decision's numbers; the title, sentence,
+   reasons, break-even, hinge and rule are RiskModel.decisionText's own texts (every number checked there). */
       function renderDecision(m) {
         const s = m.sev,
           C = m.C,
-          f = m.f,
-          be = m.be,
-          where = NODES[S.node].label,
+          t = m.t,
+          K = COPY.card,
           hasLoss = m.hasLoss,
           v = m.verdict,
           stuckUsd = s.stuck_fraction * C;
-        const vw =
-          v === "STAY" ? "Stay" : v === "EXIT" ? "Exit" : `Sell ${money(s.sell_usd)}`;
+        const vw = v === "STAY" ? K.badge.STAY : v === "EXIT" ? K.badge.EXIT : K.badge.sell(money(s.sell_usd));
         const sub = !hasLoss
-          ? "no direct loss"
+          ? K.noLoss
           : v === "REDUCE"
-            ? `${pc(m.x, 0)} of the position`
+            ? K.ofPosition(pc(m.x, 0))
             : v === "SELL_TO_CAP"
-              ? `all the pool will take${stuckUsd > 0 ? ` · ${money(stuckUsd)} stuck` : ""}`
+              ? K.allPool + (stuckUsd > 0 ? ` · ${K.stuck(money(stuckUsd))}` : "")
               : "";
-        const L = s.liquidated || [];
-        const facts =
-          s.type === "loss_model"
-            ? ` Oracle follows: ${yn(s.oracle_falls)}.${m.P.debt_usd > 0 ? ` Liquidated: ${L.includes(true) ? (L.includes(false) ? "only if the oracle follows" : "yes") : "no"}.` : ""}`
-            : "";
-        const rule = `<p class="note">${cap1(s.note)}.${facts}</p>`;
-        const ifTxt = `If ${where} ${lc(f.label)} by ${sevText()}`;
-        const beTxt =
-          m.start === null
-            ? "Selling does not pay at any severity on this slider."
-            : `Selling starts to pay once the severity exceeds <b>${sevText(m.start)}</b>${m.cap !== null && m.cap > m.start + 1e-9 ? ` and reaches the pool limit from <b>${sevText(m.cap)}</b>` : ""}.`;
-        let why,
-          body = "";
+        let body = "";
         if (!hasLoss) {
-          why = "No loss is modelled for this position in this case.";
-          body += rule;
           if (
             (s.type === "not_modelled" && S.fail === "halt") ||
             s.sellable_later < s.sellable_now - 1e-9
           ) {
             const now = s.sellable_now * C,
               later = S.fail === "halt" ? 0 : s.sellable_later * C;
-            body += `<div class="bars">${bar("Sellable today", [["b-cap", now, money(now)]], money(now), now)}${bar("If this plays out", [["b-cap", later, money(later)]], S.fail === "halt" ? `None for ${sevText()}` : later ? money(later) : "None", now)}</div>`;
+            body += `<div class="bars">${bar(K.sellableToday, [["b-cap", now, money(now)]], money(now), now)}${bar(K.ifPlaysOut, [["b-cap", later, money(later)]], S.fail === "halt" ? K.noneFor(sevText()) : later ? money(later) : K.none, now)}</div>`;
           }
         } else {
-          why =
-            v === "STAY"
-              ? `${ifTxt}, doing nothing loses <b>${money(s.loss_if_stay_usd)}</b>; selling would cost more than it saves. ${beTxt}`
-              : `${ifTxt}, doing nothing loses <b>${money(s.loss_if_stay_usd)}</b>. Selling <b>${money(s.sell_usd)}</b> now costs ${money(s.sale_cost_usd)} and leaves ${money(s.loss_kept_usd)} at risk on the rest. ${beTxt}`;
           /* "Act" = the recommended sale; on Stay, show selling to the pool limit so the bar shows why not. */
           const xa = m.x || MAXX,
             actCost = m.x
@@ -702,26 +558,41 @@
               : xa * (RM.slippageAt(xa, CURVE) + m.cy) * C,
             actKept = m.x ? s.loss_kept_usd : (1 - xa) * s.loss_if_stay_usd,
             max = Math.max(s.loss_if_stay_usd, actCost + actKept);
-          body += `<div class="bars">${bar("Do nothing", [["b-loss", s.loss_if_stay_usd, "Loss if you do nothing " + money(s.loss_if_stay_usd)]], money(s.loss_if_stay_usd), max)}${bar(
-            m.x ? "Act" : `Sell ${pc(xa, 0)}`,
+          body += `<div class="bars">${bar(K.doNothing, [["b-loss", s.loss_if_stay_usd, K.tipLoss(money(s.loss_if_stay_usd))]], money(s.loss_if_stay_usd), max)}${bar(
+            m.x ? K.act : K.sellPc(pc(xa, 0)),
             [
-              ["b-cost", actCost, "Cost of selling " + money(actCost)],
-              ["b-loss", actKept, "Loss on the part you keep " + money(actKept)],
+              ["b-cost", actCost, K.tipCost(money(actCost))],
+              ["b-loss", actKept, K.tipKept(money(actKept))],
             ],
             money(actCost + actKept),
             max,
           )}</div>
-      <div class="bkey"><span><i class="b-loss"></i>Loss</span><span><i class="b-cost"></i>Cost of selling</span></div>`;
+      <div class="bkey"><span><i class="b-loss"></i>${K.keyLoss}</span><span><i class="b-cost"></i>${K.keyCost}</span></div>`;
           if (v === "SELL_TO_CAP" && stuckUsd > 0)
-            body += `<div class="stuck"><b>${money(stuckUsd)} cannot be sold through Pendle now.</b> With the rest you keep, ${money(s.loss_kept_usd)} stays at risk.</div>`;
-          body += `<p class="note">At this severity, doing nothing loses <b>${money(s.loss_usd)}</b>: ${pc(s.L_high, 1)} of your ${m.P.debt_usd > 0 ? "equity" : "position"}, ${pc((s.L_high * S.book) / 100, 1)} of the book.${s.L_low !== s.L_high ? ` Loss is between ${pc(s.L_low, 1)} and ${pc(s.L_high, 1)} depending on the oracle; the decision uses the high end.` : ""}</p>`;
-          body += rule;
-          body += `<p class="note">Losses and the decision come from the backend model (RiskModel.decideAt). ${src(d.evidence.mechanism)}</p>`;
+            body += `<div class="stuck">${K.stuckLine(money(stuckUsd), money(s.loss_kept_usd))}</div>`;
         }
+        body += `<ul class="reasons">${t.reasons.map((x) => `<li>${x}</li>`).join("")}</ul>
+      <p class="note">${t.break_even}</p><p class="note">${t.hinges_on}</p>`;
+        if (s.L_low !== s.L_high) body += `<p class="note">${K.range(pc(s.L_low, 1), pc(s.L_high, 1))}</p>`;
+        body += `<p class="note rule">${cap1(t.rule)}.</p><p class="note">${K.source(src(d.evidence.mechanism))}</p>`;
         body += sensBlock(m);
         $("#decision").innerHTML =
-          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
-    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;
+          `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : K.whatIf} · ${t.title}</span>
+    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${t.headline}</p></div><div class="dbody">${isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;
+      }
+      /* "How it spreads": propagation's steps in causal order, each with its grade (null = the manager's input); the last
+   one, the result, equals the decision card. */
+      function renderSpread(m) {
+        const T = COPY.spread,
+          steps = m.pg.steps;
+        $("#spreadSum").textContent = T.title(steps.length);
+        $("#d-spread").open = !!S.open["d-spread"];
+        $("#spread").innerHTML = steps
+          .map(
+            (x) =>
+              `<li data-state="${x.state}" data-node="${x.node}">${x.text} ${x.grade ? gr(x.grade) : `<span class="note">(${T.input})</span>`}</li>`,
+          )
+          .join("");
       }
 
       const ymaxOf = (c) =>
@@ -905,6 +776,7 @@
         const m = model();
         renderSteps(m);
         renderChain(m);
+        renderSpread(m);
         renderDecision(m);
         renderExit(m);
       }
