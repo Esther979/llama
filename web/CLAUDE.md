@@ -87,7 +87,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults. In both views
   the header's first row holds only the title and the switch, and the view's own inputs take the second row, so the
   switch does not move when the view changes.
-- Header of the PT view, left to right (to-dos 8 and 10, done): title; the position select; "Wallet (optional)";
+- Header of the PT view, left to right (to-dos 8 and 10, done): title; the position select, captioned "PT holding
+  type"; "Wallet (optional)";
   "Position size (USD)";
   "Cash earns after selling, % APY"; the view switch at the far right. The past-event select is not in the header:
   it sits in the steps' "Simulate" row.
@@ -112,7 +113,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   is likewise someone else's position (a real borrower of this market), not the manager's: say so on the card.
   Because it is a real-borrower preset, the size field is read-only on the first screen (to-do 8): show next to it
   that choosing "PT held outright" or the market-average preset makes the size editable.
-- In both views, the dependency chain has two displays: Layers (default) and Graph. Same incident and numbers in
+- In both views, the dependency chain has two displays: Layers (default) and Graph, switched by two icons (a list, a
+  small graph; user decision, 11 Oct), each named by its `aria-label` and `title`. Same incident and numbers in
   both. In this file "view" means a page view (Position / Vaults); Layers and Graph are "displays".
 - Plain words. One number per sentence. PT view: amounts in USD, shares as % of the position. Vault view: amounts
   in the vault's currency, written after the number. Both views write money the same short way (3.0k, 456k,
@@ -264,8 +266,7 @@ What is on the branch:
   `evidence.quote_found` is true; the one USDe quote with `quote_found: null` (Ceffu's page blocks the checker, HTTP 403) is "not re-checked", which is not the same as not found). The `usde` drawer shows the summary and a link to
   Ethena's relations. Off-chain ids are no longer in "Contracts behind it"; the Ethena card reads its count from the
   data.
-- Still against the separation rules: three SVG legend swatches in `demo.js` (`renderExit`) carry inline colour
-  styles that are not geometry.
+- The exit legend's swatches are CSS classes (`.sw-line`, `.sw-dash`, `.sw-dot`); no inline colour is left.
 - Step 3 and every probability input are gone: the verdict comes from `RiskModel.decideAt`, the step-2 zones and
   "selling starts at / pool limit from" from `breakEvenSeverity`. Wide % sliders use a log scale shared with the
   zone bar.
@@ -277,7 +278,11 @@ What is on the branch:
   expiry as a fraction of the value sold (today (5.01% - 4%) x 46.3 / 365 = 0.128%), never an annual rate, and 0
   when cash earns more than the PT. Pass it unscaled to `decideAt`, `breakEvenSeverity` and `sensitivity`: the
   model scales it by value / equity for levered positions. The guide's acceptance tables use carry 0.
-- The exit panel, chart, sale table, tooltip and layer-4 fact use the selected preset's own curve,
+- The exit chart, its tooltip and the "All sale sizes" table are `RiskModel.actCostCurve(d, S.pos, S.node, S.fail,
+  S.sev, r.carry, o)` (added 11 Oct; user report: the chart ignored the cash yield and step 2): the total if you sell
+  each share (sale cost + loss on the rest) and the sale cost alone, money on the y axis, the recommended sale on the
+  lowest total; it moves with the cash yield, the incident and its duration (gate 4c). The panel's text, the
+  sellable share and the layer-4 fact use the selected preset's own curve,
   `RiskModel.sizeCurve(d, P.collateral_usd)`; "Today" is the model's `sellable_now`. The two real borrowers can
   sell 100% today, so their chart has no "Pendle refuses" band.
 - `main` was merged at `556828c` (in `5cda215`); the `9fd615e` merge before it brought `d.offchain` (off-chain
@@ -352,8 +357,7 @@ Item numbers are kept from earlier versions so references stay valid: 1, 2, the 
 the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText), 6b (propagation) and 7
 (time rail, timeline chart), 8 (position size), 9 (vault view rest) and 10 (wallet) are done.
 
-No numbered item left (6 to 10 done). Small leftovers: the vault "share of my portfolio" amount entry; the three
-inline swatch styles.
+No numbered item left (6 to 10 done). Small leftovers: the vault "share of my portfolio" amount entry.
 
 To raise with the backend: `propagation`'s `position` step lists the `lending -> position` (liquidation) edge even
 when the position is not liquidated; the page filters it (see "Current state"), the data could drop it.
@@ -462,7 +466,7 @@ when the position is not liquidated; the page filters it (see "Current state"), 
    layer 6, timeline.
 10. Done. PT wallet input (guide section 3b: an address read on chain, never typed-in collateral or debt).
 
-Alongside, when the code is touched anyway: the three inline swatch styles; strings into `COPY`.
+Alongside, when the code is touched anyway: strings into `COPY`.
 
 Update the state, gaps and to-do when an item is done or the backend answers.
 
