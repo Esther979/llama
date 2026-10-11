@@ -242,6 +242,16 @@
         flex: 1 1 120px;
         min-width: 0;
       }
+      /* the PT holding type: a captioned select, as wide as before */
+      .hin.hpos {
+        flex: 0 1 300px;
+      }
+      .hin select {
+        width: 100%;
+        flex: none;   /* the header's select rule sets a 300px flex basis, which is a height in this column */
+        font-size: 13px;
+        color: var(--ink);
+      }
       .hin.wide {
         flex: 2 1 300px;
       }
@@ -1687,4 +1697,41 @@
         .smode + .step {
           border-top: 0;
         }
+      }
+      /* Exit chart legend swatches (were inline styles): the total line, the dashed sale cost, the recommended sale. */
+      .ckey i {
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 5px;
+      }
+      .ckey .sw-line {
+        width: 22px;
+        border-top: 2px solid var(--ink);
+      }
+      .ckey .sw-dash {
+        width: 22px;
+        border-top: 2px dashed var(--muted);
+      }
+      .ckey .sw-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      /* Layers / Graph switches as icons (user decision, 11 Oct); the name stays as aria-label and title */
+      .dicon {
+        display: block;
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+      }
+      .dicon path {
+        fill: none;
+      }
+      .mode.sm button:has(.dicon) {
+        padding: 4px 11px;
+        line-height: 0;
       }

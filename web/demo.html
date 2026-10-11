@@ -19,7 +19,9 @@
       <header>
         <h1>Dependency Risk Desk</h1>
         <div class="view-part" id="hdr-pt">
-          <select id="pos" aria-label="Position"></select>
+          <label class="hin hpos" for="pos"
+            ><span id="pos-lbl"></span><select id="pos"></select
+          ></label>
           <label class="hin wide" for="wallet"
             ><span id="wallet-lbl"></span
             ><input id="wallet" type="text" list="walletList" spellcheck="false" autocomplete="off"
@@ -129,11 +131,10 @@
                 role="group"
                 aria-label="How to show the dependencies"
               >
-                <button id="v-list" data-view="list" aria-pressed="true">
-                  Layers</button
-                ><button id="v-graph" data-view="graph" aria-pressed="false">
-                  Graph
-                </button>
+                <button id="v-list" data-view="list" aria-pressed="true" aria-label="Layers" title="Layers">
+                  <svg class="dicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12M2 8h12M2 12.5h12" /></svg></button
+                ><button id="v-graph" data-view="graph" aria-pressed="false" aria-label="Graph" title="Graph">
+                  <svg class="dicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 5.4 7.2 10.9M11.4 5.4 8.8 10.9M5.6 3.8h4.8" /><circle cx="3.6" cy="3.8" r="2" /><circle cx="12.4" cy="3.8" r="2" /><circle cx="8" cy="12.4" r="2" /></svg></button>
               </div>
             </div>
             <div class="chain" id="chain"></div>
@@ -213,8 +214,8 @@
             <div class="phead">
               <h2 id="v-chainHead"></h2>
               <div class="mode sm" role="group" aria-label="How to show the vault's dependencies">
-                <button data-vdisp="list" aria-pressed="true">Layers</button
-                ><button data-vdisp="graph" aria-pressed="false">Graph</button>
+                <button data-vdisp="list" aria-pressed="true" aria-label="Layers" title="Layers"><svg class="dicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3.5h12M2 8h12M2 12.5h12" /></svg></button
+                ><button data-vdisp="graph" aria-pressed="false" aria-label="Graph" title="Graph"><svg class="dicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 5.4 7.2 10.9M11.4 5.4 8.8 10.9M5.6 3.8h4.8" /><circle cx="3.6" cy="3.8" r="2" /><circle cx="12.4" cy="3.8" r="2" /><circle cx="8" cy="12.4" r="2" /></svg></button>
               </div>
             </div>
             <div class="vchain" id="v-chain"></div>

@@ -737,6 +737,48 @@ try {
   if (agree.bad.length > 8) console.log(`           ... and ${agree.bad.length - 8} more`);
 
 
+  /* 4c. the exit chart is RiskModel.actCostCurve with the card's inputs (user report, 11 Oct: it ignored the cash
+     yield and step 2): its lines are the model's rows, it moves with the cash yield, the severity and the duration,
+     and the recommended dot sits on the lowest total */
+  const ex4 = await p.ev(`(() => {
+    ${DUR}
+    const bad = []; let n = 0;
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    const pts = () => [...document.querySelectorAll("#chart polyline")].map((x) => x.getAttribute("points")).join("|");
+    document.querySelector('[data-mode="manual"]').click();
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const k of Object.keys(NODES)) for (const f of fails(k)) {
+        setNode(k, f);
+        const r = durR(), want = RiskModel.actCostCurve(d, S.pos, S.node, S.fail, S.sev, r.carry, durO(S.pos, r)), m = model();
+        n++;
+        if (JSON.stringify(m.ac) !== JSON.stringify(want)) { bad.push(pk + " " + k + ":" + f + ": chart data differs from actCostCurve"); continue; }
+        const tl = document.querySelector("#chart polyline.cv");
+        if (!tl || tl.getAttribute("points").trim().split(/\\s+/).length !== want.rows.length) bad.push(pk + " " + k + ":" + f + ": total line");
+        if (m.x > 0) {
+          const dot = document.querySelector("#chart .recd"), best = want.rows.reduce((a, b) => (b.total_usd < a.total_usd - 1e-9 ? b : a));
+          if (!dot || Math.abs(best.fraction - m.x) > 1e-9) bad.push(pk + " " + k + ":" + f + ": recommended dot");
+        }
+      }
+    }
+    /* it moves with the cash yield, the severity and the duration */
+    fire(document.querySelector("#pos"), "spot");
+    setNode("usde", "depeg", 10);
+    const p0 = pts();
+    fire(document.querySelector("#alt"), "1");
+    const p1 = pts();
+    setNode("usde", "depeg", 20);
+    const p2 = pts();
+    setHours(48);
+    const p3 = pts();
+    fire(document.querySelector("#alt"), (d.position.implied_apy * 100).toFixed(2));
+    const moves = { alt: p1 !== p0, severity: p2 !== p1, duration: p3 !== p2 };
+    if (!moves.alt || !moves.severity || !moves.duration) bad.push("the chart does not move with " + JSON.stringify(moves));
+    return { n, bad };
+  })()`);
+  gate(ex4.bad.length === 0, `4c. exit chart = RiskModel.actCostCurve with the card's inputs (${ex4.n} cases, recommended dot on the lowest total), moving with the cash yield, the severity and the duration`);
+  ex4.bad.slice(0, 5).forEach((x) => console.log("           " + x));
+
   /* 7. time rail (guide 5b and 6, to-do 7): marks, one duration control, the recovers toggle, keys, event clicks,
      the guide's two examples, Play */
   const rail = await p.ev(`(async () => {

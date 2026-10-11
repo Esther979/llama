@@ -216,7 +216,8 @@
       const FIRST = PAST.find((x) => x.key === "pt_reusd_aug_2026") || PAST[0] || null;
       /* Real-borrower presets have a fixed on-chain size (sized: false): someone else's position. */
       const isReal = (k) => !!PRE[k] && PRE[k].sized === false;
-      let CUR = { type: "none" };
+      let CUR = { type: "none" },
+        AC = null;
       const S = {
         view: "list",
         /* how the incident is set (user decision, 11 Oct): "past" = one of d.past_incidents, steps 1 and 2 read-only;
@@ -316,6 +317,8 @@
         /* The card's texts (guide section 5) and the incident's path through the five layers (section 6) */
         m.t = RM.decisionText(d, posKey, S.node, S.fail, S.sev, cy, o);
         m.pg = RM.propagation(d, posKey, S.node, S.fail, S.sev, cy, o);
+        /* the exit chart's cost of acting at every share (same inputs) */
+        m.ac = RM.actCostCurve(d, posKey, S.node, S.fail, S.sev, cy, o);
         return m;
       }
       const VCLASS = {
@@ -903,47 +906,51 @@
         });
       }
 
-      const ymaxOf = (c) =>
-        (Math.ceil((Math.max(...c.map((p) => p[1])) * 1000) / 3) * 3) / 1000;
-      const CH = { W: 392, H: 190, l: 42, r: 10, t: 10, b: 48, ymax: ymaxOf(CURVE) };
+      /* Exit chart: RiskModel.actCostCurve, the model's cost of acting at every share sold now (sale on today's value
+   with slippage and the yield given up over the incident, loss kept on the rest; minimum = the recommended sale), so
+   it moves with the cash yield, the incident and its duration. Money on the y axis. */
+      const CH = { W: 392, H: 190, l: 48, r: 10, t: 10, b: 48, ymax: 1 };
       function useCurve(posKey) {
         [CURVE, MAXX] = RM.sizeCurve(d, PRE[posKey].collateral_usd);
-        CH.ymax = ymaxOf(CURVE);
       }
+      const nice = (v) => {
+        if (!(v > 0)) return 1;
+        const e = Math.pow(10, Math.floor(Math.log10(v))),
+          n = v / e;
+        return (n <= 1.5 ? 1.5 : n <= 3 ? 3 : n <= 6 ? 6 : 12) * e;
+      };
       const CX = (f) => CH.l + f * (CH.W - CH.l - CH.r),
         CY = (v) =>
           CH.H - CH.b - (Math.min(v, CH.ymax) / CH.ymax) * (CH.H - CH.t - CH.b);
-      const stressCurve = (k) => CURVE.map(([x, s]) => [x * (1 - k), s]);
-      function chart(m, sc) {
-        const { W, H, l, r, t, b } = CH;
-        const line = (c) =>
-          c
-            .map(([f, s]) => `${CX(f).toFixed(1)},${CY(s).toFixed(1)}`)
-            .join(" ");
+      function chart(m) {
+        const { W, H, l, r, t, b } = CH,
+          K = COPY.exit,
+          rows = m.ac.rows;
+        CH.ymax = nice(Math.max(...rows.map((x) => Math.max(x.total_usd, x.sale_cost_usd))));
+        const line = (k) => rows.map((x) => `${CX(x.fraction).toFixed(1)},${CY(x[k]).toFixed(1)}`).join(" ");
         let rec = "";
-        if (m.x > 0) {
+        const best = rows.find((x) => Math.abs(x.fraction - m.x) < 1e-9);
+        if (m.x > 0 && best) {
           const rx = CX(m.x),
-            ry = CY(m.slip);
-          rec = `<line class="rec" x1="${rx}" y1="${CY(0)}" x2="${rx}" y2="${ry}"/><circle class="recd" cx="${rx}" cy="${ry}" r="5"/><text class="rt" x="${rx}" y="${H - b + 27}" text-anchor="middle">Sell ${pc(m.x, 0)}</text>`;
+            ry = CY(best.total_usd);
+          rec = `<line class="rec" x1="${rx}" y1="${CY(0)}" x2="${rx}" y2="${ry}"/><circle class="recd" cx="${rx}" cy="${ry}" r="5"/><text class="rt" x="${rx}" y="${H - b + 27}" text-anchor="middle">${K.sell(pc(m.x, 0))}</text>`;
         }
-        const xt = [
-          ...new Set([0, Math.round(MAXX * 10) / 20, MAXX, 1]),
-        ];
-        return `<svg class="chart" id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cost of selling against the share of the position sold. Today Pendle quotes up to ${pc(MAXX, 0)}.">
+        const xt = [...new Set([0, Math.round(MAXX * 10) / 20, MAXX, 1])];
+        return `<svg class="chart" id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${K.aria(pc(MAXX, 0))}">
    ${MAXX < 1 - 1e-9 ? `<rect class="no" x="${CX(MAXX)}" y="${t}" width="${CX(1) - CX(MAXX)}" height="${H - t - b}"/>` : ""}
    ${[0, 1, 2, 3]
      .map((i) => (CH.ymax * i) / 3)
      .map(
        (v) =>
-         `<line class="ax" x1="${l}" y1="${CY(v)}" x2="${W - r}" y2="${CY(v)}"/><text x="${l - 6}" y="${CY(v) + 4}" text-anchor="end">${pc(v, 1)}</text>`,
+         `<line class="ax" x1="${l}" y1="${CY(v)}" x2="${W - r}" y2="${CY(v)}"/><text x="${l - 6}" y="${CY(v) + 4}" text-anchor="end">${money(v)}</text>`,
      )
      .join("")}
    ${xt.map((f) => `<text x="${CX(f)}" y="${H - b + 14}" text-anchor="${f === 1 ? "end" : f === 0 ? "start" : "middle"}">${pc(f, 0)}</text>`).join("")}
-   <text x="${l}" y="${H - 5}">Share of the position sold</text>
+   <text x="${l}" y="${H - 5}">${K.xAxis}</text>
    ${MAXX < 1 - 1e-9 ? `<line class="cliff" x1="${CX(MAXX)}" y1="${t}" x2="${CX(MAXX)}" y2="${H - b}"/>
-   <text x="${CX((1 + MAXX) / 2)}" y="${t + 58}" text-anchor="middle">Pendle refuses</text><text x="${CX((1 + MAXX) / 2)}" y="${t + 72}" text-anchor="middle">sales this large</text>` : ""}
-   ${sc ? `<polyline class="sv" points="${line(sc)}"/>` : ""}
-   <polyline class="cv" points="${line(CURVE)}"/>${CURVE.map(([f, s]) => `<circle class="pt" cx="${CX(f)}" cy="${CY(s)}" r="2.6"/>`).join("")}${rec}
+   <text x="${CX((1 + MAXX) / 2)}" y="${t + 58}" text-anchor="middle">${K.refuses[0]}</text><text x="${CX((1 + MAXX) / 2)}" y="${t + 72}" text-anchor="middle">${K.refuses[1]}</text>` : ""}
+   <polyline class="sv" points="${line("sale_cost_usd")}"/>
+   <polyline class="cv" points="${line("total_usd")}"/>${rec}
    <line class="cross" id="cross" x1="0" x2="0" y1="${t}" y2="${H - b}" visibility="hidden"/></svg>`;
       }
       function renderExit(m, idle) {
@@ -952,6 +959,7 @@
           cap = s.sellable_now * C,
           last = RM.slippageAt(s.sellable_now, CURVE),
           isDrain = !idle && s.type === "exit_only";
+        AC = m.ac;
         let later = null;
         CUR = { type: "idle" };
         if (!idle) {
@@ -974,16 +982,16 @@
             later = `Up to ${money(sl * C)} (${pc(sl, 0)}) at an average cost of ${pc(s.avg_cost_later, 2)}, after liquidators sell first${s.exit_row_drop != null ? ` (Morpho liquidation curve at a ${pc(s.exit_row_drop)} oracle drop)` : ""}.`;
           else later = "Exit capacity is not affected in this model.";
         }
-        const fr = [0].concat(CURVE.map((c) => c[0]).filter((f) => f >= 0.1));
-        if (m.x > 0 && !fr.some((f) => Math.abs(f - m.x) < 1e-9)) fr.push(m.x);
-        fr.sort((a, b) => a - b);
-        const isQ = (f) => !f || CURVE.some((k) => Math.abs(k[0] - f) < 1e-9);
-        const row = (f) => {
-          const sl = f ? RM.slippageAt(f, CURVE) : 0,
-            cost = f * (sl + m.cy) * C,
-            kept = (1 - f) * m.L * m.equity;
-          return `<tr class="${m.hasLoss && Math.abs(f - m.x) < 1e-9 ? "best" : ""}"><td>${f ? pc(f, 0) + " · " + money(f * C) : "Stay"}${isQ(f) ? "" : " *"}</td><td>${f ? pc(sl, 2) : "–"}</td><td>${money(cost)}</td><td>${money(kept)}</td><td>${money(cost + kept)}</td></tr>`;
-        };
+        /* the model's rows (actCostCurve) every 10%, at the pool limit and at the recommended sale */
+        const V = m.ac.value_usd,
+          tens = m.ac.rows.filter(
+            (x) =>
+              Math.abs(x.fraction * 10 - Math.round(x.fraction * 10)) < 1e-9 ||
+              Math.abs(x.fraction - m.ac.cap) < 1e-9 ||
+              Math.abs(x.fraction - m.x) < 1e-9,
+          );
+        const row = (x) =>
+          `<tr class="${m.hasLoss && Math.abs(x.fraction - m.x) < 1e-9 ? "best" : ""}"><td>${x.fraction ? pc(x.fraction, 0) + " · " + money(x.fraction * V) : "Stay"}</td><td>${x.fraction ? pc(x.slippage, 2) : "–"}</td><td>${money(x.sale_cost_usd)}</td><td>${money(x.loss_kept_usd)}</td><td>${money(x.total_usd)}</td></tr>`;
         /* Refused sizes are quoted as shares of the quotes' notional (N0): convert through USD and keep those
    within this position. */
         const refused = [
@@ -1000,13 +1008,13 @@
         $("#exit").innerHTML =
           `<div class="phead"><h2>Can you get out?</h2><span class="note">Real Pendle quotes, ${DAY}</span></div>
    <dl><dt>Today</dt><dd>Up to ${money(cap)} (${pc(s.sellable_now, 0)}), costing ${pc(last, 2)} in slippage.</dd>${later ? `<dt>If this plays out</dt><dd>${later}</dd>` : ""}</dl>
-   <div class="ckey"><span><svg width="22" height="6" aria-hidden="true"><line x1="0" y1="3" x2="22" y2="3" style="stroke:var(--ink);stroke-width:2"/></svg>Today's quotes</span>${isDrain ? '<span><svg width="22" height="6" aria-hidden="true"><line x1="0" y1="3" x2="22" y2="3" style="stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4"/></svg>If this plays out</span>' : ""}${m.x > 0 ? '<span><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="4" style="fill:var(--accent)"/></svg>Recommended sale</span>' : ""}</div>
-   <div class="cwrap" id="cwrap">${chart(m, isDrain ? stressCurve(S.sev / 100) : null)}<div class="tip" id="tip" hidden></div></div>
+   <div class="ckey"><span><i class="sw-line"></i>${COPY.exit.keyTotal}</span><span><i class="sw-dash"></i>${COPY.exit.keySale}</span>${m.x > 0 ? `<span><i class="sw-dot"></i>${COPY.exit.keyRec}</span>` : ""}</div>
+   <div class="cwrap" id="cwrap">${chart(m)}<div class="tip" id="tip" hidden></div></div>
    ${det(
      "d-sizes",
      "All sale sizes",
-     `<div class="tw"><table><thead><tr><th>Sell</th><th>Slippage</th><th>Sale cost</th><th>Loss kept</th><th>Total</th></tr></thead><tbody>${fr.map(row).join("")}${refused}</tbody></table></div>
-     <p class="note">${m.hasLoss ? "The highlighted row has the lowest total. " : ""}${fr.some((f) => !isQ(f)) ? "* Interpolated between two quotes. " : ""}${COPY.rail.carryNote(pc(m.cy, 3), durText(S.hours))} Counts only the Pendle swap route: no limit orders, OTC, or holding to expiry.</p>
+     `<div class="tw"><table><thead><tr><th>Sell</th><th>Slippage</th><th>Sale cost</th><th>Loss kept</th><th>Total</th></tr></thead><tbody>${tens.map(row).join("")}${refused}</tbody></table></div>
+     <p class="note">${m.hasLoss ? "The highlighted row has the lowest total. " : ""}${COPY.exit.interp} ${COPY.rail.carryNote(pc(m.cy, 3), durText(S.hours))} Counts only the Pendle swap route: no limit orders, OTC, or holding to expiry.</p>
      <p class="note">Quotes: ${src(d.evidence.exit_curve)}</p>`,
    )}`;
       }
@@ -1507,7 +1515,11 @@
                 : "–";
         else if (CUR.type !== "idle" && CUR.later < MAXX - 1e-9)
           lt = f > CUR.later + 1e-9 ? "no room" : "can still be sold";
-        tip.innerHTML = `<b>Sell ${pc(f, 0)} · ${money(f * PRE[S.pos].collateral_usd)}</b>Today: ${now}${lt ? "<br>If this plays out: " + lt : ""}`;
+        const ar = AC && AC.rows.find((x) => Math.abs(x.fraction - f) < 1e-9);
+        tip.innerHTML =
+          `<b>Sell ${pc(f, 0)} · ${money(f * PRE[S.pos].collateral_usd)}</b>` +
+          (ar ? COPY.exit.tip(money(ar.sale_cost_usd), money(ar.loss_kept_usd), money(ar.total_usd)) + "<br>" : "") +
+          `Slippage today: ${now}${lt ? "<br>If this plays out: " + lt : ""}`;
         tip.hidden = false;
         cross.setAttribute("x1", CX(f));
         cross.setAttribute("x2", CX(f));
@@ -1520,6 +1532,7 @@
       });
 
       /* Static parts filled from the data. */
+      $("#pos-lbl").textContent = COPY.position.holding;
       $("#wallet-lbl").textContent = COPY.wallet.label;
       $("#wallet").placeholder = COPY.wallet.placeholder;
       $("#walletList").innerHTML = (BW.wallets || [])

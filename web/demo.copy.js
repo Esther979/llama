@@ -128,6 +128,20 @@ const COPY = {
     assume: "Held constant over the incident: pool depth as today, the borrow APR and the PT's implied APY.",
   },
 
+  /* Exit chart (RiskModel.actCostCurve): the cost of acting at every share sold now. */
+  exit: {
+    keyTotal: "Total if you sell this share (sale cost + loss on the rest)",
+    keySale: "Sale cost (slippage + yield given up)",
+    keyRec: "Recommended sale (lowest total)",
+    sell: (p) => `Sell ${p}`,
+    xAxis: "Share of the position sold",
+    refuses: ["Pendle refuses", "sales this large"],
+    aria: (cap) =>
+      `Cost of acting against the share sold now: the total (sale cost plus loss on the rest) and the sale cost alone. Pendle quotes up to ${cap}.`,
+    tip: (sale, kept, total) => `Sale cost ${sale} + loss kept ${kept} = ${total}`,
+    interp: "Slippage between two quoted sizes is interpolated.",
+  },
+
   /* "How it spreads": RiskModel.propagation's steps in causal order (guide section 6). */
   spread: {
     title: (n) => `How it spreads, step by step (${n})`,
@@ -164,6 +178,7 @@ const COPY = {
   position: {
     notYours: (label) => `Position: ${label}. A real borrower of this market, read on chain, not your position.`,
     wallet: (label, block) => `Position: ${label}, read on chain at block ${block}.`,
+    holding: "PT holding type",
   },
 
   /* Vault view (second view; FRONTEND_VAULT_GUIDE.md). The sentences follow the backend's wording
