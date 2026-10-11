@@ -20,7 +20,15 @@
         <h1>Dependency Risk Desk</h1>
         <div class="view-part" id="hdr-pt">
           <select id="pos" aria-label="Position"></select>
+          <label class="hin" for="size"
+            ><span><span id="size-lbl"></span> <span id="size-mark"></span></span
+            ><input id="size" type="text" inputmode="decimal" autocomplete="off"
+          /></label>
+          <label class="hin" for="alt"
+            ><span id="alt-lbl"></span><input id="alt" type="text" inputmode="decimal"
+          /></label>
           <select id="replay" aria-label="Load a past incident pattern"></select>
+          <p class="note hline" id="sizeLine"></p>
           <span class="stamp" id="stamp"></span>
         </div>
         <div class="view-part" id="hdr-vault" hidden>
@@ -142,26 +150,6 @@
         </aside>
       </main>
 
-      <details class="adv" id="d-adv">
-        <summary>Assumptions you can change</summary>
-        <div>
-          <label for="book"
-            >Position as a share of the book, %<input
-              type="number"
-              id="book"
-              min="1"
-              max="100"
-              step="1"
-          /></label>
-          <label for="alt"
-            >Cash earns after selling, % APY<input
-              type="text"
-              inputmode="decimal"
-              id="alt"
-          /></label>
-          <p class="note" id="advNote"></p>
-        </div>
-      </details>
       </div>
 
       <main class="view-part" id="view-vault" hidden>

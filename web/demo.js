@@ -20,23 +20,28 @@
 
       /* Data and model come from the backend (FRONTEND_GUIDE.md): dashboard.sample.js sets window.DASHBOARD,
    risk_model.js sets window.RiskModel. The page holds no snapshot numbers and no loss formulas. */
-      const d = window.DASHBOARD,
+      const D0 = window.DASHBOARD,
         RM = window.RiskModel;
+      /* d is the data at the manager's position size (RiskModel.atSize, guide 3b): set by resize() on load and on every
+   size change; every model call takes this d. D0 is the backend's file as loaded. */
+      let d = D0;
       if (!d || !RM) {
         $("#banner").hidden = false;
         $("#banner").innerHTML =
           "<b>Could not load the backend files.</b> This page needs ../sample_data/dashboard.sample.js and risk_model.js next to it.";
         throw new Error("backend files missing");
       }
-      const N = d.position.notional_usd,
+      /* N0: the notional the Pendle quotes were taken at; the refused sizes in the evidence are shares of it. */
+      const N0 = D0.position.notional_usd,
+        SI = D0.size_input,
         LD = d.lending[0];
       /* Exit curve and largest sellable share of the selected position (guide section 0b): every position has its
    own curve, RiskModel.sizeCurve(d, collateral). d.exit_curve / d.max_exit_fraction describe only the size
    input's position. Set for the selected preset by useCurve() at each render. */
-      let [CURVE, MAXX] = RM.sizeCurve(d, N);
+      let [CURVE, MAXX] = RM.sizeCurve(d, N0);
+      let PRE = d.position_presets;
       const NODES = d.ui.nodes,
         LAY = d.ui.layers,
-        PRE = d.position_presets,
         FT = d.failure_types.types,
         GN = d.dependency_graph.nodes,
         ORC = d.oracle;
@@ -228,8 +233,10 @@
         alt: d.position.implied_apy * 100,
         /* the first screen opens at the event's own duration (1 h for PT-reUSD); null-duration events: DEF_H, stays */
         hours: FIRST && FIRST.hours != null ? FIRST.hours : DEF_H,
+        /* position size in USD for the presets the manager sizes (spot, lev_market_avg); assumed (D) until typed */
+        size: SI.default_usd,
+        sizeTyped: false,
         recovers: FIRST ? FIRST.hours != null && !!FIRST.recovers : true,
-        book: 10,
         open: {},
         more: {},
       };
@@ -624,6 +631,31 @@
           .join("");
       }
 
+      /* Position size (guide 3b, to-do 8): the data at the manager's size. The size field sets spot and
+   lev_market_avg (sized presets); a real borrower's size is read on chain, so the field then shows it, read-only. */
+      const fullUsd = (v) => Math.round(v).toLocaleString("en-US");
+      function resize() {
+        d = RM.atSize(D0, S.size);
+        PRE = d.position_presets;
+      }
+      function renderSize() {
+        const P = PRE[S.pos],
+          K = COPY.size,
+          f = $("#size"),
+          real = isReal(S.pos);
+        if (real) f.value = fullUsd(P.collateral_usd);
+        else if (f.readOnly) f.value = fullUsd(S.size);
+        f.readOnly = real;
+        $("#size-mark").innerHTML = real
+          ? K.onChain(gr("A"))
+          : S.sizeTyped
+            ? K.typed
+            : K.assumed(gr("D"), ((SI.evidence || {}).default_usd || {}).source || "");
+        $("#sizeLine").innerHTML =
+          K.line(fullUsd(P.pt_units), "$" + SI.pt_price_usd.toFixed(4), pc(MAXX, 0), money(SI.capacity_usd)) +
+          (real ? " " + K.editHint : "");
+      }
+
       /* Time rail (guide 5b and 6, to-do 7): the duration control sits on the chain it drives. Events
    (RiskModel.propagationEvents, about 300 model runs) are cached by position, incident, severity, recovers and cash
    APY, never recomputed on drag. The track and its thumb are static markup: only the marks, labels and list are
@@ -632,7 +664,7 @@
         EV = null,
         TLR = null;
       const eventsOf = () => {
-        const k = [S.pos, S.node, S.fail, S.sev, S.recovers, S.alt].join("|");
+        const k = [S.pos, S.size, S.node, S.fail, S.sev, S.recovers, S.alt].join("|");
         if (k !== EVK) {
           EVK = k;
           EV = RM.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);
@@ -783,7 +815,7 @@
       let PREV = { sig: null, st: {} },
         FLASH = {};
       function trackFlash(pg) {
-        const sig = [S.pos, S.node, S.fail].join("|"),
+        const sig = [S.pos, S.size, S.node, S.fail].join("|"),
           now = performance.now(),
           st = {};
         pg.layers.forEach((l) => {
@@ -890,17 +922,17 @@
             kept = (1 - f) * m.L * m.equity;
           return `<tr class="${m.hasLoss && Math.abs(f - m.x) < 1e-9 ? "best" : ""}"><td>${f ? pc(f, 0) + " · " + money(f * C) : "Stay"}${isQ(f) ? "" : " *"}</td><td>${f ? pc(sl, 2) : "–"}</td><td>${money(cost)}</td><td>${money(kept)}</td><td>${money(cost + kept)}</td></tr>`;
         };
-        /* Refused sizes are quoted as shares of the size input's position (N): convert through USD and keep those
+        /* Refused sizes are quoted as shares of the quotes' notional (N0): convert through USD and keep those
    within this position. */
         const refused = [
           ...(d.evidence.max_exit_fraction.source || "").matchAll(
             /([\d.]+) refused \((\w+)/g,
           ),
         ]
-          .filter((r) => +r[1] * N <= C * (1 + 1e-9))
+          .filter((r) => +r[1] * N0 <= C * (1 + 1e-9))
           .map(
             (r) =>
-              `<tr class="ref"><td>${pc((+r[1] * N) / C, 0)} · ${money(+r[1] * N)}</td><td colspan="4">Refused: ${r[2]}</td></tr>`,
+              `<tr class="ref"><td>${pc((+r[1] * N0) / C, 0)} · ${money(+r[1] * N0)}</td><td colspan="4">Refused: ${r[2]}</td></tr>`,
           )
           .join("");
         $("#exit").innerHTML =
@@ -989,6 +1021,7 @@
         useCurve(S.pos);
         const m = model();
         trackFlash(m.pg);
+        renderSize();
         renderSteps(m);
         renderRail(m);
         renderTimeline();
@@ -1104,7 +1137,7 @@
                   ["Expiry", `${EXPIRY} (${DAYS} days) · ${src(pe.expiry)}`],
                   [
                     "Largest sale quoted",
-                    `${money(d.max_exit_fraction * N)} · ${src(d.evidence.max_exit_fraction)}`,
+                    `${money(SI.capacity_usd)} · ${src(SI.evidence && SI.evidence.capacity_usd)}`,
                   ],
                 ]
               : id === "oracle" && ORC
@@ -1299,10 +1332,18 @@
         }
         if (t.id === "alt") {
           S.alt = num(0, 50, 0);
+          t.value = trim(S.alt);
           render();
         }
-        if (t.id === "book") {
-          S.book = num(1, 100, 10);
+        if (t.id === "size" && !t.readOnly) {
+          /* the field keeps the number as typed; "5M" and "250k" are read too; anything else restores the last size */
+          const m = String(t.value).trim().replace(/[\s,_]/g, "").match(/^(\d*\.?\d+)([kKmM]?)$/),
+            v = m ? +m[1] * { "": 1, k: 1e3, K: 1e3, m: 1e6, M: 1e6 }[m[2]] : NaN;
+          if (v > 0 && isFinite(v)) {
+            S.size = v;
+            S.sizeTyped = true;
+            resize();
+          } else t.value = fullUsd(S.size);
           render();
         }
       });
@@ -1310,7 +1351,7 @@
         "toggle",
         (ev) => {
           const t = ev.target;
-          if (t.tagName === "DETAILS" && t.id && t.id !== "d-adv")
+          if (t.tagName === "DETAILS" && t.id)
             S.open[t.id] = t.open;
         },
         true,
@@ -1406,12 +1447,12 @@
         '<option value="">Load a past incident pattern…</option>' +
         PAST.map((p) => `<option value="${p.key}">${p.label}</option>`).join("");
       $("#stamp").innerHTML =
-        `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""} · position size <span class="asm">${money(N)}</span>`;
-      $("#advNote").innerHTML =
-        `Position size: ${src(d.position.evidence && d.position.evidence.notional_usd)}. Every loss and decision comes from the backend model.`;
-      ["alt", "book"].forEach((k) => {
-        $("#" + k).value = k === "alt" ? S.alt.toFixed(2) : S[k];
-      });
+        `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""}`;
+      $("#size-lbl").innerHTML = COPY.size.label;
+      $("#alt-lbl").innerHTML = COPY.size.altLabel(gr("D"));
+      $("#alt").value = S.alt.toFixed(2);
+      $("#size").value = fullUsd(S.size);
+      resize();
       try {
         const v = localStorage.getItem("rd-view2");
         if (v === "graph" || v === "list") S.view = v;

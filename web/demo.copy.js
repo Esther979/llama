@@ -123,6 +123,18 @@ const COPY = {
     input: "your input",
   },
 
+  /* Header inputs of the PT view (guide 3b, to-do 8): the position size and the cash yield, the manager's two
+     assumptions. */
+  size: {
+    label: "Position size (USD)",
+    assumed: (g, source) => `<span class="asm" title="${source}">assumed</span> ${g}`,
+    typed: "your input",
+    onChain: (g) => `read on chain ${g}`,
+    altLabel: (g) => `Cash earns after selling, % APY ${g}`,
+    line: (units, price, share, cap) => `${units} PT at ${price}; sellable now: ${share} (${cap} pool limit).`,
+    editHint: "Size of a real borrower, read on chain: pick “PT held outright” or the market-average preset to set your own.",
+  },
+
   /* The real-borrower presets are someone else's position, read on chain. */
   position: {
     notYours: (label) => `Position: ${label}. A real borrower of this market, read on chain, not your position.`,

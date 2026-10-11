@@ -217,7 +217,7 @@ async function openPage(b, { width = 1400, dark = false } = {}) {
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
     return r.result.value;
   };
-  return { ev, errors, s };
+  return { ev, errors, s, targetId };
 }
 
 /* ---- checks */
@@ -599,12 +599,13 @@ try {
      The table has no duration (the oracle switch applies, the loss stays): the page is set to 16 h on the rail,
      recovers off, and its amounts match within 0.1% (the PT valued at the end of the incident). */
   const rows = acceptanceRows();
-  const atPage = rows.filter((r) => r.size === 1e7);
+  const atPage = rows;
   const mres = await p.ev(`(() => {
     const out = [];
     for (const r of ${JSON.stringify(atPage)}) {
-      const t = d.failure_types.types[r.fail], x = RiskModel.decideAt(d, r.preset, r.node, r.fail, r.sev, 0),
-        be = RiskModel.breakEvenSeverity(d, r.preset, r.node, r.fail, 0, t.min, t.max), dd = [];
+      const ds = RiskModel.atSize(window.DASHBOARD, r.size), t = ds.failure_types.types[r.fail],
+        x = RiskModel.decideAt(ds, r.preset, r.node, r.fail, r.sev, 0),
+        be = RiskModel.breakEvenSeverity(ds, r.preset, r.node, r.fail, 0, t.min, t.max), dd = [];
       const eq = (a, b, tol, name) => { if (a === null || b === null ? a !== b : Math.abs(a - b) > tol) dd.push(name + " " + a + " vs " + b); };
       if (x.verdict !== r.verdict) dd.push("verdict " + x.verdict);
       eq(Math.round(x.sell_fraction * 100), r.sell, 0, "sell %");
@@ -614,18 +615,21 @@ try {
       eq(+x.sellable_later.toFixed(4), r.later, 1e-4, "sellable later");
       eq(be.start === null ? null : +be.start.toFixed(3), r.beStart, 1e-3, "break-even start");
       eq(be.cap === null ? null : +be.cap.toFixed(3), r.beCap, 1e-3, "break-even cap");
-      out.push({ row: r.preset + " " + r.node + ":" + r.fail + " @" + r.sev, d: dd });
+      out.push({ row: r.size / 1e6 + "M " + r.preset + " " + r.node + ":" + r.fail + " @" + r.sev, d: dd });
     }
     return out;
   })()`);
   const mok = mres.filter((r) => !r.d.length).length;
-  gate(mok === mres.length && mres.length > 0, `4. acceptance rows at $10M, model (decideAt, carry 0): ${mok}/${mres.length} match exactly`);
+  gate(mok === mres.length && mres.length > 0, `4. acceptance rows at every size, model (atSize, decideAt, carry 0): ${mok}/${mres.length} match exactly`);
   mres.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
   const res = await p.ev(`(() => {
     const rows = ${JSON.stringify(atPage)}, out = [];
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     fire(document.querySelector("#replay"), "");   /* section 9 rows are what-if tests */
     for (const r of rows) {
+      /* the size through the page's own field, typed as a manager would ("7,000,000") */
+      fire(document.querySelector("#pos"), "spot");
+      fire(document.querySelector("#size"), r.size.toLocaleString("en-US"));
       fire(document.querySelector("#pos"), r.preset);
       setNode(r.node, r.fail, r.sev);
       S.recovers = false;
@@ -644,12 +648,15 @@ try {
       eq(be.start === null ? null : +be.start.toFixed(3), r.beStart, 1e-3, "break-even start");
       eq(be.cap === null ? null : +be.cap.toFixed(3), r.beCap, 1e-3, "break-even cap");
       if (!txt.startsWith(want)) d.push("screen '" + txt + "' vs '" + want + "'");
-      out.push({ row: r.preset + " " + r.node + ":" + r.fail + " @" + r.sev, d });
+      if (Math.abs(d.size_usd - r.size) > 1e-6) d.push("page size " + d.size_usd);
+      out.push({ row: r.size / 1e6 + "M " + r.preset + " " + r.node + ":" + r.fail + " @" + r.sev, d });
     }
+    fire(document.querySelector("#pos"), "spot");
+    fire(document.querySelector("#size"), "10,000,000");
     return out;
   })()`);
   const ok = res.filter((r) => !r.d.length).length;
-  gate(ok === res.length && res.length > 0, `4. acceptance rows at $10M, screen at 16 h, recovers off: ${ok}/${res.length} match (amounts within 0.1%)`);
+  gate(ok === res.length && res.length > 0, `4. acceptance rows at every size, screen (size typed in the header, 16 h, recovers off): ${ok}/${res.length} match (amounts within 0.1%)`);
   res.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
   /* 4b. the exit panel agrees with the decision card, for every preset x failure at four severities */
   const agree = await p.ev(`(() => {
@@ -681,8 +688,7 @@ try {
   gate(agree.bad.length === 0, `4b. exit panel agrees with the decision card: ${agree.n - agree.bad.length}/${agree.n} cases`);
   agree.bad.slice(0, 8).forEach((x) => console.log("           " + x));
   if (agree.bad.length > 8) console.log(`           ... and ${agree.bad.length - 8} more`);
-  const other = rows.length - atPage.length;
-  if (other) console.log(`SKIPPED    4. ${other} acceptance rows at other sizes: the page has no position-size input yet`);
+
 
   /* 7. time rail (guide 5b and 6, to-do 7): marks, one duration control, the recovers toggle, keys, event clicks,
      the guide's two examples, Play */
@@ -827,6 +833,57 @@ try {
   })()`);
   gate(tlc.n > 0 && tlc.bad.length === 0, `7b. timeline chart equals RiskModel.timeline / timelineSummary, bands from the events, duration line: ${tlc.n - tlc.bad.length}/${tlc.n} cases`);
   tlc.bad.slice(0, 5).forEach((x) => console.log("           " + x));
+
+  /* 8. header inputs (guide 3b, to-do 8): position size (default, typed, read-only for real borrowers, the line
+     under it), cash yield in the header with the decimal comma, no "Assumptions you can change" section, no static
+     "position size" text */
+  const p8 = await openPage(b);   /* a fresh page: the default size must not have been typed over */
+  const hdr = await p8.ev(`(() => {
+    const bad = [], fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    const f = document.querySelector("#size"), mark = () => document.querySelector("#size-mark").textContent,
+      line = () => document.querySelector("#sizeLine").textContent, hdr = document.querySelector("header");
+    if (!hdr.contains(f) || !hdr.contains(document.querySelector("#alt"))) bad.push("size and cash yield are not in the header");
+    if (document.querySelector("#d-adv, #book") || /Assumptions you can change/.test(document.body.innerText)) bad.push("the assumptions section is still there");
+    if (/position size \\$/i.test(document.querySelector("#stamp").textContent)) bad.push("static position size in the stamp");
+    /* real borrowers: on-chain size, read-only, grade A, with the hint */
+    for (const k of Object.keys(PRE).filter((k) => PRE[k].sized === false)) {
+      fire(document.querySelector("#pos"), k);
+      if (!f.readOnly || f.value !== Math.round(PRE[k].collateral_usd).toLocaleString("en-US") || !/read on chain/.test(mark()) || !/A/.test(mark()))
+        bad.push(k + ": field '" + f.value + "' readOnly " + f.readOnly + " mark '" + mark() + "'");
+      if (!line().includes(Math.round(PRE[k].pt_units).toLocaleString("en-US") + " PT")) bad.push(k + ": line '" + line() + "'");
+    }
+    /* sized presets: the default 10,000,000 is an assumption (D) until typed */
+    fire(document.querySelector("#pos"), "spot");
+    if (f.readOnly || f.value !== "10,000,000" || !/assumed/.test(mark()) || S.sizeTyped) bad.push("default: '" + f.value + "' mark '" + mark() + "'");
+    for (const [typed, want] of [["1,000,000", 1e6], ["5M", 5e6], ["250k", 2.5e5], ["50 000 000", 5e7]]) {
+      fire(f, typed);
+      if (S.size !== want || d.size_usd !== want || PRE.spot.collateral_usd !== want || PRE.lev_market_avg.collateral_usd !== want || f.value !== typed || mark() !== COPY.size.typed)
+        bad.push("typed " + typed + ": size " + S.size + " field '" + f.value + "'");
+      const want2 = RiskModel.decideAtDuration(RiskModel.atSize(window.DASHBOARD, want), "spot", S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
+      if (JSON.stringify(model().sev) !== JSON.stringify(want2)) bad.push("typed " + typed + ": card differs from the model at that size");
+      if (!line().includes(Math.round(want / d.size_input.pt_price_usd).toLocaleString("en-US") + " PT") || !line().includes(Math.round(d.max_exit_fraction * 100) + "%"))
+        bad.push("typed " + typed + ": line '" + line() + "'");
+    }
+    fire(f, "abc");
+    if (S.size !== 5e7 || f.value !== "50,000,000") bad.push("invalid input: size " + S.size + " field '" + f.value + "'");
+    /* real borrowers keep their size whatever is typed; back to spot shows the typed size again */
+    fire(document.querySelector("#pos"), "lev_closest_to_liquidation");
+    const rb = PRE.lev_closest_to_liquidation.collateral_usd;
+    fire(document.querySelector("#pos"), "spot");
+    if (Math.abs(rb - 3249471.575060609) > 1 || f.value !== "50,000,000" || f.readOnly) bad.push("after a real borrower: '" + f.value + "', borrower " + rb);
+    fire(f, "10,000,000");
+    /* the cash yield: decimal comma */
+    const alt0 = S.alt;
+    fire(document.querySelector("#alt"), "4,5");
+    if (S.alt !== 4.5) bad.push("cash yield 4,5 -> " + S.alt);
+    fire(document.querySelector("#alt"), String(alt0));
+    return bad;
+  })()`);
+  if (p8.errors.length) hdr.push("console errors: " + p8.errors.slice(0, 2).join(" | "));
+  /* back to the main page in the foreground: a background tab throttles timers and animation frames */
+  await b.send("Target.closeTarget", { targetId: p8.targetId });
+  await b.send("Target.activateTarget", { targetId: p.targetId });
+  gate(hdr.length === 0, `8. header: size field (default assumed D, typed 1M / 5M / 250k / 50M, invalid restored, read-only on-chain size for real borrowers, PT units line), cash yield in the header, no assumptions section${hdr.length ? ": " + hdr.slice(0, 4).join("; ") : ""}`);
 
   /* 6. vault view (FRONTEND_VAULT_GUIDE.md) */
   const vr = vaultRows();
