@@ -119,6 +119,10 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   with a tooltip; the duration events list (`#revents`) and the timeline chart (`#d-tl`) are in the dependency panel,
   the rail's red marks carry their change as a tooltip; the wallet field opens from "+ Wallet (optional)" (or when a
   wallet is set). Steps panel 252 px tall for a past event (was about 620).
+- Past mode picks its event in the "Incident type" column (user decision, 11 Oct): the past-incident select (with
+  its asterisk and description tooltip) is the column's first line, the incident type it sets ("dependency ·
+  failure", `#ro1`) the second; the "Simulate" row holds only the A past incident / Manual switch. Manual mode shows
+  the incident menu in the same place. (On the page these are "past incidents", never "examples": gate 2b.)
 - The chain panel is titled "Dependency mapping" in both views (user decision, 11 Oct). The duration events list
   ("How the path changes with the duration") is gone: the events live on the time frame rail only, as red marks with
   a tooltip naming the change and a click that jumps there (gate 7 clicks a mark).
