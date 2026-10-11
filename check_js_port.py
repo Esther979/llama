@@ -168,6 +168,40 @@ def main():
           + (f"  first mismatch {bbad[0]}" if bbad else ""))
     bad = bad + dbad + bbad
 
+    # the exit chart's cost of acting at every share (actCostCurve): JS = Python row by row, and its minimum is
+    # decideAt's decision (the recommended sale), with and without the duration inputs
+    from frontend_contract import act_cost_curve, decide_at_duration, _duration_inputs as duration_inputs
+    acombos = [(pk, k.split(":")[0], k.split(":")[1], sev, carry, None) for pk in d["position_presets"]
+               for k in d["ui"]["injections"] for sev in (0.5, 2, 10, 50) for carry in (0.0, 0.002)]
+    for pk in d["position_presets"]:
+        for (nd, fl, sev, h, rec) in (("usde", "depeg", 3, 6, True), ("usde", "depeg", 3, 24, False),
+                                      ("susde", "navLoss", 10, 720, False), ("oracle", "oracleLow", 2.77, 1, True)):
+            rr = decide_at_duration(d, pk, nd, fl, sev, h, rec, 0.04)
+            acombos.append((pk, nd, fl, sev, rr["carry"], duration_inputs(d, pk, rr, h, rec)))
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "a.json"), os.path.join(tmp, "a.js")
+        json.dump(acombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=require(process.argv[3]);const fs=require('fs');"
+                            "const a=JSON.parse(fs.readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(a.map(c=>M.actCostCurve(d,c[0],c[1],c[2],c[3],c[4],c[5]))));")
+        ja = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    abad, amin = [], []
+    for c, j in zip(acombos, ja):
+        py = act_cost_curve(d, *c)
+        if len(py["rows"]) != len(j["rows"]) or not all(
+                same(a[k], b[k]) for a, b in zip(py["rows"], j["rows"]) for k in a) or not same(py["cap"], j["cap"]):
+            abad.append(c[:4])
+        dec = decide_at(d, *c)
+        best = min(py["rows"], key=lambda r: r["total_usd"])
+        if not (same(best["total_usd"], dec["total_if_act_usd"], 1e-6)
+                and same(py["rows"][0]["total_usd"], dec["loss_if_stay_usd"], 1e-6)):
+            amin.append(c[:4])
+    print(f"GATE {'PASS' if not abad else 'FAIL'}  actCostCurve: {len(acombos)} cases equal in JS and Python, row by row"
+          + (f"  first mismatch {abad[0]}" if abad else ""))
+    print(f"GATE {'PASS' if not amin else 'FAIL'}  actCostCurve: its lowest total is decideAt's (total if act), its "
+          f"first row the loss if staying" + (f"  first mismatch {amin[0]}" if amin else ""))
+    bad = bad + abad + amin
+
     # sensitivity (no probability): same candidates, flips, effects and weakest link
     from frontend_contract import carry_of, sensitivity
     ccombos = [(alt, days) for alt in (None, 0.0, 0.02, 0.04, 0.0501, 0.08) for days in (None, 0.5, 10, 46, 100)]

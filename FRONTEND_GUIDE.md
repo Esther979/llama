@@ -323,6 +323,7 @@ Remove these old texts, the backend now contradicts them: "Type unknown", "Upstr
 
 ## 7. Exit panel
 
+- Chart (11 Oct): `RiskModel.actCostCurve(d, S.pos, S.node, S.fail, S.sev, r.carry, o)` with section 5b's inputs: `rows[]` (`fraction`, `slippage`, `sale_cost_usd`, `loss_kept_usd`, `total_usd`) on decide's grid up to the pool limit (`cap`). Plot `total_usd` (the cost of acting at each share) and `sale_cost_usd` against the share sold; the lowest total is the recommended sale (`r.sell_fraction`), the first row the loss if staying. It moves with the cash yield, the severity and the duration. Checked equal to Python (`act_cost_curve`) in `check_js_port.py`.
 - Today: per position, `const [curve, cap] = RiskModel.sizeCurve(d, P.collateral_usd)`: sellable now `cap` (= `r.sellable_now`), cost `slippageAt(cap, curve)`; the chart draws `curve`. `d.exit_curve` / `d.max_exit_fraction` are for the size input's position only (`spot`, `lev_market_avg`), not for the real-borrower presets (section 0b). Gas per USD size in `d.exit_curve_usd[i].gas_usd`.
 - If this plays out: `r.sellable_later` and `r.avg_cost_later` (null -> "No room left"). For `lending:cascade` and for failures where the oracle follows, these come from the real liquidation curve (`d.borrowers.exit_later`, oracle drops 0.5% to 40%, so the page's cascade slider range up to 40% is covered), replacing the "pool liquidity leaves" assumption.
 - Dashed curve: only for `market:drain` (the page's existing `stressCurve(sev / 100)`).

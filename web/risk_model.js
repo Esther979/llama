@@ -265,6 +265,24 @@
       loss_kept_usd: kept, total_if_act_usd: sale + kept, avoided_usd: L * E - sale - kept, stuck_fraction: dec.stuckFraction});
   }
 
+  /* The cost of acting at every share sold now, on decide's grid (port of frontend_contract.act_cost_curve): sale
+     x (slippage + carry) V on today's value, loss (1 - x) L E kept, total; its minimum is decideAt's sell_fraction. */
+  function actCostCurve(d, presetKey, node, fail, sev, carry = 0, opts = null, steps = 100) {
+    const r = inject(d, presetKey, node, fail, sev, opts), p = d.position_presets[presetKey], o = opts || {};
+    const C = 'collateral_usd' in o ? o.collateral_usd : p.collateral_usd;
+    const V = 'sale_value_usd' in o ? o.sale_value_usd : p.collateral_usd;
+    const E = C - ('debt_usd' in o ? o.debt_usd : p.debt_usd), L = r.L_high;
+    const raw = sizeCurve(d, V)[0], maxX = Math.max(...raw.map(c => c[0]));
+    const xs = [];
+    for (let i = 0; i <= steps && i / steps <= maxX + 1e-12; i++) xs.push(i / steps);
+    if (Math.abs(xs[xs.length - 1] - maxX) > 1e-12) xs.push(maxX);
+    const rows = xs.map(x => {
+      const sl = x > 0 ? slippageAt(x, raw) : 0, sale = x * (sl + carry) * V, kept = (1 - x) * L * E;
+      return {fraction: x, slippage: sl, sale_cost_usd: sale, loss_kept_usd: kept, total_usd: sale + kept};
+    });
+    return {rows, cap: maxX, value_usd: V, equity_usd: E, loss_if_stay_usd: L * E};
+  }
+
   /* Smallest severity at which selling starts / reaches the cap (port of frontend_contract.break_even_severity). */
   function breakEvenSeverity(d, presetKey, node, fail, carry = 0, lo = null, hi = null, steps = 400, opts = null) {
     const ft = d.failure_types.types[fail];
@@ -883,7 +901,7 @@
   }
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
-               inject, decideAt, breakEvenSeverity,
+               inject, decideAt, actCostCurve, breakEvenSeverity,
                sensitivity, decisionText, propagation, propagationAtDuration, propagationEvents, recoveryToggle, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

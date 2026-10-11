@@ -571,6 +571,33 @@ def decide_at(d, preset_key, node, fail, sev, carry=0.0, opts=None):
                 stuck_fraction=res["stuck_fraction"])
 
 
+def act_cost_curve(d, preset_key, node, fail, sev, carry=0.0, opts=None, steps=100):
+    """The cost of acting at every share x sold now, on decide's grid (0, 1/steps, ... up to the largest quote, plus
+    the quote itself when it is off the grid): the sale x * (slippage + carry) * V on today's value, the loss
+    (1 - x) * L * E kept on the rest, and their total, exactly as decide_at counts them; its minimum is decide_at's
+    sell_fraction. For the exit chart, so it follows the cash yield (carry) and the incident (L).
+    Mirrored by RiskModel.actCostCurve."""
+    from decision_core import slippage_at
+    r = inject(d, preset_key, node, fail, sev, opts)
+    p = d["position_presets"][preset_key]
+    o = opts or {}
+    C = o.get("collateral_usd", p["collateral_usd"])
+    E = C - o.get("debt_usd", p["debt_usd"])
+    V = o.get("sale_value_usd", p["collateral_usd"])
+    raw, _ = size_curve(d, V)
+    L = r["L_high"]
+    max_x = max(x for x, _ in raw)
+    xs = [i / steps for i in range(steps + 1) if i / steps <= max_x + 1e-12]
+    if abs(xs[-1] - max_x) > 1e-12:
+        xs.append(max_x)
+    rows = []
+    for x in xs:
+        sl = slippage_at(x, raw) if x > 0 else 0.0
+        sale, kept = x * (sl + carry) * V, (1 - x) * L * E
+        rows.append(dict(fraction=x, slippage=sl, sale_cost_usd=sale, loss_kept_usd=kept, total_usd=sale + kept))
+    return dict(rows=rows, cap=max_x, value_usd=V, equity_usd=E, loss_if_stay_usd=L * E)
+
+
 def break_even_severity(d, preset_key, node, fail, carry=0.0, lo=None, hi=None, steps=400, opts=None):
     """Smallest severity (failure's unit) at which selling starts, and at which it reaches the cap or full exit:
     scan + bisection on decide_at. None = not within [lo, hi]. Mirrored by RiskModel.breakEvenSeverity."""
