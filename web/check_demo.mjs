@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /* Browser check for web/demo.html (web/CLAUDE.md, "How to verify", steps 1 to 4, plus phone width and dark mode).
    Drives the installed Chrome over the DevTools protocol: no packages, Node 22+ (global WebSocket).
-   Usage: node web/check_demo.mjs [page.html]   (default web/demo.html; CHROME=/path/to/chrome overrides the browser)
-   Exit code 1 on any console error, failed check or acceptance mismatch. */
+   Usage: node web/check_demo.mjs [--quick] [page.html]   (default web/demo.html; CHROME=/path/to/chrome overrides the
+   browser). Full run about 40 s. --quick (about 15 s, while working): the big sweeps sampled (2g one duration, 4b and
+   7b fewer cases) and Play only started and stopped, not swept to the end; every gate still runs.
+   Exit code 1 on any console error, failed check, acceptance mismatch or a step that hangs (90 s per step). */
 
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, existsSync } from "node:fs";
@@ -11,7 +13,10 @@ import { join, dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const PAGE = pathToFileURL(resolve(process.argv[2] || join(HERE, "demo.html"))).href;
+const ARGS = process.argv.slice(2),
+  QUICK = ARGS.includes("--quick");
+const PAGE = pathToFileURL(resolve(ARGS.find((a) => !a.startsWith("--")) || join(HERE, "demo.html"))).href;
+const STEP_MS = +process.env.STEP_MS || 90000;
 const GUIDE = resolve(HERE, "..", "FRONTEND_GUIDE.md");
 const VGUIDE = resolve(HERE, "..", "FRONTEND_VAULT_GUIDE.md");
 const CHROME =
@@ -212,8 +217,13 @@ async function openPage(b, { width = 1400, dark = false } = {}) {
   );
   await s("Page.navigate", { url: PAGE });
   await loaded;
+  /* every step fails after STEP_MS instead of hanging (e.g. a tab sent to the background stops its timers) */
   const ev = async (expr) => {
-    const r = await s("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true });
+    let timer;
+    const r = await Promise.race([
+      s("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true }),
+      new Promise((_, no) => (timer = setTimeout(() => no(new Error(`a page step took over ${STEP_MS / 1000} s (hang, or the tab is in the background)`)), STEP_MS))),
+    ]).finally(() => clearTimeout(timer));
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
     return r.result.value;
   };
@@ -508,7 +518,7 @@ try {
     fire(document.querySelector("#replay"), "");
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
-      for (const h of [6, 24]) for (const rec of [true, false]) {
+      for (const [h, rec] of ${QUICK} ? [[24, false]] : [[6, true], [6, false], [24, true], [24, false]]) {
         setHours(h); S.recovers = rec;
         for (const k of Object.keys(NODES)) for (const f of fails(k))
           for (const sv of [FAIL[f].def, FAIL[f].max]) { setNode(k, f, sv); check(pk + " " + k + ":" + f + " @" + sv + " " + h + "h rec " + rec); }
@@ -672,7 +682,7 @@ try {
       fire(document.querySelector("#pos"), pk);
       for (const k of Object.keys(NODES)) for (const f of fails(k)) {
         const fl = FAIL[f];
-        for (const sv of [fl.min, fl.def, (fl.min + fl.max) / 2, fl.max]) {
+        for (const sv of ${QUICK} ? [fl.def, fl.max] : [fl.min, fl.def, (fl.min + fl.max) / 2, fl.max]) {
           setNode(k, f, sv);
           const m = model(), r = m.sev, today = usd(dd("Today")), later = dd("If this plays out"), tag = pk + " " + k + ":" + f + " @" + +sv.toFixed(2);
           n++;
@@ -764,19 +774,24 @@ try {
     const ev2 = eventsOf().events;
     out.example2 = ev2.map((e) => [+e.hours.toFixed(1), e.verdict_before, e.verdict_after]);
     if (ev2.length !== 1 || Math.abs(ev2[0].hours - 4190.4) > 0.1 || ev2[0].verdict_after !== "EXIT") out.bad.push("guide example 4,190.4 h: " + JSON.stringify(out.example2));
-    /* e. Play from 1 h: pauses past the event, reaches the end and stops; the label toggles */
+    /* e. Play from 1 h: pauses past the event, reaches the end and stops; the label toggles (about 10 s; --quick:
+       only that it starts) */
     setNode("usde", "depeg", 3);
     setHours(1);
     const play = document.querySelector("#play");
     play.click();
     const labelOn = play.textContent, t0 = performance.now();
     let paused = false;
-    while (PLAY.on && performance.now() - t0 < 30000) {
+    if (${QUICK}) {
+      out.play = { quick: true, on: PLAY.on, labelOn };
+      if (!PLAY.on || labelOn !== COPY.rail.pause) out.bad.push("play did not start: " + JSON.stringify(out.play));
+      play.click();
+    } else while (PLAY.on && performance.now() - t0 < 30000) {
       await new Promise((ok) => setTimeout(ok, 100));
       if (PLAY.hold > 0 && Math.abs(S.hours - 16 * 1.0005) < 1e-6) paused = true;
     }
-    out.play = { ms: Math.round(performance.now() - t0), end: S.hours, labelOn, labelOff: play.textContent, paused };
-    if (PLAY.on || S.hours !== H_MAX || labelOn !== COPY.rail.pause || play.textContent !== COPY.rail.play || !paused)
+    if (!${QUICK}) out.play = { ms: Math.round(performance.now() - t0), end: S.hours, labelOn, labelOff: play.textContent, paused };
+    if (!${QUICK} && (PLAY.on || S.hours !== H_MAX || labelOn !== COPY.rail.pause || play.textContent !== COPY.rail.play || !paused))
       out.bad.push("play: " + JSON.stringify(out.play));
     /* a drag or a key stops Play */
     setHours(1); play.click(); key("ArrowRight");
@@ -797,7 +812,7 @@ try {
     thumb: document.querySelector("#rthumb").style.left, now: +document.querySelector("#rthumb").getAttribute("aria-valuenow") }))))`);
   if (Math.abs(atPress - 0.2) > 0.01 || Math.abs(dragged.u - 0.6) > 0.01 || Math.abs(parseFloat(dragged.thumb) - 60) > 1)
     rail.bad.push(`pointer drag: pressed at u ${atPress.toFixed(3)}, released at u ${dragged.u.toFixed(3)}, thumb ${dragged.thumb}`);
-  gate(rail.bad.length === 0, `7. time rail (pointer drag included): ${rail.marks} event marks and the two reference marks as the model's events (48 cases), recovers toggle on ${rail.toggles} of them, one duration control, keys, event click (thumb, layers, verdict, flash), guide examples ${JSON.stringify(rail.example)} and ${JSON.stringify(rail.example2)}, Play ${rail.play ? rail.play.ms + " ms" : "-"}`);
+  gate(rail.bad.length === 0, `7. time rail (pointer drag included): ${rail.marks} event marks and the two reference marks as the model's events (48 cases), recovers toggle on ${rail.toggles} of them, one duration control, keys, event click (thumb, layers, verdict, flash), guide examples ${JSON.stringify(rail.example)} and ${JSON.stringify(rail.example2)}, Play ${!rail.play ? "-" : rail.play.quick ? "started and stopped (--quick: not swept)" : rail.play.ms + " ms"}`);
   rail.bad.slice(0, 8).forEach((x) => console.log("           " + x));
 
   /* 7b. timeline chart (guide 5b): RiskModel.timeline's points, timelineSummary's lines, one band per answer between
@@ -808,7 +823,7 @@ try {
     fire(document.querySelector("#replay"), "");
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
-      for (const k of Object.keys(NODES)) for (const f of fails(k)) for (const rec of [true, false]) {
+      for (const k of Object.keys(NODES)) for (const f of fails(k)) for (const rec of ${QUICK} ? [false] : [true, false]) {
         setNode(k, f); S.recovers = rec; setHours(30);
         const tag = pk + " " + k + ":" + f + " rec " + rec, T = COPY.tl;
         const rows = RiskModel.timeline(d, pk, k, f, S.sev, rec, S.alt / 100), sum = RiskModel.timelineSummary(d, pk, rows),
@@ -1060,5 +1075,5 @@ try {
 } finally {
   b.close();
 }
-console.log(failures ? `\n${failures} check(s) failed` : "\nAll checks passed");
+console.log((failures ? `\n${failures} check(s) failed` : "\nAll checks passed") + (QUICK ? " (--quick: sampled; run without it before a commit)" : ""));
 process.exit(failures ? 1 : 0);
