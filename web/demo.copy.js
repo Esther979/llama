@@ -4,8 +4,8 @@
 const COPY = {
   /* Step hints. An incident is set by hand or loaded from a real past event (no detector, no invented incidents). */
   steps: {
-    hint: "Pick any dependency, then set the failure and how bad by hand.",
-    pastHint: "Set by the past event. Switch to Manual to test other values.",
+    /* a past event's steps 1 and 2, as text */
+    ro: (fail, sev) => `${fail} · ${sev}`,
   },
 
   /* How the incident is set: a past event or by hand, one or the other. */
@@ -32,9 +32,9 @@ const COPY = {
      its stated alternative, the decision rerun. */
   sens: {
     title: "What would change the answer",
-    hinges: (alt, grade, verdict) => `The answer hinges on: ${alt} (grade ${grade}) → ${verdict}.`,
+    hinges: (alt, grade, verdict) => `The answer hinges on: ${alt} → ${verdict}.`,
     robust: "No tested assumption changes the answer.",
-    cols: ["If instead", "Grade", "Answer"],
+    cols: ["If instead", "Answer"],
     others: "Other positions, same incident",
     flips: "changes the answer",
     loses: (v) => `doing nothing loses ${v}`,
@@ -72,7 +72,6 @@ const COPY = {
     keyCost: "Cost of selling",
     stuckLine: (a, b) => `<b>${a} cannot be sold through Pendle now.</b> With the rest you keep, ${b} stays at risk.`,
     range: (lo, hi) => `Loss is between ${lo} and ${hi} depending on the oracle; the decision uses the high end.`,
-    source: (src) => `Losses, the decision and these texts come from the backend model (RiskModel.decideAtDuration, decisionText). ${src}`,
   },
 
   /* Time rail: how long the incident lasts (guide sections 5b and 6). Event texts are RiskModel.propagationEvents'
@@ -86,8 +85,10 @@ const COPY = {
     after: "After the incident",
     recovers: "Recovers",
     stays: "Stays",
-    stepLine: (dur, rec) =>
-      `Lasts ${dur}${rec === null ? "" : rec ? ", recovers" : ", stays"}: set in step 3 below.`,
+    recovery: "Recovery",
+    evHead: "How the path changes with the duration (step 3)",
+    markTip: (dur, verdict, layers) => `From ${dur}: ${[verdict, layers].filter(Boolean).join("; ")}. Click to go there.`,
+    layerShort: (n, from, to) => `layer ${n} ${from} → ${to}`,
     oracle: (dur) => `oracle switch ${dur}`,
     expiry: "PT expiry",
     pastMark: (dur) => `the past event: ${dur}`,
@@ -130,16 +131,45 @@ const COPY = {
 
   /* Exit chart (RiskModel.actCostCurve): the cost of acting at every share sold now. */
   exit: {
-    keyTotal: "Total if you sell this share (sale cost + loss on the rest)",
-    keySale: "Sale cost (slippage + yield given up)",
-    keyRec: "Recommended sale (lowest total)",
+    keySale: "Sale cost",
+    keyKept: "Loss on the part kept",
+    keyTotal: "Total (the two added)",
+    keyNo: "Beyond Pendle's limit: cannot sell now",
+    lowest: (v, x) => `Lowest ${v} at x = ${x}`,
+    sayNoLoss: "Keep it all: this incident costs this position nothing.",
+    sayStay: (v) => `Keep it all: staying costs ${v}, less than any sale.`,
+    saySell: (x, amt, sale, kept, total, stay, saved) =>
+      `Sell ${x} (${amt}): sale cost ${sale}, loss on the rest ${kept}, total ${total}, ${saved} less than keeping it all (${stay}).`,
+    sayStuck: (p) => `The other ${p} cannot be sold now.`,
+    carry: (cash, pt, dur, share, usd) =>
+      `Cash earns ${cash} vs the PT's ${pt} a year. Over this ${dur} incident, selling gives up ${share} of the amount sold (${usd} on a full sale): a short incident leaves the chart almost unchanged; a longer one (step 3) moves it.`,
+    carryNone: (pt) => `Cash earns at least the PT's ${pt} a year: selling gives up no yield, so the cash yield does not move the chart.`,
+    be: "Break-even severity:",
+    beStart: "selling starts",
+    beCap: "to the pool limit / all",
+    beNever: "not on this slider",
+    beRange: (lo, hi) => `(slider ${lo} to ${hi})`,
     sell: (p) => `Sell ${p}`,
-    xAxis: "Share of the position sold",
+    xAxis: "Share sold now, x",
     refuses: ["Pendle refuses", "sales this large"],
     aria: (cap) =>
       `Cost of acting against the share sold now: the total (sale cost plus loss on the rest) and the sale cost alone. Pendle quotes up to ${cap}.`,
     tip: (sale, kept, total) => `Sale cost ${sale} + loss kept ${kept} = ${total}`,
     interp: "Slippage between two quoted sizes is interpolated.",
+  },
+
+  /* Layers display in the explainer's propagation form: "Layer n · name", a state badge, the layer's text. */
+  layers: {
+    head: (n, name) => `Layer ${n} · ${name}`,
+    position: "Your position",
+    state: {
+      origin: "Origin",
+      hit: "Affected",
+      unchanged: "Unchanged",
+      not_applicable: "Not applicable",
+      not_modelled: "Not modelled",
+      unknown: "Unknown",
+    },
   },
 
   /* "How it spreads": RiskModel.propagation's steps in causal order (guide section 6). */
@@ -155,7 +185,7 @@ const COPY = {
     assumed: (g, source) => `<span class="asm" title="${source}">assumed</span> ${g}`,
     typed: "your input",
     onChain: (g) => `read on chain ${g}`,
-    altLabel: (g) => `Cash earns after selling, % APY ${g}`,
+    altLabel: (g) => `And if you sell: cash earns, % APY ${g}`,
     line: (units, price, share, cap) => `${units} PT at ${price}; sellable now: ${share} (${cap} pool limit).`,
     editHint: "Size of a real borrower, read on chain: pick “PT held outright” or the market-average preset to set your own.",
     editHintWallet: "Size of this wallet's position, read on chain.",
@@ -165,6 +195,7 @@ const COPY = {
   wallet: {
     label: "Wallet (optional)",
     placeholder: "0x… a borrower of this market, or a wallet read on chain",
+    add: "+ Wallet (optional)",
     optBorrower: (coll, ltv) => `borrower of this market · collateral ${coll} · LTV ${ltv}`,
     optWallet: "wallet read on chain",
     invalid: "Not an Ethereum address (0x and 40 hexadecimal characters).",
@@ -204,7 +235,7 @@ const COPY = {
         ? "Withdrawing does not pay at any severity on this slider."
         : `Withdrawing the free part pays once it loses more than ${beFree}` +
           (beForced !== null && beForced !== beFree ? `; forcing out the rest from ${beForced}.` : "."),
-    anchors: "Ticks: historical anchors (C).",
+    anchors: "Ticks: historical anchors.",
     notFound:
       "This vault is not in the analysed list. Add it to sample_data/rockawayx_vaults.csv and run vault_pipeline.py.",
     notCovered: (name, note) => `${name}: ${note}. No numbers for this vault.`,
@@ -262,15 +293,15 @@ const COPY = {
         : "No analysed credit incident: the locked part carries no modelled loss.",
     issuerNote: "Second-order effects on borrowers (their debt is in the same asset) are not modelled.",
     assumption: (alt) =>
-      `Alternative yield ${alt} a year (D); the yield given up is counted over the incident's duration, set in step 3.`,
+      `Alternative yield ${alt} a year (your assumption); the yield given up is counted over the incident's duration, set in step 3.`,
     /* Duration of a vault incident (guide 3, "Timeline"). */
     dur: {
-      recWhy: "Whether the token comes back after the incident is your assumption (D); liquidations during it stay.",
+      recWhy: "Whether the token comes back after the incident is your assumption; liquidations during it stay.",
       noRec: "This incident has one loss grid: recovering does not change it.",
       switchAt: (dur) => `oracle switch ${dur}`,
       chartTitle: "Loss if staying, by how long the incident lasts",
       chartNote: (cur) =>
-        `Amounts in ${cur}. Held constant over the incident: the vault's allocations, its market liquidity and the yields (D).`,
+        `Amounts in ${cur}. Held constant over the incident: the vault's allocations, its market liquidity and the yields.`,
     },
     verdictWord: { STAY: "Stay", EXIT: "Exit", EXIT_PARTIAL: "Exit part", REVIEW: "Review" },
     /* Details under the vault card (guide section 3). */
@@ -301,13 +332,13 @@ const COPY = {
       pmCols: ["Shock", "Collateral", "Oracle follows", "Market bad debt", "Vault loss"],
       yes: "yes",
       no: "no",
-      pmNote: (cur) => `Each market at the historical shocks of the slider's anchors (C); amounts in ${cur}.`,
+      pmNote: (cur) => `Each market at the historical shocks of the slider's anchors; amounts in ${cur}.`,
       mkTitle: (n) => `Markets the vault lends on (${n})`,
       mkCols: ["Collateral", "Type", "Allocation", "Of vault", "Of market", "Oracle", "Borrowers", "Max LTV / limit", "Debt within 1% of liquidation"],
       notAnalysed: "(not analysed)",
       follows: (mkt, und) =>
         `(follows ${[mkt ? "its market" : null, und ? "the underlying" : null].filter(Boolean).join(" and ") || "neither"})`,
-      mkNote: (cur) => `Read on chain at the vault's block (A); amounts in ${cur}. The affected markets of this incident are highlighted.`,
+      mkNote: (cur) => `Read on chain at the vault's block; amounts in ${cur}. The affected markets of this incident are highlighted.`,
     },
   },
 

@@ -77,10 +77,10 @@
         const v = h < 48 ? h : h / 24;
         return String(v < 10 ? +v.toFixed(1) : Math.round(v)) + (h < 48 ? " h" : " days");
       };
-      const gr = (g) =>
-        g
-          ? `<span class="gr ${g}" title="${d.evidence.grades[g] || ""}">${g}</span>`
-          : "";
+      /* No evidence grades on the page (user decision, 11 Oct): gr() shows nothing, ng() drops "(grade X)" from the
+   model's texts. The data keep their grades; grade D still draws dashed (an assumption). */
+      const gr = () => "";
+      const ng = (t) => String(t || "").replace(/ \(grade [A-D]\)/g, "");
       const src = (e) => (e ? `${gr(e.grade)} ${e.source}` : "");
       /* The page's own table, kept as the guide asks: label, unit, range and starting value. No loss functions and
    no probabilities here: the decision assumes the incident has happened (guide, rule 5). */
@@ -175,30 +175,6 @@
           (f) => FAIL[f] && d.ui.injections[k + ":" + f],
         );
       const BW = d.borrowers || {};
-      const LFACT = {
-        1: { head: NODES.eth.label, fact: "Every contract below settles here" },
-        2: {
-          head: "sUSDe, backed by USDe and Ethena",
-          fact: "The PT redeems to sUSDe at expiry",
-        },
-        3: {
-          head: NODES.oracle.contract_name || NODES.oracle.label,
-          fact: NODES.oracle.note || "",
-        },
-        4: {
-          head: NODES.market.label,
-          get fact() {
-            const C = PRE[S.pos].collateral_usd;
-            return `You can sell ${money(MAXX * C)} of ${money(C)} today`;
-          },
-        },
-        5: {
-          head: NODES.lending.label,
-          fact: BW.distribution
-            ? `${BW.distribution.n_borrowers} borrowers; Morpho liquidations would exceed the pool from a ${pc(BW.first_drop_seized_exceeds_capacity)} oracle drop`
-            : "",
-        },
-      };
       /* Edges come from the data only, including the two to the position (pt -> holding, lending -> liquidation for
    the presets in applies_to). The data names the position "position"; the page draws it as "pos". */
       const EDGES = d.ui.edges.map((e) =>
@@ -328,28 +304,31 @@
         EXIT: "cap",
       };
 
-      /* Layers display: each row's state and text are RiskModel.propagation's (guide section 6). */
+      /* Layers display, in the explainer's propagation form (user decision, 11 Oct): per layer "Layer n · name", its
+   state badge and RiskModel.propagation's text for that layer; then the position (its step) and the result (the
+   verdict and its step). The static layer heads and facts are gone. The rows stay buttons (manual mode: test an
+   incident at that layer) and keep "Show dependencies and evidence". */
       const HOT = (st) => st === "origin" || st === "hit";
+      const stBadge = (st) => `<span class="st" data-st="${st}">${COPY.layers.state[st] || st}</span>`;
       function renderList(m, idle) {
         const pg = m.pg,
+          T = COPY.layers,
           org = idle ? 0 : pg.origin.layer,
-          P = m.P,
-          posStep = pg.steps.find((x) => x.node === "position");
+          posStep = pg.steps.find((x) => x.node === "position"),
+          res = pg.steps.find((x) => x.node === "result");
         let h = LAY.map((L) => {
           const ids = L.nodes,
             pl = pg.layers.find((x) => x.n === L.n) || { state: "unchanged", text: "" },
             hot = !idle && HOT(pl.state),
-            open = !!S.more[L.n],
-            lf = LFACT[L.n];
+            open = !!S.more[L.n];
           const past = org === L.n && !!S.past,
             hyp = org === L.n && !S.past;
           const tags =
             (past ? `<span class="tag det">${COPY.past.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
-          const fact = lf.fact;
           return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}" data-state="${pl.state}" data-ln="${L.n}"><span class="ln">${L.n}</span>
       <button class="lrow" data-layer="${L.n}" aria-label="Test an incident at layer ${L.n}, ${L.name}">
-        <span class="lt"><span class="lbl">${L.name}</span><b>${lf.head}${tags}</b><span class="fact">${fact}</span>${idle ? "" : `<span class="eff ${hot ? "" : "n"}">${pl.text}</span>`}</span></button>
+        <span class="lt"><span class="lhd"><span class="lname2">${T.head(L.n, L.name)}</span>${idle ? "" : stBadge(pl.state)}${tags}</span>${idle ? "" : `<span class="eff">${pl.text}</span>`}</span></button>
       <button class="more" data-more="${L.n}" aria-expanded="${open}">${open ? "Hide" : "Show"} ${ids.length} ${ids.length > 1 ? "dependencies" : "dependency"} and evidence</button>
       ${
         open
@@ -364,8 +343,10 @@
       }
     </div>`;
         }).join("");
-        const ph = !idle && posStep && HOT(posStep.state);
-        h += `<div class="lay pos ${ph ? "hot" : ""}" data-state="${posStep ? posStep.state : "unchanged"}"><span class="ln">◆</span><div class="lrow"><span class="lt"><span class="lbl">Your position</span><b>${isLev() ? "PT posted as collateral" : "PT held outright"}</b><span class="fact">${isLev() ? `Collateral ${money(P.collateral_usd)}, debt ${money(P.debt_usd)}` : money(P.collateral_usd)}</span>${posStep && !idle ? `<span class="eff">${posStep.text}</span>` : ""}</span></div></div>`;
+        if (!idle && posStep)
+          h += `<div class="lay pos" data-state="${posStep.state}"><span class="ln">◆</span><div class="lrow"><span class="lt"><span class="lhd"><span class="lname2">${T.position}</span>${stBadge(posStep.state)}</span><span class="eff">${posStep.text}</span></span></div></div>`;
+        if (!idle && res)
+          h += `<div class="lay res" data-state="result"><span class="ln">=</span><div class="lrow"><span class="lt"><span class="lhd"><span class="vb ${VCLASS[pg.verdict]}">${pg.verdict}</span></span><span class="eff">${res.text}</span></span></div></div>`;
         $("#chain").innerHTML = h;
       }
 
@@ -543,7 +524,7 @@
           f = m.f,
           vw = (v) => T.verdict[v] || v;
         const row = (c) =>
-          `<tr class="${sv.weakest && c === sv.weakest ? "best" : ""} ${c.flips ? "flip" : ""}"><td>${c.alternative}</td><td>${gr(c.grade)}</td><td>${vw(c.verdict)}${c.flips ? ` <span class="note">(${T.flips})</span>` : ""}${c.comparison && c.loss_if_stay_usd > 0 ? `<span class="note"> · ${T.loses(money(c.loss_if_stay_usd))}</span>` : ""}</td></tr>`;
+          `<tr class="${sv.weakest && c === sv.weakest ? "best" : ""} ${c.flips ? "flip" : ""}"><td>${c.alternative}</td><td>${vw(c.verdict)}${c.flips ? ` <span class="note">(${T.flips})</span>` : ""}${c.comparison && c.loss_if_stay_usd > 0 ? `<span class="note"> · ${T.loses(money(c.loss_if_stay_usd))}</span>` : ""}</td></tr>`;
         const own = sv.candidates.filter((c) => !c.comparison),
           other = sv.candidates.filter((c) => c.comparison);
         const head = sv.weakest
@@ -559,7 +540,7 @@
           T.title,
           `<p class="sens-head">${head}</p>
       <div class="tw"><table class="sens"><thead><tr>${T.cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${own.map(row).join("")}${
-        other.length ? `<tr class="grp"><th colspan="3">${T.others}</th></tr>${other.map(row).join("")}` : ""
+        other.length ? `<tr class="grp"><th colspan="2">${T.others}</th></tr>${other.map(row).join("")}` : ""
       }</tbody></table></div>
       <dl><dt>${T.severity}</dt><dd>${sevFlip}</dd><dt>${T.rule}</dt><dd>${T.ruleText}</dd></dl>`,
         );
@@ -613,10 +594,11 @@
           if (v === "SELL_TO_CAP" && stuckUsd > 0)
             body += `<div class="stuck">${K.stuckLine(money(stuckUsd), money(s.loss_kept_usd))}</div>`;
         }
+        /* the break-even sentence (on the severity slider and under the exit chart), the propagation rule (the reasons
+   say it) and the model / source note are not on the card (user decision, 11 Oct) */
         body += `<ul class="reasons">${t.reasons.map((x) => `<li>${x}</li>`).join("")}</ul>
-      <p class="note">${t.break_even}</p><p class="note">${t.hinges_on}</p>`;
+      <p class="note">${ng(t.hinges_on)}</p>`;
         if (s.L_low !== s.L_high) body += `<p class="note">${K.range(pc(s.L_low, 1), pc(s.L_high, 1))}</p>`;
-        body += `<p class="note rule">${cap1(t.rule)}.</p><p class="note">${K.source(src(d.evidence.mechanism))}</p>`;
         body += sensBlock(m);
         $("#decision").innerHTML =
           `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : K.whatIf} · ${t.title}</span>
@@ -632,7 +614,7 @@
         $("#spread").innerHTML = steps
           .map(
             (x) =>
-              `<li data-state="${x.state}" data-node="${x.node}">${x.text} ${x.grade ? gr(x.grade) : `<span class="note">(${T.input})</span>`}</li>`,
+              `<li data-state="${x.state}" data-node="${x.node}">${x.text}</li>`,
           )
           .join("");
       }
@@ -706,6 +688,9 @@
                 ? W.noPT(BW.block)
                 : W.found(found.map((k) => PRE[k].label).join("; "), BW.block, gr("A"));
         wm.hidden = !wm.innerHTML;
+        /* the optional wallet field stays behind "+ Wallet" until asked for or used */
+        $("#walletBox").hidden = !(S.walletOpen || S.wallet || S.walletBad);
+        $("#walletAdd").hidden = !$("#walletBox").hidden;
         wm.dataset.state = S.walletBad ? "bad" : !S.wallet ? "" : d.wallet_read === false ? "unread" : d.wallet_found ? "found" : "empty";
       }
 
@@ -743,7 +728,8 @@
         $("#rec").innerHTML =
           (rt.show
             ? `<span class="note">${T.after}</span><span class="mode sm" role="group" aria-label="${T.after}"><button data-rec="1" aria-pressed="${S.recovers}">${T.recovers}</button><button data-rec="0" aria-pressed="${!S.recovers}">${T.stays}</button></span>`
-            : "") + `<span class="note rwhy">${rt.reason}</span>`;
+            : `<span class="note">${T.recovery}</span>`) +
+          `<span class="rwhy" tabindex="0" role="note" title="${ng(rt.reason).replace(/"/g, "&quot;")}" aria-label="${ng(rt.reason).replace(/"/g, "&quot;")}">ⓘ</span>`;
         /* grey reference marks (oracle switch, expiry, the past event's own duration), one red mark per event */
         const refs = [];
         if (TL !== null) refs.push([+TL, T.oracle(durText(+TL))]);
@@ -756,7 +742,7 @@
           ev.events
             .map(
               (e, i) =>
-                `<button class="rm ev ${S.hours >= e.hours ? "passed" : ""}" style="left:${at(e.hours)}" data-evh="${i}" data-h="${e.hours}" aria-label="${T.jump(durText(e.hours))}"></button>`,
+                `<button class="rm ev ${S.hours >= e.hours ? "passed" : ""}" style="left:${at(e.hours)}" data-evh="${i}" data-h="${e.hours}" aria-label="${T.jump(durText(e.hours))}" title="${T.markTip(durText(e.hours), e.verdict_before !== e.verdict_after ? `${COPY.sens.verdict[e.verdict_before] || e.verdict_before} → ${COPY.sens.verdict[e.verdict_after] || e.verdict_after}` : "", e.layers.map((l) => T.layerShort(l.n, T.state[l.from] || l.from, T.state[l.to] || l.to)).join("; "))}"></button>`,
             )
             .join("");
         $("#raxis").innerHTML = T.ticks
@@ -776,7 +762,7 @@
         th.style.left = at(S.hours);
         th.setAttribute("aria-valuenow", +S.hours.toFixed(2));
         th.setAttribute("aria-valuetext", durText(S.hours));
-        $("#durNote").textContent = T.stepLine(durText(S.hours), rt.show ? S.recovers : null);
+        $("#evHead").textContent = T.evHead;
       }
       /* Timeline chart (guide 5b), in a fold under the rail and on its axis: loss if staying at the model's grid of
    durations (RiskModel.timeline), the background coloured by the answer between the events' exact durations, grey
@@ -909,49 +895,76 @@
       /* Exit chart: RiskModel.actCostCurve, the model's cost of acting at every share sold now (sale on today's value
    with slippage and the yield given up over the incident, loss kept on the rest; minimum = the recommended sale), so
    it moves with the cash yield, the incident and its duration. Money on the y axis. */
-      const CH = { W: 392, H: 190, l: 48, r: 10, t: 10, b: 48, ymax: 1 };
+      const CH = { W: 392, H: 230, l: 50, r: 10, t: 10, b: 36, ymax: 1 };
       function useCurve(posKey) {
         [CURVE, MAXX] = RM.sizeCurve(d, PRE[posKey].collateral_usd);
       }
-      const nice = (v) => {
-        if (!(v > 0)) return 1;
+      const niceStep = (v) => {
         const e = Math.pow(10, Math.floor(Math.log10(v))),
-          n = v / e;
-        return (n <= 1.5 ? 1.5 : n <= 3 ? 3 : n <= 6 ? 6 : 12) * e;
+          f = v / e;
+        return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e;
       };
       const CX = (f) => CH.l + f * (CH.W - CH.l - CH.r),
-        CY = (v) =>
-          CH.H - CH.b - (Math.min(v, CH.ymax) / CH.ymax) * (CH.H - CH.t - CH.b);
+        CY = (v) => CH.H - CH.b - (Math.min(v, CH.ymax) / CH.ymax) * (CH.H - CH.t - CH.b);
+      /* Ported from the explainer's "balance" chart: sale cost, loss on the rest and their total against the share
+   sold now (RiskModel.actCostCurve), the lowest total marked; the part Pendle refuses today hatched. */
       function chart(m) {
         const { W, H, l, r, t, b } = CH,
           K = COPY.exit,
           rows = m.ac.rows;
-        CH.ymax = nice(Math.max(...rows.map((x) => Math.max(x.total_usd, x.sale_cost_usd))));
+        const top = Math.max(1, m.ac.loss_if_stay_usd, ...rows.map((x) => Math.max(x.sale_cost_usd, x.total_usd))),
+          step = niceStep(top / 3);
+        CH.ymax = Math.ceil(top / step) * step;
         const line = (k) => rows.map((x) => `${CX(x.fraction).toFixed(1)},${CY(x[k]).toFixed(1)}`).join(" ");
-        let rec = "";
-        const best = rows.find((x) => Math.abs(x.fraction - m.x) < 1e-9);
-        if (m.x > 0 && best) {
-          const rx = CX(m.x),
-            ry = CY(best.total_usd);
-          rec = `<line class="rec" x1="${rx}" y1="${CY(0)}" x2="${rx}" y2="${ry}"/><circle class="recd" cx="${rx}" cy="${ry}" r="5"/><text class="rt" x="${rx}" y="${H - b + 27}" text-anchor="middle">${K.sell(pc(m.x, 0))}</text>`;
-        }
-        const xt = [...new Set([0, Math.round(MAXX * 10) / 20, MAXX, 1])];
+        const best = rows.reduce((a, x) => (x.total_usd < a.total_usd - 1e-9 ? x : a), rows[0]);
+        const bx = CX(best.fraction),
+          by = CY(best.total_usd),
+          lx = Math.min(Math.max(bx, l + 58), W - r - 58);
+        let grid = "";
+        for (let v = 0; v <= CH.ymax + 1e-9; v += step)
+          grid += `<line class="ax" x1="${l}" y1="${CY(v)}" x2="${W - r}" y2="${CY(v)}"/><text x="${l - 6}" y="${CY(v) + 4}" text-anchor="end">${money(v)}</text>`;
+        const xt = [...new Set([0, 0.25, 0.5, 0.75, 1].filter((f) => Math.abs(f - MAXX) > 0.08).concat(MAXX < 1 - 1e-9 ? [MAXX] : []))];
         return `<svg class="chart" id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${K.aria(pc(MAXX, 0))}">
-   ${MAXX < 1 - 1e-9 ? `<rect class="no" x="${CX(MAXX)}" y="${t}" width="${CX(1) - CX(MAXX)}" height="${H - t - b}"/>` : ""}
-   ${[0, 1, 2, 3]
-     .map((i) => (CH.ymax * i) / 3)
-     .map(
-       (v) =>
-         `<line class="ax" x1="${l}" y1="${CY(v)}" x2="${W - r}" y2="${CY(v)}"/><text x="${l - 6}" y="${CY(v) + 4}" text-anchor="end">${money(v)}</text>`,
-     )
-     .join("")}
+   ${MAXX < 1 - 1e-9 ? `<rect class="no" x="${CX(MAXX)}" y="${t}" width="${CX(1) - CX(MAXX)}" height="${H - t - b}"/><text class="no-lbl" x="${CX((1 + MAXX) / 2)}" y="${t + 14}" text-anchor="middle">${K.refuses[0]}</text><text class="no-lbl" x="${CX((1 + MAXX) / 2)}" y="${t + 28}" text-anchor="middle">${K.refuses[1]}</text>` : ""}
+   ${grid}
    ${xt.map((f) => `<text x="${CX(f)}" y="${H - b + 14}" text-anchor="${f === 1 ? "end" : f === 0 ? "start" : "middle"}">${pc(f, 0)}</text>`).join("")}
-   <text x="${l}" y="${H - 5}">${K.xAxis}</text>
-   ${MAXX < 1 - 1e-9 ? `<line class="cliff" x1="${CX(MAXX)}" y1="${t}" x2="${CX(MAXX)}" y2="${H - b}"/>
-   <text x="${CX((1 + MAXX) / 2)}" y="${t + 58}" text-anchor="middle">${K.refuses[0]}</text><text x="${CX((1 + MAXX) / 2)}" y="${t + 72}" text-anchor="middle">${K.refuses[1]}</text>` : ""}
-   <polyline class="sv" points="${line("sale_cost_usd")}"/>
-   <polyline class="cv" points="${line("total_usd")}"/>${rec}
+   <text x="${l + (W - l - r) / 2}" y="${H - 5}" text-anchor="middle">${K.xAxis}</text>
+   <polyline class="ln-kept" points="${line("loss_kept_usd")}"/>
+   <polyline class="ln-sale" points="${line("sale_cost_usd")}"/>
+   <polyline class="ln-total" points="${line("total_usd")}"/>
+   <line class="best-guide" x1="${bx}" x2="${bx}" y1="${t}" y2="${H - b}"/><circle class="best-dot" cx="${bx}" cy="${by}" r="5.5"/>
+   <text class="best-lbl" x="${lx}" y="${Math.max(by - 10, t + 40)}" text-anchor="middle">${K.lowest(money(best.total_usd), pc(best.fraction, 0))}</text>
    <line class="cross" id="cross" x1="0" x2="0" y1="${t}" y2="${H - b}" visibility="hidden"/></svg>`;
+      }
+      /* The chart's caption (the explainer's sentence): what selling the recommended share costs against staying. */
+      function exitSay(m) {
+        const r = m.sev,
+          K = COPY.exit,
+          V = m.ac.value_usd;
+        if (r.verdict === "STAY")
+          return r.loss_if_stay_usd <= 0 ? K.sayNoLoss : K.sayStay(money(r.loss_if_stay_usd));
+        return (
+          K.saySell(pc(r.sell_fraction, 0), money(r.sell_fraction * V), money(r.sale_cost_usd), money(r.loss_kept_usd), money(r.total_if_act_usd), money(r.loss_if_stay_usd), money(r.avoided_usd)) +
+          (r.verdict === "SELL_TO_CAP" ? " " + K.sayStuck(pc(1 - r.sell_fraction, 0)) : "")
+        );
+      }
+      /* What the cash yield does here (user report, 11 Oct: typing it seemed to change nothing). The yield given up is
+   the model's r.carry, over the incident's duration (at most until expiry): tiny for a short incident, so the chart
+   barely moves; this line shows the amount so the input is never silent. */
+      function carryLine(m) {
+        const K = COPY.exit,
+          apy = d.time_model.implied_apy;
+        if (S.alt / 100 >= apy - 1e-12) return K.carryNone(pc(apy, 2));
+        const c = m.cy,
+          cs = c >= 0.001 ? pc(c, 2) : c >= 1e-5 ? pc(c, 4) : pc(c, 6);
+        return K.carry(pc(S.alt / 100, 2), pc(apy, 2), durText(Math.min(S.hours, d.time_model.days_to_expiry * 24)), cs, money(c * m.ac.value_usd));
+      }
+      /* Break-even severities under the chart (the same m.be as step 2's zones). */
+      function exitBe(m) {
+        const K = COPY.exit,
+          f = m.f,
+          v = (x) => (x === null ? K.beNever : (x <= f.min + 1e-9 ? "≤ " : "") + sevText(x));
+        return `<span>${K.be}</span><span>${K.beStart} <b>${v(m.be.start)}</b></span><span>${K.beCap} <b>${v(m.be.cap)}</b></span><span class="note">${K.beRange(sevText(f.min), sevText(f.max))}</span>`;
       }
       function renderExit(m, idle) {
         const C = m.C,
@@ -1008,8 +1021,11 @@
         $("#exit").innerHTML =
           `<div class="phead"><h2>Can you get out?</h2><span class="note">Real Pendle quotes, ${DAY}</span></div>
    <dl><dt>Today</dt><dd>Up to ${money(cap)} (${pc(s.sellable_now, 0)}), costing ${pc(last, 2)} in slippage.</dd>${later ? `<dt>If this plays out</dt><dd>${later}</dd>` : ""}</dl>
-   <div class="ckey"><span><i class="sw-line"></i>${COPY.exit.keyTotal}</span><span><i class="sw-dash"></i>${COPY.exit.keySale}</span>${m.x > 0 ? `<span><i class="sw-dot"></i>${COPY.exit.keyRec}</span>` : ""}</div>
+   <div class="cverdict"><span class="vb ${VCLASS[s.verdict]}">${s.verdict}</span><span>${exitSay(m)}</span></div>
+   <p class="note ccarry" id="carryLine">${carryLine(m)}</p>
+   <div class="ckey"><span><i class="sw-sale"></i>${COPY.exit.keySale}</span><span><i class="sw-kept"></i>${COPY.exit.keyKept}</span><span><i class="sw-total"></i>${COPY.exit.keyTotal}</span>${MAXX < 1 - 1e-9 ? `<span><i class="sw-no"></i>${COPY.exit.keyNo}</span>` : ""}</div>
    <div class="cwrap" id="cwrap">${chart(m)}<div class="tip" id="tip" hidden></div></div>
+   <p class="cbe">${exitBe(m)}</p>
    ${det(
      "d-sizes",
      "All sale sizes",
@@ -1038,23 +1054,25 @@
                   : m.cap > m.start + 1e-9
                     ? `sell part from ${S0}, to the pool limit from ${K0}.`
                     : `sell to the pool limit from ${S0}.`);
-        $("#sevNote").textContent =
-          (S.past
-            ? COPY.past.sevNote(sevText(pastOf().sev))
-            : `${f.sev}: ${sevText()}.`) + zt;
-        let h = "";
+        /* the slider's own track carries the break-even zones (user decision, 11 Oct): stay / sell part / sell to the
+   pool limit, split at m.be on the slider's scale; only the split points are set here (geometry), the colours are
+   tokens in demo.css. No loss modelled: a plain track. */
+        const sv = $("#sev");
         if (be.start !== null || m.hasLoss) {
-          const w = (v) =>
-              v === null
-                ? 100
-                : isLog(f)
-                  ? (sevPos(f, v) / LOGR) * 100
-                  : ((v - f.min) / (f.max - f.min)) * 100,
-            a = w(be.start),
-            b = w(be.cap);
-          h = `<div class="zones" role="img" aria-label="Severity ranges for stay, partial sale and selling to the pool limit"><i class="zs" style="width:${a}%"></i><i class="zp" style="width:${b - a}%"></i><i class="zc" style="width:${100 - b}%"></i></div>`;
+          /* a split at or beyond an end of the scale goes past the track (-1 / 2), so the half thumb at that end does
+   not keep the other zone's colour */
+          const w = (v) => {
+            const x = v === null ? 2 : isLog(f) ? sevPos(f, v) / LOGR : (v - f.min) / (f.max - f.min);
+            return x <= 1e-9 ? -1 : x >= 1 - 1e-9 ? 2 : x;
+          };
+          sv.classList.add("zoned");
+          sv.style.setProperty("--za", w(be.start).toFixed(4));
+          sv.style.setProperty("--zb", w(be.cap).toFixed(4));
+          sv.title = zt.trim();
+        } else {
+          sv.classList.remove("zoned");
+          sv.title = "";
         }
-        $("#zoneBox").innerHTML = h;
       }
       function syncSteps() {
         const past = S.mode === "past",
@@ -1066,9 +1084,13 @@
         });
         $("#replay").closest(".pastwrap").hidden = !past;
         ["#node", "#fail", "#sev"].forEach((q) => ($(q).disabled = past));
+        /* a past event fixes steps 1 and 2: shown as text, not as greyed controls (user decision, 11 Oct) */
+        $("#node").hidden = $("#fail").hidden = $("#sevRow").hidden = past;
+        $("#ro1").hidden = $("#ro2").hidden = !past;
+        $("#ro1").textContent = NODES[S.node].label;
+        $("#ro2").textContent = COPY.steps.ro(FAIL[S.fail].label, sevText());
         $("#steps").dataset.sim = S.mode;
         $("#q1").textContent = "Test a failure at…";
-        $("#n1").textContent = past ? COPY.steps.pastHint : COPY.steps.hint;
         $("#node").innerHTML = LAY.map(
               (L) =>
                 `<optgroup label="What-if · ${L.n} · ${L.name}">${L.nodes
@@ -1328,7 +1350,6 @@
         const e = EDGES[i];
         openDrawer(`${nl(e.from)} → ${nl(e.to)}`, [
           ["Dependency type", e.type],
-          ["Grade", `${gr(e.grade)} ${d.evidence.grades[e.grade] || ""}`],
           ["Evidence", `<span class="mono">${e.evidence}</span>`],
         ]);
       }
@@ -1347,6 +1368,11 @@
           render();
         } else if (t.dataset.drawer) nodeEvidence(t.dataset.drawer);
         else if (t.dataset.mode) setMode(t.dataset.mode);
+        else if (t.id === "walletAdd") {
+          S.walletOpen = true;
+          render();
+          $("#wallet").focus();
+        }
         else if (t.dataset.layer) {
           /* a past event fixes the incident: a layer then only opens its evidence */
           const n = +t.dataset.layer,
@@ -1390,6 +1416,13 @@
       document.addEventListener("input", (ev) => {
         const t = ev.target;
         stopPlay();
+        if (t.id === "alt") {
+          /* the cash yield, step 2's second slider (user decision, 11 Oct): live, like the explainer's; a manager's
+   assumption, so it stays enabled for a past event */
+          S.alt = +t.value;
+          $("#altOut").textContent = S.alt.toFixed(2) + "%";
+          frame();
+        }
         if (t.id === "sev" && S.mode !== "past") {
           const f = FAIL[S.fail];
           S.sev = isLog(f) ? posSev(f, +t.value) : +t.value;
@@ -1412,8 +1445,8 @@
         if (t.id === "fail" && S.mode !== "past") setFail(t.value);
         if (t.id === "replay") loadPast(t.value);
         if (t.id === "alt") {
-          S.alt = num(0, 50, 0);
-          t.value = trim(S.alt);
+          S.alt = +t.value;
+          $("#altOut").textContent = S.alt.toFixed(2) + "%";
           render();
         }
         if (t.id === "wallet") setWallet(t.value);
@@ -1534,6 +1567,7 @@
       /* Static parts filled from the data. */
       $("#pos-lbl").textContent = COPY.position.holding;
       $("#wallet-lbl").textContent = COPY.wallet.label;
+      $("#walletAdd").textContent = COPY.wallet.add;
       $("#wallet").placeholder = COPY.wallet.placeholder;
       $("#walletList").innerHTML = (BW.wallets || [])
         .map((w) => `<option value="${w.address}">${COPY.wallet.optWallet}</option>`)
@@ -1548,7 +1582,9 @@
       if (!PAST.length) document.querySelector("#steps .smode").hidden = true;
       $("#size-lbl").innerHTML = COPY.size.label;
       $("#alt-lbl").innerHTML = COPY.size.altLabel(gr("D"));
+      /* the slider snaps to 0.01%; S.alt starts at the PT's own implied APY (nothing given up) */
       $("#alt").value = S.alt.toFixed(2);
+      $("#altOut").textContent = S.alt.toFixed(2) + "%";
       showAmt($("#size"), S.size);
       resize();
       try {

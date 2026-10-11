@@ -251,7 +251,7 @@ try {
     const b = document.querySelector("#pastBanner"), card = document.querySelector("#decision");
     return { past: S.past, pos: S.pos, verdict: model().verdict, banner: !!b && !b.hidden && /Pattern from/.test(b.textContent),
       hours: S.hours, recovers: S.recovers, toggle: !!document.querySelector("#rec [data-rec]"),
-      reason: (document.querySelector("#rec .rwhy") || { textContent: "" }).textContent,
+      reason: (document.querySelector("#rec .rwhy") || { title: "" }).title,
       cardPattern: /Pattern from/.test(card.querySelector(".lbl").textContent),
       notYours: /not your position/.test(card.textContent),
       replay: document.querySelector("#replay").value };
@@ -341,7 +341,10 @@ try {
        what-if with every control editable and no banner; Past again loads the last event chosen */
     fire(sel, PAST[0].key);
     const wrap = sel.closest(".pastwrap"), tip = document.querySelector("#pastBanner"), top0 = document.querySelector("#steps").getBoundingClientRect().top;
-    const ro = ["#node", "#fail", "#sev"].every((q) => document.querySelector(q).disabled) && !!wrap && !wrap.hidden && S.mode === "past";
+    const ro = ["#node", "#fail", "#sev"].every((q) => document.querySelector(q).disabled) && !!wrap && !wrap.hidden && S.mode === "past"
+      /* shown as text, the controls hidden (plan C) */
+      && document.querySelector("#node").hidden && document.querySelector("#fail").hidden && document.querySelector("#sevRow").hidden
+      && document.querySelector("#ro1").textContent === NODES[S.node].label && document.querySelector("#ro2").textContent.includes(sevText());
     /* the event's description is a tooltip of the asterisk at the select's top right: not shown with the select
        focused, shown with the asterisk focused (keyboard; hover is checked below with the mouse), never moving the
        panel */
@@ -361,6 +364,7 @@ try {
     document.querySelector('[data-mode="manual"]').click();
     const still = document.querySelector("#steps").getBoundingClientRect().top === top0;
     const whatIf = S.mode === "manual" && S.past === null && [S.node, S.fail, S.sev].join() === before && wrap.hidden && still
+      && !document.querySelector("#node").hidden && !document.querySelector("#sevRow").hidden && document.querySelector("#ro1").hidden
       && document.querySelector("#pastBanner").hidden && ["#node", "#fail", "#sev"].every((q) => !document.querySelector(q).disabled)
       && /What-if/.test(document.querySelector("#decision .lbl").textContent);
     document.querySelector('[data-mode="past"]').click();
@@ -382,6 +386,23 @@ try {
   const overSel = await tipShown(hv.sel), overInfo = await tipShown(hv.info);
   await p.s("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
   gate(!overSel && overInfo, `2d. mouse: the past event's description shows over the asterisk (${overInfo}), not over the select (${overSel})`);
+  /* every select opens downward under its box (real clicks; base-select where the browser has it) */
+  const down = [];
+  for (const q of ["#pos", "#replay", "#node", "#fail"]) {
+    if (q === "#node") await p.ev(`document.querySelector('[data-mode="manual"]').click()`);
+    const bx = await p.ev(`(() => { const e = document.querySelector("${q}"); e.scrollIntoView({ block: "center" }); const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
+    await p.s("Input.dispatchMouseEvent", { type: "mousePressed", x: bx.x, y: bx.y, button: "left", clickCount: 1 });
+    await p.s("Input.dispatchMouseEvent", { type: "mouseReleased", x: bx.x, y: bx.y, button: "left", clickCount: 1 });
+    const r = await p.ev(`new Promise((ok) => setTimeout(() => { const e = document.querySelector("${q}");
+      const tops = [...e.querySelectorAll("option")].map((o) => o.getBoundingClientRect()).filter((b) => b.height > 0).map((b) => b.top);
+      ok({ base: CSS.supports("appearance", "base-select"), open: e.matches(":open"), below: tops.length > 0 && Math.min(...tops) >= e.getBoundingClientRect().bottom - 1 }); }, 300))`);
+    await p.s("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await p.s("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    down.push({ q, ...r });
+  }
+  await p.ev(`document.querySelector('[data-mode="past"]').click()`);
+  const badDown = down.filter((r) => r.base && !(r.open && r.below));
+  gate(badDown.length === 0, `2d. selects open downward under their box (${down.map((r) => r.q + (r.base ? (r.open && r.below ? " down" : " NOT down") : " native")).join(", ")})`);
   gate(past.whatIf, `2d. past or manual: past = steps 1-2 read-only (severity and chain clicks change nothing), the event's description a tooltip on the asterisk only (hidden with the select focused, the panel does not move), Manual = editable what-if from the same values, Past again = the last event${past.whatIf ? "" : " " + JSON.stringify(past.parts)}`);
 
   /* 2e. the guide's past-incident table (section 3c), on screen. The page values the position at the end of the
@@ -496,7 +517,7 @@ try {
       for (const view of ["list", "graph"]) {
         document.querySelector('[data-view="' + view + '"]').click();
         if (view === "list") {
-          const st = [...document.querySelectorAll("#chain .lay:not(.pos)")].map((x) => x.dataset.state);
+          const st = [...document.querySelectorAll("#chain .lay[data-ln]")].map((x) => x.dataset.state);
           if (st.join() !== r.states.join()) d2.push("layers " + st.join(" · "));
           const pos = document.querySelector("#chain .lay.pos .eff");
           if (!pos || !closeText(pos.textContent, r.position)) d2.push("position row '" + (pos && pos.textContent) + "'");
@@ -541,6 +562,9 @@ try {
       if (t.unchecked.length || pg.unchecked.length) bad.push(tag + ": unchecked numbers");
       const why = document.querySelector("#decision .why").textContent;
       if (why !== t.headline) bad.push(tag + ": card sentence is not the headline");
+      /* not on the card (user decision, 11 Oct): the break-even sentence, the propagation rule, the model / source note */
+      const card = document.querySelector("#decision .dbody").textContent;
+      if (card.includes(t.break_even) || card.includes(cap1(t.rule)) || /come from the backend model/.test(card)) bad.push(tag + ": break-even, rule or source note still on the card");
       if (!document.querySelector("#decision .lbl").textContent.includes(t.title)) bad.push(tag + ": card label lacks the title");
       const lis = [...document.querySelectorAll("#spread li")];
       if (lis.length !== pg.steps.length) bad.push(tag + ": spread list " + lis.length + " vs " + pg.steps.length + " steps");
@@ -549,6 +573,18 @@ try {
       if (res.node !== "result" || !res.text.startsWith(pg.verdict)) bad.push(tag + ": last step is not the result");
       const pos = pg.steps.find((x) => x.node === "position"), row = document.querySelector("#chain .lay.pos .eff");
       if (pos && (!row || row.textContent !== pos.text)) bad.push(tag + ": position row differs from the position step");
+      /* the explainer's form: each layer row = "Layer n · name", its state badge and its text; the result card = the
+         verdict and the result step; no static layer facts */
+      const lays = [...document.querySelectorAll("#chain .lay[data-ln]")];
+      pg.layers.forEach((l, i) => {
+        const el = lays[i];
+        if (!el || !el.querySelector(".lname2").textContent.startsWith("Layer " + l.n + " · ")
+            || el.querySelector(".st").textContent !== (COPY.layers.state[l.state] || l.state) || el.querySelector(".eff").textContent !== l.text)
+          bad.push(tag + ": layer " + l.n + " row");
+      });
+      const rc = document.querySelector("#chain .lay.res");
+      if (!rc || rc.querySelector(".vb").textContent !== pg.verdict || rc.querySelector(".eff").textContent !== res.text) bad.push(tag + ": result card");
+      if (document.querySelector("#chain .fact")) bad.push(tag + ": a static layer fact is still shown");
     };
     const check = (tag) => { n++; const b = bad.length; try { one(tag); } catch (e) { bad.push(tag + ": " + e); } if (bad.length > b) failed++; };
     document.querySelector('[data-view="list"]').click();
@@ -615,7 +651,7 @@ try {
       if (rows.length !== order.length) bad.push(tag + ": " + rows.length + " rows vs " + order.length + " candidates");
       order.forEach((c, i) => {
         const r = rows[i]; if (!r) return;
-        const t = r.children[2].textContent;
+        const t = r.children[1].textContent;
         if (!t.startsWith(VW[c.verdict] || c.verdict)) bad.push(tag + " row " + i + ": '" + t + "' vs " + c.verdict);
         if (r.classList.contains("flip") !== c.flips) bad.push(tag + " row " + i + ": flip mark " + r.classList.contains("flip") + " vs " + c.flips);
         if (r.children[0].textContent !== c.alternative) bad.push(tag + " row " + i + ": alternative text");
@@ -740,7 +776,7 @@ try {
   /* 4c. the exit chart is RiskModel.actCostCurve with the card's inputs (user report, 11 Oct: it ignored the cash
      yield and step 2): its lines are the model's rows, it moves with the cash yield, the severity and the duration,
      and the recommended dot sits on the lowest total */
-  const ex4 = await p.ev(`(() => {
+  const ex4 = await p.ev(`(async () => {
     ${DUR}
     const bad = []; let n = 0;
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
@@ -753,30 +789,50 @@ try {
         const r = durR(), want = RiskModel.actCostCurve(d, S.pos, S.node, S.fail, S.sev, r.carry, durO(S.pos, r)), m = model();
         n++;
         if (JSON.stringify(m.ac) !== JSON.stringify(want)) { bad.push(pk + " " + k + ":" + f + ": chart data differs from actCostCurve"); continue; }
-        const tl = document.querySelector("#chart polyline.cv");
-        if (!tl || tl.getAttribute("points").trim().split(/\\s+/).length !== want.rows.length) bad.push(pk + " " + k + ":" + f + ": total line");
-        if (m.x > 0) {
-          const dot = document.querySelector("#chart .recd"), best = want.rows.reduce((a, b) => (b.total_usd < a.total_usd - 1e-9 ? b : a));
-          if (!dot || Math.abs(best.fraction - m.x) > 1e-9) bad.push(pk + " " + k + ":" + f + ": recommended dot");
+        const tag = pk + " " + k + ":" + f;
+        for (const [cls, key] of [["ln-sale", "sale_cost_usd"], ["ln-kept", "loss_kept_usd"], ["ln-total", "total_usd"]]) {
+          const ln = document.querySelector("#chart polyline." + cls);
+          if (!ln || ln.getAttribute("points").trim().split(/\\s+/).length !== want.rows.length) bad.push(tag + ": line " + cls);
         }
+        /* the lowest total is marked, and it is the card's decision */
+        const dot = document.querySelector("#chart .best-dot"), best = want.rows.reduce((a, b) => (b.total_usd < a.total_usd - 1e-9 ? b : a));
+        if (!dot || Math.abs(best.fraction - m.x) > 1e-9 || !document.querySelector("#chart .best-lbl").textContent.includes(money(best.total_usd))) bad.push(tag + ": lowest total mark");
+        /* the caption names the card's verdict and amounts; the break-even line is the card's m.be */
+        /* the severity slider's own track carries the zones, split at the break-even severities on its scale */
+        const sv = document.querySelector("#sev"), zoned = m.be.start !== null || m.hasLoss;
+        const pos = (v) => { const x = v === null ? 2 : isLog(m.f) ? sevPos(m.f, v) / LOGR : (v - m.f.min) / (m.f.max - m.f.min);
+          return x <= 1e-9 ? -1 : x >= 1 - 1e-9 ? 2 : x; };
+        if (sv.classList.contains("zoned") !== zoned || (zoned && (Math.abs(+sv.style.getPropertyValue("--za") - pos(m.be.start)) > 1e-3
+            || Math.abs(+sv.style.getPropertyValue("--zb") - pos(m.be.cap)) > 1e-3))) bad.push(tag + ": severity track zones");
+        const cap = document.querySelector("#exit .cverdict").textContent, bel = document.querySelector("#exit .cbe").textContent;
+        if (!cap.startsWith(r.verdict) || (r.verdict !== "STAY" && !cap.includes(money(r.total_if_act_usd)))) bad.push(tag + ": caption '" + cap + "'");
+        const bv = (x) => (x === null ? COPY.exit.beNever : sevText(x));
+        if (!bel.includes(bv(m.be.start)) || !bel.includes(bv(m.be.cap))) bad.push(tag + ": break-even line '" + bel + "'");
       }
     }
     /* it moves with the cash yield, the severity and the duration */
     fire(document.querySelector("#pos"), "spot");
     setNode("usde", "depeg", 10);
     const p0 = pts();
-    fire(document.querySelector("#alt"), "1");
-    const p1 = pts();
+    /* the cash yield acts while typing (input events), as the explainer's slider */
+    const alt = document.querySelector("#alt");
+    alt.value = "1"; alt.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+    const p1 = pts(), live = S.alt === 1 && /Cash earns 1\\.00%/.test(document.querySelector("#carryLine").textContent);
+    fire(alt, "1");
     setNode("usde", "depeg", 20);
     const p2 = pts();
     setHours(48);
     const p3 = pts();
     fire(document.querySelector("#alt"), (d.position.implied_apy * 100).toFixed(2));
-    const moves = { alt: p1 !== p0, severity: p2 !== p1, duration: p3 !== p2 };
+    const moves = { alt: p1 !== p0 && live, severity: p2 !== p1, duration: p3 !== p2 };
+    /* sliders show their position only: no native fill, no separate zone bar */
+    if (document.querySelector("#zoneBox, .zones") || [...document.querySelectorAll("input[type=range]")].some((x) => getComputedStyle(x).appearance !== "none"))
+      bad.push("a slider still draws a progress fill or a separate zone bar");
     if (!moves.alt || !moves.severity || !moves.duration) bad.push("the chart does not move with " + JSON.stringify(moves));
     return { n, bad };
   })()`);
-  gate(ex4.bad.length === 0, `4c. exit chart = RiskModel.actCostCurve with the card's inputs (${ex4.n} cases, recommended dot on the lowest total), moving with the cash yield, the severity and the duration`);
+  gate(ex4.bad.length === 0, `4c. exit chart = RiskModel.actCostCurve with the card's inputs (${ex4.n} cases: sale cost, loss kept and total lines, the lowest total marked = the card's sale, caption and break-even line from the card, the severity track's zones at the break-evens, no progress fills), moving with the cash yield (live while typing), the severity and the duration`);
   ex4.bad.slice(0, 5).forEach((x) => console.log("           " + x));
 
   /* 7. time rail (guide 5b and 6, to-do 7): marks, one duration control, the recovers toggle, keys, event clicks,
@@ -806,14 +862,20 @@ try {
         if (refs.length !== 2 || Math.abs(refs[0] - TLH) > 1e-9 || Math.abs(refs[1] - EXP) > 1e-9) out.bad.push(tag + ": reference marks " + refs.join());
         out.marks += marks.length;
         const rt = RiskModel.recoveryToggle(d, k, f), tg = document.querySelectorAll("#rec [data-rec]").length === 2,
-          why = (document.querySelector("#rec .rwhy") || { textContent: "" }).textContent;
-        if (tg !== rt.show || why !== rt.reason) out.bad.push(tag + ": toggle " + tg + " vs " + rt.show + ", reason '" + why + "'");
+          why = (document.querySelector("#rec .rwhy") || { title: "" }).title;
+        if (tg !== rt.show || why !== rt.reason.replace(/ \\(grade [A-D]\\)/g, "")) out.bad.push(tag + ": toggle " + tg + " vs " + rt.show + ", reason '" + why + "'");
         out.toggles += tg;
       }
     }
     /* b. one duration control on the page: the rail's thumb; the only range input is the severity */
-    const sliders = document.querySelectorAll("#view-pt [role=slider]").length, ranges = document.querySelectorAll("#view-pt input[type=range]").length;
-    if (sliders !== 1 || ranges !== 1 || !/set in step 3/.test(document.querySelector("#durNote").textContent))
+    /* the range inputs are step 2's two sliders (severity, cash yield): neither is a duration */
+    const sliders = document.querySelectorAll("#view-pt [role=slider]").length,
+      ranges = [...document.querySelectorAll("#view-pt input[type=range]")].map((x) => x.id).sort().join();
+    /* the duration events are results: listed in the dependency panel, not in the inputs; each mark says its change */
+    const evIn = document.querySelector("#steps #revents"), evOut = document.querySelector("#evBox #revents");
+    const tips = [...document.querySelectorAll("#rmarks .rm.ev")].every((x) => /^From /.test(x.title));
+    if (evIn || !evOut || !tips || document.querySelector("#steps #d-tl")) out.bad.push("events list or timeline chart still in the inputs, or marks without a tooltip");
+    if (sliders !== 1 || ranges !== "alt,sev" || document.querySelector("#durNote"))
       out.bad.push("duration controls: " + sliders + " sliders, " + ranges + " range inputs");
     /* c. keys: arrows 1% of the rail, PageUp 10% */
     fire(document.querySelector("#pos"), "lev_closest_to_liquidation");
@@ -945,13 +1007,15 @@ try {
     const bad = [], fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     const f = document.querySelector("#size"), mark = () => document.querySelector("#size-mark").textContent,
       line = () => document.querySelector("#sizeLine").textContent, hdr = document.querySelector("header");
-    if (!hdr.contains(f) || !hdr.contains(document.querySelector("#alt"))) bad.push("size and cash yield are not in the header");
+    const altEl = document.querySelector("#alt");
+    if (!hdr.contains(f) || hdr.contains(altEl) || !document.querySelector("#steps").contains(altEl) || altEl.type !== "range")
+      bad.push("size in the header, the cash yield a slider in step 2: not so");
     if (document.querySelector("#d-adv, #book") || /Assumptions you can change/.test(document.body.innerText)) bad.push("the assumptions section is still there");
     if (document.querySelector("#stamp")) bad.push("the snapshot stamp is still in the header");
     /* real borrowers: on-chain size, read-only, grade A, with the hint */
     for (const k of Object.keys(PRE).filter((k) => PRE[k].sized === false)) {
       fire(document.querySelector("#pos"), k);
-      if (!f.readOnly || f.title !== Math.round(PRE[k].collateral_usd).toLocaleString("en-US") || !/^\\d+(\\.\\d{1,3})?m$/.test(f.value) || !/read on chain/.test(mark()) || !/A/.test(mark()))
+      if (!f.readOnly || f.title !== Math.round(PRE[k].collateral_usd).toLocaleString("en-US") || !/^\\d+(\\.\\d{1,3})?m$/.test(f.value) || !/read on chain/.test(mark()))
         bad.push(k + ": field '" + f.value + "' readOnly " + f.readOnly + " mark '" + mark() + "'");
       if (!line().includes(Math.round(PRE[k].pt_units).toLocaleString("en-US") + " PT")) bad.push(k + ": line '" + line() + "'");
     }
@@ -976,16 +1040,21 @@ try {
     fire(document.querySelector("#pos"), "spot");
     if (Math.abs(rb - 3249471.575060609) > 1 || f.value !== "50m" || f.readOnly) bad.push("after a real borrower: '" + f.value + "', borrower " + rb);
     fire(f, "10,000,000");
-    /* the cash yield: decimal comma */
+    /* the cash yield slider: live, shown next to it, and enabled for a past event (steps 1-2's incident is locked) */
     const alt0 = S.alt;
-    fire(document.querySelector("#alt"), "4,5");
-    if (S.alt !== 4.5) bad.push("cash yield 4,5 -> " + S.alt);
-    fire(document.querySelector("#alt"), String(alt0));
+    if (S.mode !== "past" || altEl.disabled) bad.push("the cash yield slider is disabled for a past event");
+    altEl.value = "4.5"; altEl.dispatchEvent(new Event("input", { bubbles: true }));
+    if (S.alt !== 4.5 || document.querySelector("#altOut").textContent !== "4.50%") bad.push("cash yield slider 4.5 -> " + S.alt);
+    fire(altEl, String(alt0));
     /* wallet (guide 3b, to-do 10): the list = wallets read + borrowers of this market; a borrower's address gives
        wallet_morpho = that borrower at its on-chain size (guide 9: collateral 3,249,472, debt 2,941,927), selected,
        read-only, the card equal to the model on atSize(..., wallet); an unread address says to rerun --wallet; a
        non-address says so; clearing removes the presets */
     const W = document.querySelector("#wallet"), msg = document.querySelector("#walletMsg"), D0 = window.DASHBOARD;
+    /* the optional wallet field sits behind "+ Wallet" until asked for (plan C) */
+    if (!document.querySelector("#walletBox").hidden || document.querySelector("#walletAdd").hidden) bad.push("the wallet field is open before it is asked for");
+    document.querySelector("#walletAdd").click();
+    if (document.querySelector("#walletBox").hidden || document.activeElement !== W) bad.push("+ Wallet does not open the field");
     const listed = [...document.querySelectorAll("#walletList option")].map((o) => o.value);
     const wantList = (D0.borrowers.wallets || []).map((w) => w.address).concat(D0.borrowers.list.map((x) => x.address));
     if (listed.join() !== wantList.join()) bad.push("wallet list " + listed.length + " vs " + wantList.length);
@@ -1013,7 +1082,7 @@ try {
   /* back to the main page in the foreground: a background tab throttles timers and animation frames */
   await b.send("Target.closeTarget", { targetId: p8.targetId });
   await b.send("Target.activateTarget", { targetId: p.targetId });
-  gate(hdr.length === 0, `8. header: size field (default assumed D, typed 1M / 5M / 250k / 50M, invalid restored, read-only on-chain size for real borrowers, PT units line), cash yield in the header, no assumptions section; wallet (list, borrower read at its on-chain size and selected, unread / invalid / cleared)${hdr.length ? ": " + hdr.slice(0, 4).join("; ") : ""}`);
+  gate(hdr.length === 0, `8. header: size field (default assumed D, typed 1M / 5M / 250k / 50M, invalid restored, read-only on-chain size for real borrowers, PT units line), the cash yield a slider in step 2 (enabled for a past event), no assumptions section; wallet (list, borrower read at its on-chain size and selected, unread / invalid / cleared)${hdr.length ? ": " + hdr.slice(0, 4).join("; ") : ""}`);
 
   /* 6. vault view (FRONTEND_VAULT_GUIDE.md) */
   const vr = vaultRows();
@@ -1244,6 +1313,24 @@ try {
   if (vault.g) vault.g.bad.slice(0, 6).forEach((x) => console.log("           " + x));
   gate(vault.ptSame, "6a. switching back restores the PT view exactly (state, text, controls)");
   vault.bad.forEach((x) => console.log("           " + x));
+
+  /* no evidence grades on the page (user decision, 11 Oct): no badge, no Grade column or row, no "(grade X)" */
+  const grades = await p.ev(`(() => {
+    const hits = [];
+    const look = () => { if (document.querySelector(".gr")) hits.push("badge"); const t = document.body.innerText;
+      if (/\\(grade [A-D]\\)|\\bGrade\\b|evidence grade/.test(t)) hits.push((t.match(/[^\\n]{0,40}(\\(grade [A-D]\\)|\\bGrade\\b|evidence grade)[^\\n]{0,20}/) || [""])[0]); };
+    document.querySelector('[data-page="pt"]').click();
+    ["d-flip"].forEach((k) => { const x = document.getElementById(k); if (x) x.open = true; });
+    look();
+    for (const k of Object.keys(NODES)) { nodeEvidence(k); look(); }
+    closeDrawer();
+    document.querySelector('[data-page="vault"]').click();
+    VaultView.state.open["v-d-sens"] = true; VaultView.set({});
+    look();
+    document.querySelector('[data-page="pt"]').click();
+    return [...new Set(hits)].slice(0, 4);
+  })()`);
+  gate(grades.length === 0, `9. no evidence grade on the page (badges, columns, drawer rows, "(grade X)")${grades.length ? ": " + grades.join(" / ") : ""}`);
 
   gate(p.errors.length === 0, `1. no console errors during checks 1-4${p.errors.length ? ": " + p.errors.slice(0, 3).join(" | ") : ""}`);
 

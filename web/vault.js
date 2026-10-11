@@ -50,7 +50,8 @@
   };
   const frac = (v) =>
     (Math.abs(v) >= 0.01 || v === 0 ? (v * 100).toFixed(2) : String(+(v * 100).toPrecision(3))) + "%";
-  const gr = (g) => (/^[ABCD]$/.test(g || "") ? `<span class="gr ${g}">${g}</span>` : "");
+  /* no evidence grades on the page (user decision, 11 Oct) */
+  const gr = () => "";
   const short = (a) => (a && a.length > 14 ? a.slice(0, 6) + "…" + a.slice(-4) : a || "");
   const num = (t, comma) => {
     const s = String(t).trim().replace(/[\s_']/g, "");
@@ -316,13 +317,13 @@
     const sv = RM.vaultSensitivity(inc, ex, amt, r.severity);
     LAST.sens = sv;
     const srow = (c) =>
-      `<tr class="${sv.weakest && c === sv.weakest ? "best" : ""} ${c.flips ? "flip" : ""}"><td>${c.alternative}</td><td>${gr(c.grade)}</td><td>${vword(c.verdict)}${c.flips ? ` <span class="note">(${COPY.sens.flips})</span>` : ""}</td></tr>`;
+      `<tr class="${sv.weakest && c === sv.weakest ? "best" : ""} ${c.flips ? "flip" : ""}"><td>${c.alternative}</td><td>${vword(c.verdict)}${c.flips ? ` <span class="note">(${COPY.sens.flips})</span>` : ""}</td></tr>`;
     const own = sv.candidates.filter((c) => !c.comparison),
       cmp = sv.candidates.filter((c) => c.comparison);
     const atDefault = VS.alt === ex.alt_apy && VS.hours === ex.horizon_days * 24 && !VS.recovers;
     const sensBody = `<p class="sens-head">${sv.weakest ? COPY.sens.hinges(sv.weakest.alternative, sv.weakest.grade, vword(sv.weakest.verdict)) : COPY.sens.robust}</p>
     <div class="tw"><table class="sens"><thead><tr>${COPY.sens.cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${own.map(srow).join("")}${
-      cmp.length ? `<tr class="grp"><th colspan="3">${D.otherAmount}</th></tr>${cmp.map(srow).join("")}` : ""
+      cmp.length ? `<tr class="grp"><th colspan="2">${D.otherAmount}</th></tr>${cmp.map(srow).join("")}` : ""
     }</tbody></table></div>${atDefault ? "" : `<p class="note">${D.sensDefaults(frac(ex.alt_apy), ex.horizon_days, vword(sv.verdict))}</p>`}`;
     /* loss by severity: inc.severity_grid on the slider's log scale, the current severity marked; then each market at
        the historical shocks (no probability) */
@@ -537,15 +538,18 @@
     $("#v-sev").value = sevPos(sev);
     $("#v-sevOut").textContent = frac(sev);
     $("#v-ticks").innerHTML = (inc.severity_anchors || [])
-      .map((a) => `<i style="left:${(sevPos(a.severity) / LOGR) * 100}%" title="${a.label}: ${frac(a.severity)} (${a.grade})"></i>`)
+      .map((a) => `<i style="left:${(sevPos(a.severity) / LOGR) * 100}%" title="${a.label}: ${frac(a.severity)}"></i>`)
       .join("");
     const bf = r.severity_break_even_free,
       bc = r.severity_break_even_forced,
       w = (s) => (s === null ? 100 : (sevPos(s) / LOGR) * 100);
-    $("#v-zones").innerHTML =
-      inc.type === "asset_issuer"
-        ? ""
-        : `<div class="zones" role="img" aria-label="Severity ranges: stay, withdraw the free part, force out the rest"><i class="zs" style="width:${w(bf)}%"></i><i class="zp" style="width:${w(bc) - w(bf)}%"></i><i class="zc" style="width:${100 - w(bc)}%"></i></div>`;
+    /* the slider's own track carries the zones: stay / withdraw the free part / force out the rest (as the PT view) */
+    const vs = $("#v-sev");
+    vs.classList.toggle("zoned", inc.type !== "asset_issuer");
+    /* a split at or beyond an end of the scale goes past the track (-1 / 2), as in the PT view */
+    const zf = (p) => (p <= 1e-7 ? -1 : p >= 100 - 1e-7 ? 2 : p / 100);
+    vs.style.setProperty("--za", zf(w(bf)).toFixed(4));
+    vs.style.setProperty("--zb", zf(w(bc)).toFixed(4));
     $("#v-sevNote").textContent =
       (inc.type === "asset_issuer" ? "" : C.sevNote(bf === null ? null : frac(bf), bc === null ? null : frac(bc)) + " ") +
       C.anchors;
