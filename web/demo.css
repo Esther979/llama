@@ -268,6 +268,13 @@
         flex: 1 1 340px;
         margin: -4px 0 0;
       }
+      #hdr-pt .wmsg {
+        flex-basis: 100%;
+      }
+      #hdr-pt .wmsg[data-state="bad"],
+      #hdr-pt .wmsg[data-state="unread"] {
+        color: var(--warn);
+      }
       #hdr-pt .stamp {
         flex: 0 1 auto;
         margin: -4px 0 0 auto;

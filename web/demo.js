@@ -236,6 +236,9 @@
         /* position size in USD for the presets the manager sizes (spot, lev_market_avg); assumed (D) until typed */
         size: SI.default_usd,
         sizeTyped: false,
+        /* an address read on chain (guide 3b): "" = none; walletBad = the field holds something that is not one */
+        wallet: "",
+        walletBad: false,
         recovers: FIRST ? FIRST.hours != null && !!FIRST.recovers : true,
         open: {},
         more: {},
@@ -614,7 +617,7 @@
         body += sensBlock(m);
         $("#decision").innerHTML =
           `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : K.whatIf} · ${t.title}</span>
-    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${t.headline}</p></div><div class="dbody">${isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;
+    <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${t.headline}</p></div><div class="dbody">${isWallet(S.pos) ? `<p class="note">${COPY.position.wallet(PRE[S.pos].label, BW.block)}</p>` : isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;
       }
       /* "How it spreads": propagation's steps in causal order, each with its grade (null = the manager's input); the last
    one, the result, equals the decision card. */
@@ -635,8 +638,29 @@
    lev_market_avg (sized presets); a real borrower's size is read on chain, so the field then shows it, read-only. */
       const fullUsd = (v) => Math.round(v).toLocaleString("en-US");
       function resize() {
-        d = RM.atSize(D0, S.size);
+        d = RM.atSize(D0, S.size, S.wallet || null);
         PRE = d.position_presets;
+        /* the position select follows the presets: a wallet read on chain adds "wallet" / "wallet_morpho" */
+        $("#pos").innerHTML = Object.keys(PRE)
+          .map((k) => `<option value="${k}">${PRE[k].label}</option>`)
+          .join("");
+        if (!PRE[S.pos]) S.pos = "spot";
+        $("#pos").value = S.pos;
+      }
+      const isWallet = (k) => k === "wallet" || k === "wallet_morpho";
+      /* Wallet (guide 3b, to-do 10): an address typed or picked from the borrowers of this market (and the wallets the
+   backend read with onchain_positions.py --wallet). Its presets come only from the chain; nothing is typed in. */
+      function setWallet(text) {
+        const a = String(text).trim().toLowerCase();
+        S.walletBad = !!a && !/^0x[0-9a-f]{40}$/.test(a);
+        S.wallet = a && !S.walletBad ? a : "";
+        resize();
+        const wk = ["wallet_morpho", "wallet"].find((k) => PRE[k]);
+        if (wk) S.pos = wk;
+        else if (isWallet(S.pos) || !PRE[S.pos]) S.pos = "spot";
+        $("#pos").value = S.pos;
+        closeDrawer();
+        render();
       }
       function renderSize() {
         const P = PRE[S.pos],
@@ -653,7 +677,22 @@
             : K.assumed(gr("D"), ((SI.evidence || {}).default_usd || {}).source || "");
         $("#sizeLine").innerHTML =
           K.line(fullUsd(P.pt_units), "$" + SI.pt_price_usd.toFixed(4), pc(MAXX, 0), money(SI.capacity_usd)) +
-          (real ? " " + K.editHint : "");
+          (real ? " " + (isWallet(S.pos) ? K.editHintWallet : K.editHint) : "");
+        /* the wallet's state: not an address / not read on chain / read, no PT / read, its presets */
+        const W = COPY.wallet,
+          wm = $("#walletMsg"),
+          found = ["wallet", "wallet_morpho"].filter((k) => PRE[k]);
+        wm.innerHTML = S.walletBad
+          ? W.invalid
+          : !S.wallet
+            ? ""
+            : d.wallet_read === false
+              ? W.notRead(S.wallet)
+              : !d.wallet_found
+                ? W.noPT(BW.block)
+                : W.found(found.map((k) => PRE[k].label).join("; "), BW.block, gr("A"));
+        wm.hidden = !wm.innerHTML;
+        wm.dataset.state = S.walletBad ? "bad" : !S.wallet ? "" : d.wallet_read === false ? "unread" : d.wallet_found ? "found" : "empty";
       }
 
       /* Time rail (guide 5b and 6, to-do 7): the duration control sits on the chain it drives. Events
@@ -664,7 +703,7 @@
         EV = null,
         TLR = null;
       const eventsOf = () => {
-        const k = [S.pos, S.size, S.node, S.fail, S.sev, S.recovers, S.alt].join("|");
+        const k = [S.pos, S.size, S.wallet, S.node, S.fail, S.sev, S.recovers, S.alt].join("|");
         if (k !== EVK) {
           EVK = k;
           EV = RM.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);
@@ -815,7 +854,7 @@
       let PREV = { sig: null, st: {} },
         FLASH = {};
       function trackFlash(pg) {
-        const sig = [S.pos, S.size, S.node, S.fail].join("|"),
+        const sig = [S.pos, S.size, S.wallet, S.node, S.fail].join("|"),
           now = performance.now(),
           st = {};
         pg.layers.forEach((l) => {
@@ -1335,6 +1374,7 @@
           t.value = trim(S.alt);
           render();
         }
+        if (t.id === "wallet") setWallet(t.value);
         if (t.id === "size" && !t.readOnly) {
           /* the field keeps the number as typed; "5M" and "250k" are read too; anything else restores the last size */
           const m = String(t.value).trim().replace(/[\s,_]/g, "").match(/^(\d*\.?\d+)([kKmM]?)$/),
@@ -1440,8 +1480,15 @@
       });
 
       /* Static parts filled from the data. */
-      $("#pos").innerHTML = Object.keys(PRE)
-        .map((k) => `<option value="${k}">${PRE[k].label}</option>`)
+      $("#wallet-lbl").textContent = COPY.wallet.label;
+      $("#wallet").placeholder = COPY.wallet.placeholder;
+      $("#walletList").innerHTML = (BW.wallets || [])
+        .map((w) => `<option value="${w.address}">${COPY.wallet.optWallet}</option>`)
+        .concat(
+          (BW.list || []).map(
+            (b) => `<option value="${b.address}">${COPY.wallet.optBorrower(money(b.collateral_pt * D0.position.pt_price_usd), pc(b.ltv))}</option>`,
+          ),
+        )
         .join("");
       $("#replay").innerHTML =
         '<option value="">Load a past incident pattern…</option>' +

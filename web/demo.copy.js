@@ -133,11 +133,26 @@ const COPY = {
     altLabel: (g) => `Cash earns after selling, % APY ${g}`,
     line: (units, price, share, cap) => `${units} PT at ${price}; sellable now: ${share} (${cap} pool limit).`,
     editHint: "Size of a real borrower, read on chain: pick “PT held outright” or the market-average preset to set your own.",
+    editHintWallet: "Size of this wallet's position, read on chain.",
+  },
+
+  /* Wallet (guide 3b, to-do 10): an address whose position is read on chain; never typed-in numbers. */
+  wallet: {
+    label: "Wallet (optional)",
+    placeholder: "0x… a borrower of this market, or a wallet read on chain",
+    optBorrower: (coll, ltv) => `borrower of this market · collateral ${coll} · LTV ${ltv}`,
+    optWallet: "wallet read on chain",
+    invalid: "Not an Ethereum address (0x and 40 hexadecimal characters).",
+    notRead: (a) =>
+      `Not read on chain: rerun <span class="mono">python3 onchain_positions.py --wallet ${a}</span>, then the export.`,
+    noPT: (block) => `This wallet holds no PT-sUSDe in the wallet or in this Morpho market at block ${block}.`,
+    found: (labels, block, g) => `Read on chain at block ${block} ${g}: ${labels}.`,
   },
 
   /* The real-borrower presets are someone else's position, read on chain. */
   position: {
     notYours: (label) => `Position: ${label}. A real borrower of this market, read on chain, not your position.`,
+    wallet: (label, block) => `Position: ${label}, read on chain at block ${block}.`,
   },
 
   /* Vault view (second view; FRONTEND_VAULT_GUIDE.md). The sentences follow the backend's wording

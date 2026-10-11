@@ -892,13 +892,39 @@ try {
     fire(document.querySelector("#alt"), "4,5");
     if (S.alt !== 4.5) bad.push("cash yield 4,5 -> " + S.alt);
     fire(document.querySelector("#alt"), String(alt0));
+    /* wallet (guide 3b, to-do 10): the list = wallets read + borrowers of this market; a borrower's address gives
+       wallet_morpho = that borrower at its on-chain size (guide 9: collateral 3,249,472, debt 2,941,927), selected,
+       read-only, the card equal to the model on atSize(..., wallet); an unread address says to rerun --wallet; a
+       non-address says so; clearing removes the presets */
+    const W = document.querySelector("#wallet"), msg = document.querySelector("#walletMsg"), D0 = window.DASHBOARD;
+    const listed = [...document.querySelectorAll("#walletList option")].map((o) => o.value);
+    const wantList = (D0.borrowers.wallets || []).map((w) => w.address).concat(D0.borrowers.list.map((x) => x.address));
+    if (listed.join() !== wantList.join()) bad.push("wallet list " + listed.length + " vs " + wantList.length);
+    const A = "0x5c430FF6f374da12218b380d2040299ae5b6d40e";
+    fire(W, A);
+    const wm = PRE.wallet_morpho, ref = RiskModel.atSize(D0, S.size, A).position_presets.wallet_morpho;
+    if (!wm || S.pos !== "wallet_morpho" || document.querySelector("#pos").value !== "wallet_morpho") bad.push("wallet: preset not selected (" + S.pos + ")");
+    else {
+      if (Math.round(wm.collateral_usd) !== 3249472 || Math.round(wm.debt_usd) !== 2941927 || JSON.stringify(wm) !== JSON.stringify(ref)) bad.push("wallet_morpho numbers");
+      if (!f.readOnly || f.value !== "3,249,472" || msg.hidden || msg.dataset.state !== "found") bad.push("wallet: field '" + f.value + "' message " + msg.dataset.state);
+      const want = RiskModel.decideAtDuration(RiskModel.atSize(D0, S.size, A), "wallet_morpho", S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
+      if (JSON.stringify(model().sev) !== JSON.stringify(want)) bad.push("wallet: card differs from the model");
+      if (/not your position/.test(document.querySelector("#decision").textContent)) bad.push("wallet: the card calls it someone else's position");
+    }
+    fire(W, "0x0000000000000000000000000000000000000001");
+    if (msg.dataset.state !== "unread" || !/onchain_positions\.py --wallet 0x0+1/.test(msg.textContent) || PRE.wallet_morpho || PRE.wallet || S.pos === "wallet_morpho")
+      bad.push("unread wallet: " + msg.dataset.state + " '" + msg.textContent + "' pos " + S.pos);
+    fire(W, "abc");
+    if (msg.dataset.state !== "bad" || S.wallet !== "") bad.push("not an address: " + msg.dataset.state);
+    fire(W, "");
+    if (!msg.hidden || PRE.wallet_morpho || S.wallet !== "") bad.push("cleared wallet: message shown or presets left");
     return bad;
   })()`);
   if (p8.errors.length) hdr.push("console errors: " + p8.errors.slice(0, 2).join(" | "));
   /* back to the main page in the foreground: a background tab throttles timers and animation frames */
   await b.send("Target.closeTarget", { targetId: p8.targetId });
   await b.send("Target.activateTarget", { targetId: p.targetId });
-  gate(hdr.length === 0, `8. header: size field (default assumed D, typed 1M / 5M / 250k / 50M, invalid restored, read-only on-chain size for real borrowers, PT units line), cash yield in the header, no assumptions section${hdr.length ? ": " + hdr.slice(0, 4).join("; ") : ""}`);
+  gate(hdr.length === 0, `8. header: size field (default assumed D, typed 1M / 5M / 250k / 50M, invalid restored, read-only on-chain size for real borrowers, PT units line), cash yield in the header, no assumptions section; wallet (list, borrower read at its on-chain size and selected, unread / invalid / cleared)${hdr.length ? ": " + hdr.slice(0, 4).join("; ") : ""}`);
 
   /* 6. vault view (FRONTEND_VAULT_GUIDE.md) */
   const vr = vaultRows();
