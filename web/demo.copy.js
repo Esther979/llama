@@ -53,6 +53,16 @@ const COPY = {
     notCovered: (name, note) => `${name}: ${note}. No numbers for this vault.`,
     above: (total, cur) => `Amount above the vault's total assets (${total} ${cur}): computed for the whole vault.`,
     chainHead: "What this deposit depends on",
+    /* Edge labels of the vault graph; each edge is read from a data field (see vault.js, graphEdges). */
+    edge: {
+      chain: "settles on",
+      adapter: "adapter",
+      market: "lends on",
+      collateral: "collateral",
+      issuer: "issued by",
+      underlying: "underlying",
+      asset: "vault asset",
+    },
     onPath: "on this incident's path",
     badge: {
       STAY: "Stay",

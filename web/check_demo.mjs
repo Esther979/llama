@@ -549,6 +549,40 @@ try {
     fire(document.querySelector("#v-amt"), "10,000,000");
     out.msgs.above = /above the vault's total assets/.test(document.querySelector("#v-msg").textContent)
       && document.querySelector("#v-amt").value === "10,000,000" && VV.last().r.amount < 1e7;
+    /* 6f. graph display: one node per chain item, edges drawn, the incident's path marked; same decision as Layers */
+    out.graph = { bad: [], vaults: 0, incidents: 0 };
+    for (const e of VAULTS.report.vaults.filter((x) => x.coverage === "full")) {
+      VV.set({ addr: e.vault_address, amount: 1e6, display: "list" });
+      const v = VAULTS.details[e.vault_address.toLowerCase()];
+      for (const i of v.incidents.filter((i) => i.analyzed !== false && i.type !== "liquidity_run")) {
+        VV.set({ inc: i.key, sev: null, display: "list" });
+        const listHot = document.querySelectorAll("#v-chain li.on").length, card = document.querySelector("#v-decision").innerText;
+        VV.set({ display: "graph" });
+        const nodes = document.querySelectorAll("#v-graph-box [data-vg]").length,
+          items = v.dependency_chain.reduce((n, L) => n + L.items.length, 0),
+          lines = document.querySelectorAll("#v-edges > line, #v-edges > path").length,
+          want = (VV.last().graph || { edges: [] }).edges.length,
+          hot = document.querySelectorAll("#v-graph-box .node.hot").length,
+          hotE = document.querySelectorAll("#v-edges > .hot").length;
+        const tag = e.vault_name + " " + i.key;
+        if (nodes !== items) out.graph.bad.push(tag + ": nodes " + nodes + " vs items " + items);
+        if (lines !== want || want < items - 1 - (v.dependency_chain[5] || { items: [] }).items.filter((x) => !/vault asset|issuer|depeg/.test(x.label)).length)
+          out.graph.bad.push(tag + ": edges drawn " + lines + " of " + want);
+        if (hot < 2 || hotE < 1) out.graph.bad.push(tag + ": path marked on " + hot + " nodes, " + hotE + " edges");
+        if (hot !== listHot) out.graph.bad.push(tag + ": " + hot + " marked in Graph vs " + listHot + " in Layers");
+        if (document.querySelector("#v-decision").innerText !== card) out.graph.bad.push(tag + ": the card changed with the display");
+        out.graph.incidents++;
+      }
+      out.graph.vaults++;
+    }
+    const belem = VAULTS.report.vaults.find((x) => x.vault_name === "Belem RWA EURCV");
+    if (belem) {
+      VV.set({ addr: belem.vault_address, display: "graph" });
+      const path = [...document.querySelectorAll("#v-graph-box .node.hot .nm")].map((x) => x.textContent).join(" | ");
+      out.graph.belem = path;
+      if (!path.includes("mGLOeuro / EURCV") || !path.includes("mGLOeuro issuer")) out.graph.bad.push("Belem mGLOeuro path: " + path);
+    }
+    VV.set({ display: "list" });
     /* back to the PT view: same state and text as before */
     document.querySelector('[data-page="pt"]').click();
     out.ptSame = snap() === before && !document.querySelector("#view-pt").hidden && document.querySelector("#view-vault").hidden;
@@ -573,6 +607,9 @@ try {
   vault.sent.bad.slice(0, 3).forEach((x) => console.log("           " + x));
   gate(vault.msgs.notCovered && vault.msgs.notFound && vault.msgs.above,
     `6e. vault messages: not analysed ${vault.msgs.notCovered}, unknown address ${vault.msgs.notFound}, amount above the vault ${vault.msgs.above}`);
+  gate(vault.graph && vault.graph.bad.length === 0 && vault.graph.incidents > 0,
+    `6f. vault graph: ${vault.graph ? vault.graph.vaults : 0} vaults, ${vault.graph ? vault.graph.incidents : 0} incidents: one node per item, every derived edge drawn, the path marked as in Layers, same card`);
+  if (vault.graph) vault.graph.bad.slice(0, 5).forEach((x) => console.log("           " + x));
   gate(vault.ptSame, "6a. switching back restores the PT view exactly (state, text, controls)");
   vault.bad.forEach((x) => console.log("           " + x));
 
@@ -586,9 +623,11 @@ try {
   gate(ph.sw <= 391 && ph.w <= 391 && phone.errors.length === 0, `5. phone width 390px: layout ${ph.w}px wide, scrollWidth ${ph.sw}, no errors`);
   const phv = await phone.ev(`(() => { const b = document.querySelector('[data-page="vault"]');
     if (b) b.click();
+    const gb = document.querySelector('[data-vdisp="graph"]');
+    if (gb) gb.click();   /* the graph display: wide, it must scroll inside its own box */
     return ${settle(`{ has: !!b, sw: document.documentElement.scrollWidth, w: innerWidth }`)}; })()`);
   gate(phv.has && phv.sw <= 391 && phv.w <= 391 && phone.errors.length === 0,
-    `5. phone width 390px, vault view: ${phv.has ? `layout ${phv.w}px wide, scrollWidth ${phv.sw}` : "no vault view"}`);
+    `5. phone width 390px, vault view (graph display): ${phv.has ? `layout ${phv.w}px wide, scrollWidth ${phv.sw}` : "no vault view"}`);
   const dark = await openPage(b, { dark: true });
   const dk = await dark.ev(`(() => { const c = getComputedStyle(document.body).backgroundColor.match(/\\d+/g).map(Number);
     return { bg: getComputedStyle(document.body).backgroundColor, lum: (c[0] + c[1] + c[2]) / 3 }; })()`);

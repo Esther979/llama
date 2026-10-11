@@ -286,6 +286,27 @@
         height: 8px;
         background: var(--line-strong);
       }
+      /* Vault dependency graph: the PT graph's bands and nodes, one row per layer and fixed-width columns, so a market
+   sits above its collateral; wide vaults scroll sideways inside the panel. The left gutter carries long edges. */
+      .vgraph {
+        width: max-content;
+        min-width: 100%;
+      }
+      .vgraph .grow {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 14px;
+        padding-left: 14px;
+      }
+      .vgraph .node {
+        flex: 0 0 150px;
+      }
+      .vgraph .elab {
+        pointer-events: none;
+      }
+      .vgraph .elab.side {
+        transform: translate(4px, -50%);
+      }
       /* Vault dependency chain: six layers, items on the incident's path marked. */
       .vchain {
         display: flex;

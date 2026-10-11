@@ -77,6 +77,7 @@
     hz: null,
     inc: null,
     sev: null,
+    display: "list",
   };
   const entry = () => REPORT.find((x) => x.vault_address.toLowerCase() === VS.addr.trim().toLowerCase()) || null;
   const detail = () => {
@@ -129,12 +130,18 @@
       .map((s) => `<i class="${s[0]}" style="width:${Math.max(0.5, (s[1] / max) * 100)}%"></i>`)
       .join("")}</span><span class="bv">${val}</span>`;
   }
+  /* The name of a chain item or path segment: before " (" or ":" ("USDC issuer (vault asset)" -> "USDC issuer"). */
+  const core = (t) => String(t || "").replace(/^\[[^\]]*\]\s*/, "").split(" (")[0].split(":")[0].trim();
   function onPath(item, inc) {
     if (!inc) return false;
     const paths = (inc.propagation_paths || []).join(" | "),
-      aff = inc.affected_markets || [];
+      segs = (inc.propagation_paths || []).flatMap((p) => p.split(" -> ").map(core)),
+      aff = inc.affected_markets || [],
+      name = core(item.label);
     return (
       (!!item.label && paths.includes(item.label)) ||
+      (!!name && segs.includes(name)) ||
+      (!!inc.symbol && (name === inc.symbol || name === inc.symbol + " issuer")) ||
       (!!item.market_id && aff.some((m) => item.market_id.startsWith(String(m).split(":").pop()))) ||
       (!!item.address && !!inc.token && item.address.toLowerCase() === inc.token.toLowerCase()) ||
       (!!item.offchain && item.offchain === inc.symbol)
@@ -143,6 +150,8 @@
   function renderChain(v, inc) {
     const cur = v.exit.currency || "";
     $("#v-chainHead").textContent = C.chainHead;
+    document.querySelectorAll("[data-vdisp]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.vdisp === VS.display));
+    if (VS.display === "graph") return renderGraph(v, inc);
     $("#v-chain").innerHTML = (v.dependency_chain || [])
       .map(
         (L) => `<div class="vl"><span class="vn">${L.layer}</span><div><h3>${L.name}</h3><ul>${L.items
@@ -156,6 +165,135 @@
           .join("")}</ul></div></div>`,
       )
       .join("");
+  }
+  /* ---- graph display. Nodes are the dependency_chain items; every edge is read from a data field:
+     chain -> vault and protocol -> vault (layers 1-3, one item each), market -> protocol (layer 4 items),
+     collateral -> market (markets[].collateral = the layer-5 item's address), issuer -> collateral (layer-6 item
+     named "{symbol} issuer" or with offchain = symbol), underlying -> collateral (layer-6 "{symbol} (depeg)": the
+     collateral of that depeg incident's affected_markets), vault-asset issuer -> vault. No match, no edge. */
+  const gid = (L, i) => "L" + L + "_" + i;
+  function graphEdges(v) {
+    const ch = v.dependency_chain || [],
+      items = (n) => (ch.find((x) => x.layer === n) || { items: [] }).items,
+      out = [];
+    const add = (a, b, type) => a && b && out.push({ from: a, to: b, type });
+    const one = (n) => (items(n).length ? gid(n, 0) : null);
+    add(one(1), one(2), "chain");
+    add(one(3), one(2), "adapter");
+    const col = items(5);
+    const colOfMarket = (mid) => {
+      const m = (v.markets || []).find((x) => x.market_id === mid);
+      if (!m || !m.collateral) return -1;
+      return col.findIndex((c) => c.address && c.address.toLowerCase() === String(m.collateral).toLowerCase());
+    };
+    items(4).forEach((it, i) => {
+      add(gid(4, i), one(3), "market");
+      const c = colOfMarket(it.market_id);
+      if (c >= 0) add(gid(5, c), gid(4, i), "collateral");
+    });
+    items(6).forEach((it, j) => {
+      const name = core(it.label);
+      if (/\(vault asset\)/.test(it.label)) return add(gid(6, j), one(2), "asset");
+      col.forEach((c, k) => {
+        if (it.offchain === c.label || name === c.label + " issuer") add(gid(6, j), gid(5, k), "issuer");
+      });
+      const dep = /\(depeg\)/.test(it.label) && v.incidents.find((x) => x.type === "depeg" && x.symbol === name);
+      if (dep)
+        items(4).forEach((m, i) => {
+          const c = colOfMarket(m.market_id);
+          if (c >= 0 && (dep.affected_markets || []).some((a) => m.market_id.startsWith(String(a).split(":").pop())))
+            if (!out.some((e) => e.from === gid(6, j) && e.to === gid(5, c))) add(gid(6, j), gid(5, c), "underlying");
+        });
+    });
+    return out;
+  }
+  let GRAPH = null;
+  function renderGraph(v, inc) {
+    const cur = v.exit.currency || "",
+      hot = new Set();
+    const edges = graphEdges(v);
+    /* layer 6 in the order of the collateral it links to (vault-asset issuer first), so it sits under it */
+    const col6 = (i) => {
+      const e = edges.find((x) => x.from === gid(6, i) && x.to.startsWith("L5_"));
+      return e ? +e.to.split("_")[1] : e === undefined && edges.some((x) => x.from === gid(6, i)) ? -1 : 1e3;
+    };
+    let h = '<svg id="v-edges" aria-hidden="true"></svg>';
+    (v.dependency_chain || []).forEach((L) => {
+      const order = L.items.map((_, i) => i);
+      if (L.layer === 6) order.sort((a, b) => col6(a) - col6(b) || a - b);
+      h += `<div class="band"><div class="lname"><b>${L.layer}</b>${L.name}</div><div class="grow">${order
+        .map((i) => {
+          const it = L.items[i];
+          const on = onPath(it, inc);
+          if (on) hot.add(gid(L.layer, i));
+          return `<div class="node ${it.evidence === "D" ? "doc" : ""} ${on ? "hot" : ""}" data-vg="${gid(L.layer, i)}"${on ? ` title="${C.onPath}"` : ""}><span class="nm">${it.label}</span><span class="sub">${gr(it.evidence)}${it.allocation ? ` ${money(it.allocation)} ${cur}` : ""}</span></div>`;
+        })
+        .join("")}</div></div>`;
+    });
+    $("#v-chain").innerHTML = `<div class="gscroll"><div class="graph vgraph" id="v-graph-box">${h}<div id="v-elabels"></div></div></div>`;
+    GRAPH = { edges, hot };
+    LAST.graph = GRAPH;
+    paintGraph();
+  }
+  /* Edges drawn after layout, from the node boxes; redrawn on resize. Marker ids differ from the PT graph's. */
+  function paintGraph() {
+    const g = $("#v-graph-box"),
+      svg = $("#v-edges");
+    if (!g || !svg || !GRAPH) return;
+    const R = g.getBoundingClientRect();
+    const box = (id) => {
+      const el = g.querySelector(`[data-vg="${id}"]`);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left - R.left + r.width / 2, y: r.top - R.top + r.height / 2, w: r.width, h: r.height };
+    };
+    const clip = (a, b, pad) => {
+      const dx = b.x - a.x,
+        dy = b.y - a.y,
+        s = Math.min(dx ? (a.w / 2 + pad) / Math.abs(dx) : 1e9, dy ? (a.h / 2 + pad) / Math.abs(dy) : 1e9);
+      return [a.x + dx * s, a.y + dy * s];
+    };
+    /* the gutter: halfway between the layer names and the first column of nodes */
+    const gutter = () => {
+      const first = g.querySelector(".grow"),
+        r = first.getBoundingClientRect();
+      return r.left - R.left + 7;
+    };
+    let cold = "",
+      hotL = "",
+      labs = "";
+    GRAPH.edges.forEach((e) => {
+      const a = box(e.from),
+        b = box(e.to);
+      if (!a || !b) return;
+      const on = GRAPH.hot.has(e.from) && GRAPH.hot.has(e.to),
+        cls = `class="e ${on ? "hot" : ""}" marker-end="url(#${on ? "vah" : "van"})"`,
+        span = Math.abs(+e.from.slice(1).split("_")[0] - +e.to.slice(1).split("_")[0]);
+      let ln, lx, ly;
+      if (span > 1) {
+        /* across layers: out of the node's left side, along the gutter, into the target's left side */
+        const gx = gutter(),
+          xa = a.x - a.w / 2,
+          xb = b.x - b.w / 2 - 6;
+        ln = `<path d="M${xa} ${a.y}H${gx}V${b.y}H${xb}" ${cls}/>`;
+        lx = gx;
+        ly = b.y + b.h / 2 + 12;   /* under the target, beside the gutter: clear of the nodes it passes */
+      } else {
+        const [x1, y1] = clip(a, b, 1),
+          [x2, y2] = clip(b, a, 6);
+        ln = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${cls}/>`;
+        lx = (x1 + x2) / 2;
+        ly = (y1 + y2) / 2;
+      }
+      if (on) {
+        hotL += ln;
+        labs += `<span class="elab hot ${span > 1 ? "side" : ""}" style="left:${lx}px;top:${ly}px">${C.edge[e.type] || e.type}</span>`;
+      } else cold += ln;
+    });
+    const mk = (id, v) =>
+      `<marker id="${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(${v})"/></marker>`;
+    svg.innerHTML = "<defs>" + mk("van", "--line-strong") + mk("vah", "--crit") + "</defs>" + cold + hotL;
+    $("#v-elabels").innerHTML = labs;
   }
   function renderRun(v, amt) {
     const ex = v.exit,
@@ -327,6 +465,13 @@
     VS.sev = null;
     render();
   });
+  document.querySelectorAll("[data-vdisp]").forEach((b) =>
+    b.addEventListener("click", () => {
+      VS.display = b.dataset.vdisp;
+      render();
+    }),
+  );
+  new ResizeObserver(() => VS.display === "graph" && paintGraph()).observe($("#v-chain"));
   $("#v-sev").addEventListener("input", (ev) => {
     VS.sev = posSev(+ev.target.value);
     render();

@@ -156,7 +156,13 @@
         </section>
         <div class="cols" id="v-cols">
           <section class="panel">
-            <div class="phead"><h2 id="v-chainHead"></h2></div>
+            <div class="phead">
+              <h2 id="v-chainHead"></h2>
+              <div class="mode sm" role="group" aria-label="How to show the vault's dependencies">
+                <button data-vdisp="list" aria-pressed="true">Layers</button
+                ><button data-vdisp="graph" aria-pressed="false">Graph</button>
+              </div>
+            </div>
             <div class="vchain" id="v-chain"></div>
           </section>
           <aside class="side">
