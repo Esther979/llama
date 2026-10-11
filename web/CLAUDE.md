@@ -119,6 +119,20 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   with a tooltip; the duration events list (`#revents`) and the timeline chart (`#d-tl`) are in the dependency panel,
   the rail's red marks carry their change as a tooltip; the wallet field opens from "+ Wallet (optional)" (or when a
   wallet is set). Steps panel 252 px tall for a past event (was about 620).
+- The chain panel is titled "Dependency mapping" in both views (user decision, 11 Oct). The duration events list
+  ("How the path changes with the duration") is gone: the events live on the time frame rail only, as red marks with
+  a tooltip naming the change and a click that jumps there (gate 7 clicks a mark).
+- Steps panel (user decision, 11 Oct, latest): no step numbers (both views); under the "Simulate" row a three-column
+  control bar, "Incident type" (the incident menu), "Severity" (its zoned slider) and "Cash earns (if sell), % APY"
+  (its slider), then "Time frame" (the duration field, Play, recovery and the rail) on its own full-width row below.
+  One column on a phone. The vault view's duration panel is titled "Time frame" too. This supersedes the earlier
+  left / right split and the "Select incident" / "How bad?" / "How long?" headings described below.
+- Step 1 is "Select incident" (user decision, 11 Oct): one menu (`#incBtn` / `#incMenu`, a page component, since a
+  native select has no second level) replaces the dependency and failure selects. First level: the dependencies by
+  layer, opening downward; a dependency with several failures opens them in a second level to its right on hover,
+  click or the right arrow (under it on a phone); one with a single failure is chosen directly; a choice calls
+  `setNode(node, failure)`. Keys: up / down, right, left, Enter, Escape. The button reads "dependency · failure", as
+  does a past event's step-1 text. Step 2 is "How bad?": the severity and the cash yield.
 - Step 2 has two sliders (user decision, 11 Oct): the severity (what the loss L follows) and "And if you sell: cash
   earns, % APY" (0 to 10%, 0.01% steps, default the PT's implied APY, value shown next to it; grade D). The cash
   slider is a manager's assumption, not part of the incident: it stays enabled for a past event while step 2's
