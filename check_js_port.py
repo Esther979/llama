@@ -346,6 +346,114 @@ def main():
           + (f"  first {xunchecked[0]}" if xunchecked else ""))
     bad = bad + xbad + xunchecked + pi_bad
 
+    # propagation (PT view): the five layers step by step; same text as Python, every number from the model, and each
+    # layer's state agrees with decideAt (oracle follows <-> layer 3 hit, liquidated <-> layer 5 hit)
+    from frontend_contract import propagation
+    pcombos = xcombos + [(sz, pk, k, sev, c, o) for sz in (1e6, 1e7) for pk in at_size(d, sz)["position_presets"]
+                         for k in d["ui"]["injections"] for sev in (0.5, 3) for c in (carry_of(d, 0.04),)
+                         for o in ({"hours": 6}, {"hours": 24, "permanent": 0})]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "p.json"), os.path.join(tmp, "p.js")
+        json.dump(pcombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d0=require(process.argv[3]);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));const cache={};"
+                            "console.log(JSON.stringify(a.map(c=>{const d=cache[c[0]]||(cache[c[0]]=M.atSize(d0,c[0]));"
+                            "const k=c[2].split(':');return M.propagation(d,c[1],k[0],k[1],c[3],c[4],c[5]);})));")
+        jp = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    pbad, punchecked, pstate = [], [], []
+    for c, j in zip(pcombos, jp):
+        node, fail = c[2].split(":")
+        py = propagation(sized[c[0]], c[1], node, fail, c[3], c[4], c[5])
+        if py != j:
+            pbad.append(c)
+        if py["unchecked"]:
+            punchecked.append((c, py["unchecked"]))
+        r = decide_at(sized[c[0]], c[1], node, fail, c[3], c[4], c[5])
+        lay = {x["n"]: x["state"] for x in py["layers"]}
+        if r["type"] == "loss_model" and node not in ("feeds", "oracle"):
+            if (lay[3] == "hit") != (r["oracle_falls"] is True):
+                pstate.append((c, "layer 3"))
+        if r["type"] == "loss_model" and node != "lending" and sized[c[0]]["position_presets"][c[1]]["debt_usd"] > 0 \
+                and c[5] is None:
+            if (lay[5] == "hit") != any(r["liquidated"] or []):
+                pstate.append((c, "layer 5"))
+        if lay[py["origin"]["layer"]] != "origin" or py["steps"][-1]["text"].split(":")[0] != r["verdict"]:
+            pstate.append((c, "origin / verdict"))
+    print(f"GATE {'PASS' if not pbad else 'FAIL'}  propagation: {len(pcombos)} cases give the same layers and text in JS "
+          f"and Python" + (f"  first mismatch {pbad[0]}" if pbad else ""))
+    print(f"GATE {'PASS' if not punchecked else 'FAIL'}  propagation: every number in the text comes from the model"
+          + (f"  first {punchecked[0]}" if punchecked else ""))
+    print(f"GATE {'PASS' if not pstate else 'FAIL'}  propagation: layer states agree with decideAt (oracle follows, "
+          f"liquidated, origin, verdict)" + (f"  first {pstate[0]}" if pstate else ""))
+    bad = bad + pbad + punchecked + pstate
+
+    # propagation along the duration slider: propagationEvents, same events in JS and Python; each event is a real
+    # change (the propagation just before differs from just after) and no change is missed between events
+    import math
+    from frontend_contract import propagation_events, propagation_at_duration
+    ecombos = [(pk, k, sev, rec) for pk in sized[1e7]["position_presets"] for k in d["ui"]["injections"]
+               for sev in (0.5, 3, 20) for rec in (True, False)]
+    with tempfile.TemporaryDirectory() as tmp:
+        cf, sf = os.path.join(tmp, "e.json"), os.path.join(tmp, "e.js")
+        json.dump(ecombos, open(cf, "w"))
+        open(sf, "w").write("const M=require(process.argv[2]);const d=M.atSize(require(process.argv[3]),1e7);"
+                            "const a=JSON.parse(require('fs').readFileSync(process.argv[4]));"
+                            "console.log(JSON.stringify(a.map(c=>{const k=c[1].split(':');"
+                            "return M.propagationEvents(d,c[0],k[0],k[1],c[2],c[3],0.04);})));")
+        je = json.loads(subprocess.run(["node", sf, JS, dpath, cf], check=True, capture_output=True, text=True).stdout)
+    dz = sized[1e7]
+    sig = lambda pg: [(x["node"], x["state"]) for x in pg["steps"]] + [("verdict", pg["verdict"])]
+    ebad, ereal, n_ev, rnd = [], [], 0, random.Random(7)
+    for c, j in zip(ecombos, je):
+        node, fail = c[1].split(":")
+        py = propagation_events(dz, c[0], node, fail, c[2], c[3], 0.04)
+        if len(py["events"]) != len(j["events"]) or py["start"] != j["start"] or \
+                any(not same(a["hours"], b["hours"], 1e-6) or {k: v for k, v in a.items() if k != "hours"} !=
+                    {k: v for k, v in b.items() if k != "hours"} for a, b in zip(py["events"], j["events"])):
+            ebad.append(c)
+        at = lambda h: sig(propagation_at_duration(dz, c[0], node, fail, c[2], h, c[3], 0.04))
+        for ev in py["events"]:
+            n_ev += 1
+            if at(ev["hours"] * (1 - 1e-5)) == at(ev["hours"] * (1 + 1e-5)):
+                ereal.append((c, ev["hours"], "no change at the event"))
+        bounds = [1.0] + [ev["hours"] for ev in py["events"]] + [4320.0]
+        for lo, hi in zip(bounds, bounds[1:]):         # one random duration inside each segment: same state as its start
+            if hi / lo < 1 + 1e-4:
+                continue
+            h = lo * math.exp(math.log(hi / lo) * rnd.uniform(0.01, 0.99))
+            if at(h) != at(lo * (1 + 1e-5) if lo > 1.0 else 1.0):
+                ereal.append((c, round(h, 3), "change between events"))
+    print(f"GATE {'PASS' if not ebad else 'FAIL'}  propagationEvents: {len(ecombos)} cases give the same events in JS "
+          f"and Python ({n_ev} events)" + (f"  first mismatch {ebad[0]}" if ebad else ""))
+    print(f"GATE {'PASS' if not ereal else 'FAIL'}  propagationEvents: every event changes the propagation and none is "
+          f"missed between events" + (f"  first {ereal[0]}" if ereal else ""))
+    bad = bad + ebad + ereal
+
+    # one duration mechanism (guide 5b): decideAt with the inputs decideAtDuration used equals decideAtDuration
+    from frontend_contract import decide_at_duration
+    dur_bad, n_dur = [], 0
+    for sz in (1e6, 1e7):
+        dz = at_size(d, sz)
+        for pk, P in dz["position_presets"].items():
+            for k in dz["ui"]["injections"]:
+                for sev in (0.5, 2, 10):
+                    for hours, rec in ((1, True), (24, True), (24, False), (720, False)):
+                        n_dur += 1
+                        node, fail = k.split(":")
+                        r = decide_at_duration(dz, pk, node, fail, sev, hours, rec, 0.04)
+                        o = {"hours": hours, "collateral_usd": r["position_value_usd"],
+                             "collateral_oracle_usd": r["collateral_usd"], "debt_usd": r["debt_usd"],
+                             "sale_value_usd": P["collateral_usd"]}
+                        if rec:
+                            o["permanent"] = 0
+                        a = decide_at(dz, pk, node, fail, sev, r["carry"], o)
+                        if any(a[f] != r[f] for f in ("verdict", "sell_fraction", "sale_cost_usd", "loss_if_stay_usd",
+                                                      "loss_kept_usd")):
+                            dur_bad.append((sz, pk, k, sev, hours, rec))
+    print(f"GATE {'PASS' if not dur_bad else 'FAIL'}  one duration mechanism: decideAt with decideAtDuration's inputs "
+          f"equals decideAtDuration in {n_dur - len(dur_bad)}/{n_dur} cases" + (f"  first {dur_bad[0]}" if dur_bad else ""))
+    bad = bad + dur_bad
+
     # second view: vault decisions on the vault detail files (data/vaults)
     import glob
     from vault_pipeline import liquidity_run, vault_decide, vault_decide_at

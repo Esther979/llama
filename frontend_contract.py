@@ -920,3 +920,290 @@ def decision_text(d, preset_key, node, fail, sev, carry=0.0, opts=None):
     bad = [x for x in NUM.findall(text) if x not in nums]
     return {"verdict": r["verdict"], "title": title, "headline": head, "rule": m["note"], "reasons": reasons,
             "break_even": brk, "hinges_on": hinge, "numbers": nums, "unchecked": bad}
+
+
+# ------------------------------------------------------------------ how an incident travels through the five layers
+# what the origin node does, per injection ({sev} = the severity in the failure's unit); same strings in RiskModel
+PROPAGATION_ORIGIN = {
+    "eth:halt": "Ethereum stops producing blocks for {sev}: no exit and no liquidation while it lasts.",
+    "ethena:shortfall": "Ethena cannot fully back USDe (off-chain reserves, custodians and hedges): USDe falls {sev}.",
+    "usde:depeg": "USDe falls {sev} against USD.",
+    "susde:navLoss": "sUSDe's NAV (USDe per sUSDe) falls {sev}.",
+    "susde:discount": "sUSDe trades {sev} below its NAV; the NAV itself is unchanged.",
+    "feeds:oracleLow": "An upstream feed of the lending oracle reports a price {sev} too low; the price recovers "
+                       "afterwards, the PT itself is unchanged.",
+    "feeds:stale": "An upstream feed of the lending oracle stops updating for {sev}.",
+    "oracle:oracleLow": "The Morpho market oracle reports a PT price {sev} too low; the price recovers afterwards, the "
+                        "PT itself is unchanged.",
+    "oracle:stale": "The Morpho market oracle stops updating for {sev}.",
+    "market:drain": "{sev} of the Pendle pool's liquidity leaves.",
+    "pt:depeg": "The PT's market price on Pendle falls {sev}; the PT still redeems at expiry, so holding to expiry "
+                "recovers it.",
+    "lending:cascade": "Other borrowers of the Morpho market are liquidated at a {sev} oracle drop and their PT is sold "
+                       "into the Pendle pool first.",
+}
+_GRADES = "ABCD"
+
+
+def propagation(d, preset_key, node, fail, sev, carry=0.0, opts=None):
+    """How the incident travels through the five layers to this position, step by step in causal order (origin ->
+    PT value -> lending oracle -> liquidation -> exit liquidity -> loss on the position -> verdict), built only from
+    decide_at's results. steps[i] = {layer (None for the position / result), node, state: origin | hit | unchanged |
+    unknown | not_applicable, text, grade (None = the manager's input), edges (ui.edges crossed)}; layers = the five
+    rows with their state and text. `numbers` / `unchecked` as in decision_text. Mirrored by RiskModel.propagation."""
+    opts = opts or {}
+    from loss_model import lif
+    from reasoning import NUM
+    r = decide_at(d, preset_key, node, fail, sev, carry, opts)
+    m = d["ui"]["injections"][f"{node}:{fail}"]
+    p = d["position_presets"][preset_key]
+    ft = d["failure_types"]["types"][fail]
+    o = d.get("oracle") or {}
+    nodes = d["ui"]["nodes"]
+    nums = []
+
+    def f(s):
+        nums.extend(NUM.findall(s))
+        return s
+    money = lambda v: f("$" + _num(v, 0))
+    pct = lambda v: f(_num(v * 100, 2) + "%")
+    unit = lambda v: f(_num(v, 2) + ("%" if ft["unit"] == "%" else " h"))
+    hrs = lambda v: f(_num(v, 2) + " h")
+
+    def edges(*pairs):
+        out = []
+        for a, b in pairs:
+            e = next((e for e in d["ui"]["edges"] if e["from"] == a and e["to"] == b), None)
+            if e:
+                out.append({"from": a, "to": b, "type": e["type"], "grade": e["grade"]})
+        return out
+
+    def worst(gs):
+        gs = [g for g in gs if g]
+        return max(gs, key=_GRADES.index) if gs else None
+
+    C = opts.get("collateral_usd", p["collateral_usd"])
+    D = opts.get("debt_usd", p["debt_usd"])
+    Co = opts.get("collateral_oracle_usd", C * p.get("collateral_oracle_usd", p["collateral_usd"]) / p["collateral_usd"])
+    V = opts.get("sale_value_usd", p["collateral_usd"])
+    E = C - D
+    hours = opts.get("hours", m.get("hours"))
+    perm = opts.get("permanent", m.get("permanent"))
+    can_hold = opts.get("can_hold", p["can_hold"])
+    of = r["oracle_falls"]
+    liq = any(r["liquidated"] or [])
+    lm = m["type"] == "loss_model"
+    o_grade = (o.get("evidence") or {}).get("grade") or "D"
+    s = sev / 100
+    steps = []
+
+    def step(layer, nd, state, text, grade, edg=()):
+        steps.append({"layer": layer, "node": nd, "state": state, "text": text, "grade": grade, "edges": list(edg)})
+
+    # 1. origin
+    origin_layer = nodes[node]["layer"]
+    text = PROPAGATION_ORIGIN[f"{node}:{fail}"].replace("{sev}", unit(sev))
+    if node == "market":
+        text += (f" The pool takes {pct(r['sellable_now'])} of this position today, "
+                 + ("nothing after." if r["sellable_later"] <= 0 else f"{pct(r['sellable_later'])} after."))
+    step(origin_layer, node, "origin", text, None,
+         edges(("ethena", "usde")) if node == "ethena" else edges(("feeds", "oracle")) if node == "feeds" else ())
+
+    # 2. the PT's value (layer 4), for failures upstream of the PT
+    if lm and origin_layer == 2:
+        if fail == "discount":
+            step(4, "pt", "unchanged", "The PT redeems at the NAV-based rate, not at sUSDe's market price: its "
+                                       "redemption value does not fall, and holding to expiry recovers the discount.",
+                 "A", edges(("susde", "pt")))
+        else:
+            if node == "susde":
+                t = (f"The SY exchange rate falls with the NAV and the PT index never decreases: the PT's value falls "
+                     f"{unit(sev)}")
+                e = edges(("susde", "pt"))
+            else:
+                t = f"The PT redeems to sUSDe, which is staked USDe: the PT's value falls {unit(sev)}"
+                e = edges(("usde", "susde"), ("susde", "pt"))
+            if perm >= 1:
+                t += "; the loss is permanent (no recovery assumed)."
+            elif perm <= 0:
+                t += ("; the shock is over after the incident" + (f" ({hrs(hours)})" if hours is not None else "")
+                      + ", so a holder who can wait gets it back.")
+            else:
+                t += f"; {pct(perm)} of it remains after the incident."
+            if not can_hold:
+                t += " This position must sell at the worst point."
+            step(4, "pt", "hit", t, worst([x["grade"] for x in e]) or "A", e)
+
+    # 3. the lending oracle (layer 3)
+    if lm and node not in ("oracle",):
+        meta = o.get("kind") == "meta_oracle_timelock" and m["oracle"] == "rule"
+        thr, tl = o.get("deviation_threshold"), o.get("challenge_timelock_s")
+        if node == "feeds":
+            st, t = "hit", f"The Morpho market oracle reads this feed: it falls {unit(sev)} too."
+        elif of is True and meta:
+            st, t = "hit", (f"The meta-oracle sees a deviation above {pct(thr)} for at least {hrs(tl / 3600)} and "
+                            f"switches to its backup feed with USDe / USD: the lending oracle falls {unit(sev)}.")
+        elif of is True:
+            st, t = "hit", f"The lending oracle follows: it falls {unit(sev)}."
+        elif of is False and meta and thr is not None and s <= thr:
+            st, t = "unchanged", (f"The deviation ({unit(sev)}) is not above the meta-oracle's {pct(thr)} threshold: "
+                                  f"the lending oracle does not move.")
+        elif of is False and meta:
+            st, t = "unchanged", (f"The meta-oracle switches only after a deviation above {pct(thr)} lasting "
+                                  f"{hrs(tl / 3600)}; this incident lasts {hrs(hours)}: the lending oracle does not move.")
+        elif of is False:
+            st, t = "unchanged", ("No feed of the lending oracle prices this (the PT is priced by a linear discount, "
+                                  "no market input): the lending oracle does not move.")
+        else:
+            st, t = "unknown", (f"The lending oracle's behaviour is unknown: the loss is the worse of both branches "
+                                f"({pct(r['L_low'])} to {pct(r['L_high'])} of equity).")
+        if D <= 0:
+            t += " This matters only for a levered position: this one has no debt."
+        step(3, "oracle", st, t, o_grade)
+
+    # 4. liquidation (layer 5)
+    if lm:
+        if D <= 0:
+            step(5, "lending", "not_applicable", "This position has no debt: nothing to liquidate.", None)
+        else:
+            line = 1 - D / (Co * p["lltv"])
+            bonus = pct(lif(p["lltv"]) - 1)
+            e = edges(("oracle", "lending"), ("pt", "lending"))
+            if liq and line <= 0:
+                st, t = "hit", (f"The position is already above the liquidation line: Morpho can liquidate it, the "
+                                f"liquidator taking collateral worth the debt plus a {bonus} bonus.")
+            elif liq and of is None:
+                st, t = "hit", (f"If the oracle follows, the position is liquidated (the liquidation line is "
+                                f"{pct(line)} away); the liquidator takes collateral worth the debt plus a {bonus} bonus.")
+            elif liq:
+                st, t = "hit", (f"The lending oracle falls {unit(sev)} while the liquidation line is {pct(line)} away: "
+                                f"Morpho liquidates this position, the liquidator taking collateral worth the debt plus "
+                                f"a {bonus} bonus.")
+            elif of is True:
+                st, t = "unchanged", (f"The lending oracle falls {unit(sev)} but the liquidation line is {pct(line)} "
+                                      f"away: not liquidated.")
+            else:
+                st, t = "unchanged", (f"The lending oracle does not move: not liquidated (the liquidation line is "
+                                      f"{pct(line)} away).")
+            step(5, "lending", st, t, worst(["B"] + [x["grade"] for x in e]), e)
+
+    # 5. exit liquidity (layer 4)
+    if m["type"] != "not_modelled" and node != "market":
+        if r["sellable_later"] < r["sellable_now"] - 1e-12:
+            t = ("Liquidators sell the seized PT into the Pendle pool first: "
+                 + (f"the pool takes {pct(r['sellable_now'])} of this position today, nothing after."
+                    if r["sellable_later"] <= 0 else
+                    f"the pool takes {pct(r['sellable_now'])} of this position today, only "
+                    f"{pct(r['sellable_later'])} after."))
+            e = edges(("lending", "market"))
+            step(4, "market", "hit", t, worst(["B"] + [x["grade"] for x in e]), e)
+        else:
+            step(4, "market", "unchanged", f"The Pendle pool still takes {pct(r['sellable_now'])} of this position "
+                                           f"({money(r['sellable_now'] * V)}).", "A")
+
+    # 6. the position and 7. the verdict
+    hit_grades = [x["grade"] for x in steps if x["state"] in ("hit", "unknown")]
+    pe = edges(("pt", "position")) + (edges(("lending", "position")) if D > 0 else [])
+    loss = r["loss_if_stay_usd"]
+    if lm:
+        t = (f"Loss if staying: {money(loss)} ({pct(r['L_high'])} of the position's equity of {money(E)})."
+             if loss > 0 else "No loss on this position at this severity.")
+    elif m["type"] in ("exit_later", "exit_only"):
+        t = "No direct loss on this position: only how much of it can be sold changes."
+    else:
+        t = "No loss is modelled for this failure."
+    step(None, "position", "hit" if loss > 0 else "unchanged", t, worst(hit_grades) or "A", pe)
+    if lm and loss > 0 and r["verdict"] != "STAY":
+        res = (f"{r['verdict']}: sell {money(r['sell_usd'])} now ({pct(r['sell_fraction'])} of the position) for "
+               f"{money(r['sale_cost_usd'])}; acting costs {money(r['total_if_act_usd'])} in all instead of "
+               f"{money(loss)}." + (f" {pct(r['stuck_fraction'])} cannot be sold through the pool now."
+                                    if r["stuck_fraction"] > 0 else ""))
+    elif lm and loss > 0:
+        res = f"STAY: selling would cost more than it saves (doing nothing loses {money(loss)})."
+    else:
+        res = "STAY: nothing to sell for."
+    step(None, "result", "result", res, None)
+
+    rows = []
+    for lay in d["ui"]["layers"]:
+        mine = [x for x in steps if x["layer"] == lay["n"]]
+        if lay["n"] == origin_layer:
+            st = "origin"
+        elif any(x["state"] == "hit" for x in mine):
+            st = "hit"
+        elif any(x["state"] == "unknown" for x in mine):
+            st = "unknown"
+        elif mine and all(x["state"] == "not_applicable" for x in mine):
+            st = "not_applicable"
+        elif mine:
+            st = "unchanged"
+        else:                                       # no step here: upstream of a loss, or outside the failure's model
+            st = "unchanged" if lay["n"] < origin_layer and (lm or lay["n"] == 1) else "not_modelled"
+        txt = " ".join(x["text"] for x in mine) or ("Upstream of the failure: not affected." if st == "unchanged"
+                                                    else "Not part of how this failure is modelled.")
+        rows.append({"n": lay["n"], "name": lay["name"], "nodes": lay["nodes"], "state": st, "text": txt})
+    text = " ".join(x["text"] for x in steps)
+    bad = [x for x in NUM.findall(text) if x not in nums]
+    return {"verdict": r["verdict"], "origin": {"node": node, "layer": origin_layer}, "steps": steps, "layers": rows,
+            "numbers": nums, "unchecked": bad}
+
+
+def _duration_inputs(d, preset_key, r, hours, recovers):
+    """The opts that make decide_at (and every function taking opts) equal decide_at_duration's result r (guide 5b)."""
+    o = {"hours": hours, "collateral_usd": r["position_value_usd"], "collateral_oracle_usd": r["collateral_usd"],
+         "debt_usd": r["debt_usd"], "sale_value_usd": d["position_presets"][preset_key]["collateral_usd"]}
+    if recovers:
+        o["permanent"] = 0
+    return o
+
+
+def propagation_at_duration(d, preset_key, node, fail, sev, hours, recovers=True, alt_apy=None):
+    """propagation for an incident lasting `hours`, with decide_at_duration's inputs (what the duration slider shows)."""
+    r = decide_at_duration(d, preset_key, node, fail, sev, hours, recovers, alt_apy)
+    return propagation(d, preset_key, node, fail, sev, r["carry"], _duration_inputs(d, preset_key, r, hours, recovers))
+
+
+def propagation_events(d, preset_key, node, fail, sev, recovers=True, alt_apy=None, h_min=1.0, h_max=4320.0,
+                       steps=200):
+    """Where the propagation changes along the duration slider: the exact durations (hours, between h_min and h_max)
+    at which a step's state or the verdict changes, found by a log-spaced scan and bisection on
+    propagation_at_duration. Each event lists the changed layers (state before / after, the layer's text after) and
+    steps (node, state before / after, text after). The texts come from propagation (numbers checked there).
+    Mirrored by RiskModel.propagationEvents."""
+    import math
+
+    def at(h):
+        return propagation_at_duration(d, preset_key, node, fail, sev, h, recovers, alt_apy)
+
+    def sig(pg):
+        return [(x["node"], x["state"]) for x in pg["steps"]] + [("verdict", pg["verdict"])]
+    hs = [h_min * math.exp(math.log(h_max / h_min) * i / steps) for i in range(steps + 1)]
+    pgs = [at(h) for h in hs]
+    events, nums, bad = [], [], []
+    for i in range(steps):
+        a, b, pa = hs[i], hs[i + 1], pgs[i]
+        if sig(pa) == sig(pgs[i + 1]):
+            continue
+        sa = sig(pa)
+        for _ in range(50):                           # smallest duration whose propagation differs from a's
+            m = (a + b) / 2
+            if sig(at(m)) == sa:
+                a = m
+            else:
+                b = m
+        before, after = at(a), at(b)
+        lay = [{"n": y["n"], "name": y["name"], "from": x["state"], "to": y["state"], "text": y["text"]}
+               for x, y in zip(before["layers"], after["layers"]) if x["state"] != y["state"]]
+        stp_b = {x["node"]: x for x in before["steps"]}
+        stp = [{"layer": y["layer"], "node": y["node"], "from": stp_b[y["node"]]["state"] if y["node"] in stp_b else None,
+                "to": y["state"], "text": y["text"]}
+               for y in after["steps"] if y["node"] not in stp_b or stp_b[y["node"]]["state"] != y["state"]
+               or (y["node"] == "result" and before["verdict"] != after["verdict"])]
+        nums += after["numbers"]
+        bad += after["unchecked"]
+        events.append({"hours": math.floor(b * 1e6 + 0.5) / 1e6, "verdict_before": before["verdict"],
+                       "verdict_after": after["verdict"], "layers": lay, "steps": stp})
+    first = pgs[0]
+    return {"h_min": h_min, "h_max": h_max, "recovers": recovers,
+            "start": {"verdict": first["verdict"], "layers": [{"n": x["n"], "state": x["state"]} for x in first["layers"]]},
+            "events": events, "numbers": nums, "unchecked": bad}

@@ -56,7 +56,7 @@ The input is **vault address + amount invested**, as the organisers proposed. Th
 For `liquidity_run` there is no badge: show the run table (below).
 
 **3. Details** (collapsed by default)
-- Dependency chain: `details[a].dependency_chain` (6 layers: settlement chain, vault, protocol, markets, collateral and oracles, underlying and issuers), each item with `label`, `address` (Etherscan link), `detail`, `evidence`. Layer 6 items with `offchain` (a token symbol) open `details[a].offchain[symbol]`: issuer, `summary`, `relations` grouped by `kind` (issuer, reserve custodian, originator, redemption, oracle, regulator, attestation, ...), each with `entity`, `relation`, the link `evidence.url` and the quote `evidence.quote`; grade D (dashed), "third-party source" when `evidence.official` is false. Today: EURCV and mGLOeuro (Belem RWA EURCV), PST (Huma, Confidential RWA). Highlight the items on the selected incident's `propagation_paths` (strings "Vault -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[0]] Morpho Blue market -> [marketParams.collateralToken] PST").
+- Dependency chain: `details[a].dependency_chain` (6 layers: settlement chain, vault, protocol, markets, collateral and oracles, underlying and issuers), each item with `label`, `address` (Etherscan link), `detail`, `evidence`. Layer 6 items with `offchain` (a token symbol) open `details[a].offchain[symbol]`: issuer, `summary`, `relations` grouped by `kind` (issuer, reserve custodian, originator, redemption, oracle, regulator, attestation, ...), each with `entity`, `relation`, the link `evidence.url` and the quote `evidence.quote`; grade D (dashed), "third-party source" when `evidence.official` is false; the quote's check state `evidence.quote_found` is shown as in FRONTEND_GUIDE section 8 (`true` re-checked, `null` "not re-checked", `false` quote hidden). Today: EURCV and mGLOeuro (Belem RWA EURCV), PST (Huma, Confidential RWA). Highlight the items on the selected incident's `propagation_paths` (strings "Vault -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[0]] Morpho Blue market -> [marketParams.collateralToken] PST").
 - Economic impact at this severity: "Loss if you stay: `r.loss_if_stay_usd`" (`r.L` of the deposit), "Cost of exiting now: `r.exit_cost_usd`" (yield given up + force-deallocation penalty), "Loss still kept: `r.loss_kept_usd`" (locked part), "Loss avoided by exiting: `r.avoided_usd`". A small chart of `inc.severity_grid` (severity -> vault loss) with the current severity marked shows how the loss grows.
 - Justification sentence (templates in section 4).
 - Per market at the historical anchors: `inc.outcomes[].per_market` (`collateral`, `oracle_falls`, `market_bad_debt_high`, `vault_share_of_market`, `vault_loss_high`); show the shock of each row, not its probability.
@@ -96,27 +96,27 @@ The penalty clause when `r.exit_usd > r.free_usd` and `r.penalty > 0`; the locke
 
 ## 6. Acceptance tests
 
-After the change, these inputs must give these numbers (`RiskModel.vaultDecideAt(inc, v.exit, amount, severity, null, null)` with `v = window.VAULTS.details[address]`, default alternative yield and horizon; money in the vault's currency):
+After the change, these inputs must give these numbers (`RiskModel.vaultDecideAt(inc, v.exit, amount, severity, null, null)` with `v = window.VAULTS.details[address]`, default alternative yield and horizon; money in the vault's currency, rounded to the unit; numbers of `sample_data/vaults.sample.js` at block 26163394, recompute this table whenever the sample is regenerated):
 
 | Vault | Incident | Amount | Severity | Verdict | Loss if stay | Exit | Exit cost | Locked | Break-even severity (free / forced) |
 |---|---|---|---|---|---|---|---|---|---|
-| Belem RWA EURCV | `issuer_default:mGLOeuro` | 1,000,000 | default 84.14% | EXIT | 616,185 | 1,000,000 | 477 | 0 | 20.09% / 20.09% |
+| Belem RWA EURCV | `issuer_default:mGLOeuro` | 1,000,000 | default 84.14% | EXIT | 616,186 | 1,000,000 | 477 | 0 | 20.09% / 20.09% |
 | Belem RWA EURCV | `issuer_default:mGLOeuro` | 1,000,000 | 10.00% | STAY | 0 | 0 | 0 | 0 | 20.09% / 20.09% |
 | Belem RWA EURCV | `issuer_default:mGLOeuro` | 100,000 | 30.00% | EXIT | 5,345 | 100,000 | 48 | 0 | 20.09% / 20.09% |
 | Belem RWA EURCV | `asset_issuer:EURCV` | 1,000,000 | 5.00% | REVIEW | 50,000 | 0 | 0 | 0 | 0.05% / 0.05% |
-| RockawayX Confidential RWA USDC | `issuer_default:PST` | 1,000,000 | 10.00% | STAY | 0 | 0 | 0 | 0 | 13.82% / 16.25% |
-| RockawayX Confidential RWA USDC | `issuer_default:PST` | 1,000,000 | 30.00% | EXIT | 123,819 | 1,000,000 | 4,932 | 0 | 13.82% / 16.25% |
-| RockawayX Confidential RWA USDC | `pt_market_dip:PT-reUSD-10DEC2026` | 1,000,000 | default 2.97% | STAY | 0 | 0 | 0 | 0 | 15.39% / 23.47% |
-| RockawayX YIELD USDC | `issuer_default:PT-reUSD-10DEC2026` | 1,000,000 | 50.00% | EXIT | 182,023 | 1,000,000 | 4,968 | 0 | 10.11% / 11.95% |
-| RockawayX NUVA Ecosystem | `issuer_default:nvPRIME` | 1,000,000 | default 84.14% | EXIT_PARTIAL | 587,966 | 380,352 | 2,374 | 619,648 | 21.37% / 26.23% |
+| RockawayX Confidential RWA USDC | `issuer_default:PST` | 1,000,000 | 10.00% | STAY | 0 | 0 | 0 | 0 | 13.83% / 16.25% |
+| RockawayX Confidential RWA USDC | `issuer_default:PST` | 1,000,000 | 30.00% | EXIT | 123,807 | 1,000,000 | 4,932 | 0 | 13.83% / 16.25% |
+| RockawayX Confidential RWA USDC | `pt_market_dip:PT-reUSD-10DEC2026` | 1,000,000 | default 2.97% | STAY | 0 | 0 | 0 | 0 | 15.38% / 23.46% |
+| RockawayX YIELD USDC | `issuer_default:PT-reUSD-10DEC2026` | 1,000,000 | 50.00% | EXIT | 182,150 | 1,000,000 | 4,968 | 0 | 10.11% / 11.95% |
+| RockawayX NUVA Ecosystem | `issuer_default:nvPRIME` | 1,000,000 | default 84.14% | EXIT_PARTIAL | 587,966 | 380,354 | 2,374 | 619,646 | 21.37% / 26.23% |
 
 Liquidity run, Belem RWA EURCV, amount 1,000,000, mGLOeuro at its default severity (L = 0.6162; `RiskModel.vaultRun(v.exit, 1e6, share, L)`):
 
 | Others take | Free now | With penalty | Locked | Loss on locked part |
 |---|---|---|---|---|
 | 0% | 361,743 | 638,257 | 0 | 0 |
-| 50% | 180,872 | 334,978 | 484,151 | 298,326 |
-| 100% | 0 | 0 | 1,000,000 | 616,185 |
+| 50% | 180,872 | 334,979 | 484,150 | 298,326 |
+| 100% | 0 | 0 | 1,000,000 | 616,186 |
 
 ## 7. Refreshing the data (backend side)
 

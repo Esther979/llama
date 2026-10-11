@@ -4,3 +4,5 @@ data/
 *.pyc
 .DS_Store
 .env
+# local explainer pages (not for GitHub)
+explainer/

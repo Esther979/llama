@@ -6,7 +6,7 @@
      oracleFalls                oracle_types.py (oracle_falls; meta-oracle threshold + timelock)
      slippageAt, decide         decision_core.py
      breakEven                  incidents.py (exact break-even from the exit curve, no p grid)
-     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText   frontend_contract.py (position size: the manager's input)
+     sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize, decisionText, propagation(AtDuration, Events)   frontend_contract.py (position size: the manager's input)
 
    Shapes (same field names as the Python dataclasses):
      scenario = {layer: 2|3, shock: 0..1, permanent: 0..1, hours: number|null}
@@ -547,6 +547,245 @@
   }
 
   const RANK = 'ABCD';
+
+  /* How the incident travels through the five layers, step by step (port of frontend_contract.propagation). */
+  const PROPAGATION_ORIGIN = {
+    'eth:halt': 'Ethereum stops producing blocks for {sev}: no exit and no liquidation while it lasts.',
+    'ethena:shortfall': 'Ethena cannot fully back USDe (off-chain reserves, custodians and hedges): USDe falls {sev}.',
+    'usde:depeg': 'USDe falls {sev} against USD.',
+    'susde:navLoss': "sUSDe's NAV (USDe per sUSDe) falls {sev}.",
+    'susde:discount': 'sUSDe trades {sev} below its NAV; the NAV itself is unchanged.',
+    'feeds:oracleLow': 'An upstream feed of the lending oracle reports a price {sev} too low; the price recovers ' +
+                       'afterwards, the PT itself is unchanged.',
+    'feeds:stale': 'An upstream feed of the lending oracle stops updating for {sev}.',
+    'oracle:oracleLow': 'The Morpho market oracle reports a PT price {sev} too low; the price recovers afterwards, the ' +
+                        'PT itself is unchanged.',
+    'oracle:stale': 'The Morpho market oracle stops updating for {sev}.',
+    'market:drain': "{sev} of the Pendle pool's liquidity leaves.",
+    'pt:depeg': "The PT's market price on Pendle falls {sev}; the PT still redeems at expiry, so holding to expiry " +
+                'recovers it.',
+    'lending:cascade': 'Other borrowers of the Morpho market are liquidated at a {sev} oracle drop and their PT is sold ' +
+                       'into the Pendle pool first.'
+  };
+  function propagation(d, presetKey, node, fail, sev, carry = 0, opts = null) {
+    opts = opts || {};
+    const r = decideAt(d, presetKey, node, fail, sev, carry, opts);
+    const m = d.ui.injections[node + ':' + fail], p = d.position_presets[presetKey], ft = d.failure_types.types[fail];
+    const o = d.oracle || {}, nodes = d.ui.nodes, nums = [];
+    const f = s => { nums.push(...(s.match(NUM) || [])); return s; };
+    const money = v => f('$' + _num(v, 0)), pct = v => f(_num(v * 100, 2) + '%');
+    const unit = v => f(_num(v, 2) + (ft.unit === '%' ? '%' : ' h')), hrs = v => f(_num(v, 2) + ' h');
+    const edges = (...pairs) => {
+      const out = [];
+      for (const [a, b] of pairs) {
+        const e = d.ui.edges.find(e => e.from === a && e.to === b);
+        if (e) out.push({from: a, to: b, type: e.type, grade: e.grade});
+      }
+      return out;
+    };
+    const worst = gs => {
+      gs = gs.filter(Boolean);
+      return gs.length ? gs.reduce((a, g) => RANK.indexOf(g) > RANK.indexOf(a) ? g : a) : null;
+    };
+    const C = 'collateral_usd' in opts ? opts.collateral_usd : p.collateral_usd;
+    const D = 'debt_usd' in opts ? opts.debt_usd : p.debt_usd;
+    const Co = 'collateral_oracle_usd' in opts ? opts.collateral_oracle_usd
+      : C * ('collateral_oracle_usd' in p ? p.collateral_oracle_usd : p.collateral_usd) / p.collateral_usd;
+    const V = 'sale_value_usd' in opts ? opts.sale_value_usd : p.collateral_usd, E = C - D;
+    const hours = 'hours' in opts ? opts.hours : (m.hours === undefined ? null : m.hours);
+    const perm = 'permanent' in opts ? opts.permanent : m.permanent;
+    const canHold = 'can_hold' in opts ? opts.can_hold : p.can_hold;
+    const of = r.oracle_falls, liq = (r.liquidated || []).some(Boolean), lm = m.type === 'loss_model';
+    const oGrade = (o.evidence || {}).grade || 'D', s = sev / 100, steps = [];
+    const step = (layer, nd, state, text, grade, edg = []) => steps.push({layer, node: nd, state, text, grade, edges: edg});
+
+    // 1. origin
+    const originLayer = nodes[node].layer;
+    let text = PROPAGATION_ORIGIN[node + ':' + fail].replace('{sev}', unit(sev));
+    if (node === 'market')
+      text += ` The pool takes ${pct(r.sellable_now)} of this position today, ` +
+        (r.sellable_later <= 0 ? 'nothing after.' : `${pct(r.sellable_later)} after.`);
+    step(originLayer, node, 'origin', text, null,
+         node === 'ethena' ? edges(['ethena', 'usde']) : node === 'feeds' ? edges(['feeds', 'oracle']) : []);
+
+    // 2. the PT's value (layer 4), for failures upstream of the PT
+    if (lm && originLayer === 2) {
+      if (fail === 'discount') {
+        step(4, 'pt', 'unchanged', "The PT redeems at the NAV-based rate, not at sUSDe's market price: its " +
+             'redemption value does not fall, and holding to expiry recovers the discount.', 'A', edges(['susde', 'pt']));
+      } else {
+        let t, e;
+        if (node === 'susde') {
+          t = `The SY exchange rate falls with the NAV and the PT index never decreases: the PT's value falls ${unit(sev)}`;
+          e = edges(['susde', 'pt']);
+        } else {
+          t = `The PT redeems to sUSDe, which is staked USDe: the PT's value falls ${unit(sev)}`;
+          e = edges(['usde', 'susde'], ['susde', 'pt']);
+        }
+        if (perm >= 1) t += '; the loss is permanent (no recovery assumed).';
+        else if (perm <= 0)
+          t += '; the shock is over after the incident' + (hours !== null ? ` (${hrs(hours)})` : '') +
+            ', so a holder who can wait gets it back.';
+        else t += `; ${pct(perm)} of it remains after the incident.`;
+        if (!canHold) t += ' This position must sell at the worst point.';
+        step(4, 'pt', 'hit', t, worst(e.map(x => x.grade)) || 'A', e);
+      }
+    }
+
+    // 3. the lending oracle (layer 3)
+    if (lm && node !== 'oracle') {
+      const meta = o.kind === 'meta_oracle_timelock' && m.oracle === 'rule';
+      const thr = o.deviation_threshold, tl = o.challenge_timelock_s;
+      let st, t;
+      if (node === 'feeds') { st = 'hit'; t = `The Morpho market oracle reads this feed: it falls ${unit(sev)} too.`; }
+      else if (of === true && meta) {
+        st = 'hit'; t = `The meta-oracle sees a deviation above ${pct(thr)} for at least ${hrs(tl / 3600)} and ` +
+          `switches to its backup feed with USDe / USD: the lending oracle falls ${unit(sev)}.`;
+      } else if (of === true) { st = 'hit'; t = `The lending oracle follows: it falls ${unit(sev)}.`; }
+      else if (of === false && meta && thr !== null && thr !== undefined && s <= thr) {
+        st = 'unchanged'; t = `The deviation (${unit(sev)}) is not above the meta-oracle's ${pct(thr)} threshold: ` +
+          'the lending oracle does not move.';
+      } else if (of === false && meta) {
+        st = 'unchanged'; t = `The meta-oracle switches only after a deviation above ${pct(thr)} lasting ` +
+          `${hrs(tl / 3600)}; this incident lasts ${hrs(hours)}: the lending oracle does not move.`;
+      } else if (of === false) {
+        st = 'unchanged'; t = 'No feed of the lending oracle prices this (the PT is priced by a linear discount, ' +
+          'no market input): the lending oracle does not move.';
+      } else {
+        st = 'unknown'; t = "The lending oracle's behaviour is unknown: the loss is the worse of both branches " +
+          `(${pct(r.L_low)} to ${pct(r.L_high)} of equity).`;
+      }
+      if (D <= 0) t += ' This matters only for a levered position: this one has no debt.';
+      step(3, 'oracle', st, t, oGrade);
+    }
+
+    // 4. liquidation (layer 5)
+    if (lm) {
+      if (D <= 0) step(5, 'lending', 'not_applicable', 'This position has no debt: nothing to liquidate.', null);
+      else {
+        const line = 1 - D / (Co * p.lltv), bonus = pct(lif(p.lltv) - 1);
+        const e = edges(['oracle', 'lending'], ['pt', 'lending']);
+        let st, t;
+        if (liq && line <= 0) {
+          st = 'hit'; t = 'The position is already above the liquidation line: Morpho can liquidate it, the ' +
+            `liquidator taking collateral worth the debt plus a ${bonus} bonus.`;
+        } else if (liq && of === null) {
+          st = 'hit'; t = `If the oracle follows, the position is liquidated (the liquidation line is ` +
+            `${pct(line)} away); the liquidator takes collateral worth the debt plus a ${bonus} bonus.`;
+        } else if (liq) {
+          st = 'hit'; t = `The lending oracle falls ${unit(sev)} while the liquidation line is ${pct(line)} away: ` +
+            'Morpho liquidates this position, the liquidator taking collateral worth the debt plus ' +
+            `a ${bonus} bonus.`;
+        } else if (of === true) {
+          st = 'unchanged'; t = `The lending oracle falls ${unit(sev)} but the liquidation line is ${pct(line)} ` +
+            'away: not liquidated.';
+        } else {
+          st = 'unchanged'; t = 'The lending oracle does not move: not liquidated (the liquidation line is ' +
+            `${pct(line)} away).`;
+        }
+        step(5, 'lending', st, t, worst(['B'].concat(e.map(x => x.grade))), e);
+      }
+    }
+
+    // 5. exit liquidity (layer 4)
+    if (m.type !== 'not_modelled' && node !== 'market') {
+      if (r.sellable_later < r.sellable_now - 1e-12) {
+        const t = 'Liquidators sell the seized PT into the Pendle pool first: ' +
+          (r.sellable_later <= 0 ? `the pool takes ${pct(r.sellable_now)} of this position today, nothing after.`
+            : `the pool takes ${pct(r.sellable_now)} of this position today, only ${pct(r.sellable_later)} after.`);
+        const e = edges(['lending', 'market']);
+        step(4, 'market', 'hit', t, worst(['B'].concat(e.map(x => x.grade))), e);
+      } else {
+        step(4, 'market', 'unchanged', `The Pendle pool still takes ${pct(r.sellable_now)} of this position ` +
+             `(${money(r.sellable_now * V)}).`, 'A');
+      }
+    }
+
+    // 6. the position and 7. the verdict
+    const hitGrades = steps.filter(x => x.state === 'hit' || x.state === 'unknown').map(x => x.grade);
+    const pe = edges(['pt', 'position']).concat(D > 0 ? edges(['lending', 'position']) : []);
+    const loss = r.loss_if_stay_usd;
+    let t;
+    if (lm) t = loss > 0 ? `Loss if staying: ${money(loss)} (${pct(r.L_high)} of the position's equity of ${money(E)}).`
+      : 'No loss on this position at this severity.';
+    else if (m.type === 'exit_later' || m.type === 'exit_only')
+      t = 'No direct loss on this position: only how much of it can be sold changes.';
+    else t = 'No loss is modelled for this failure.';
+    step(null, 'position', loss > 0 ? 'hit' : 'unchanged', t, worst(hitGrades) || 'A', pe);
+    let res;
+    if (lm && loss > 0 && r.verdict !== 'STAY')
+      res = `${r.verdict}: sell ${money(r.sell_usd)} now (${pct(r.sell_fraction)} of the position) for ` +
+        `${money(r.sale_cost_usd)}; acting costs ${money(r.total_if_act_usd)} in all instead of ${money(loss)}.` +
+        (r.stuck_fraction > 0 ? ` ${pct(r.stuck_fraction)} cannot be sold through the pool now.` : '');
+    else if (lm && loss > 0) res = `STAY: selling would cost more than it saves (doing nothing loses ${money(loss)}).`;
+    else res = 'STAY: nothing to sell for.';
+    step(null, 'result', 'result', res, null);
+
+    const rows = d.ui.layers.map(lay => {
+      const mine = steps.filter(x => x.layer === lay.n);
+      let st;
+      if (lay.n === originLayer) st = 'origin';
+      else if (mine.some(x => x.state === 'hit')) st = 'hit';
+      else if (mine.some(x => x.state === 'unknown')) st = 'unknown';
+      else if (mine.length && mine.every(x => x.state === 'not_applicable')) st = 'not_applicable';
+      else if (mine.length) st = 'unchanged';
+      else st = lay.n < originLayer && (lm || lay.n === 1) ? 'unchanged' : 'not_modelled';   // no step here
+      const txt = mine.map(x => x.text).join(' ') || (st === 'unchanged' ? 'Upstream of the failure: not affected.'
+                                                     : 'Not part of how this failure is modelled.');
+      return {n: lay.n, name: lay.name, nodes: lay.nodes, state: st, text: txt};
+    });
+    const all = steps.map(x => x.text).join(' ');
+    const bad = (all.match(NUM) || []).filter(x => !nums.includes(x));
+    return {verdict: r.verdict, origin: {node, layer: originLayer}, steps, layers: rows, numbers: nums, unchecked: bad};
+  }
+  /* The opts that make decideAt equal decideAtDuration's result r (guide 5b). */
+  function durationInputs(d, presetKey, r, hours, recovers) {
+    const o = {hours, collateral_usd: r.position_value_usd, collateral_oracle_usd: r.collateral_usd,
+               debt_usd: r.debt_usd, sale_value_usd: d.position_presets[presetKey].collateral_usd};
+    if (recovers) o.permanent = 0;
+    return o;
+  }
+  /* propagation for an incident lasting `hours` (port of frontend_contract.propagation_at_duration). */
+  function propagationAtDuration(d, presetKey, node, fail, sev, hours, recovers = true, altApy = null) {
+    const r = decideAtDuration(d, presetKey, node, fail, sev, hours, recovers, altApy);
+    return propagation(d, presetKey, node, fail, sev, r.carry, durationInputs(d, presetKey, r, hours, recovers));
+  }
+  /* Where the propagation changes along the duration slider (port of frontend_contract.propagation_events). */
+  function propagationEvents(d, presetKey, node, fail, sev, recovers = true, altApy = null, hMin = 1, hMax = 4320,
+                             steps = 200) {
+    const at = h => propagationAtDuration(d, presetKey, node, fail, sev, h, recovers, altApy);
+    const sig = pg => JSON.stringify(pg.steps.map(x => [x.node, x.state]).concat([['verdict', pg.verdict]]));
+    const hs = [];
+    for (let i = 0; i <= steps; i++) hs.push(hMin * Math.exp(Math.log(hMax / hMin) * i / steps));
+    const pgs = hs.map(at), events = [], nums = [], bad = [];
+    for (let i = 0; i < steps; i++) {
+      let a = hs[i], b = hs[i + 1];
+      const sa = sig(pgs[i]);
+      if (sa === sig(pgs[i + 1])) continue;
+      for (let k = 0; k < 50; k++) {
+        const m = (a + b) / 2;
+        if (sig(at(m)) === sa) a = m; else b = m;
+      }
+      const before = at(a), after = at(b);
+      const lay = after.layers.map((y, j) => [before.layers[j], y]).filter(([x, y]) => x.state !== y.state)
+        .map(([x, y]) => ({n: y.n, name: y.name, from: x.state, to: y.state, text: y.text}));
+      const stpB = {};
+      for (const x of before.steps) stpB[x.node] = x;
+      const stp = after.steps.filter(y => !(y.node in stpB) || stpB[y.node].state !== y.state ||
+                                          (y.node === 'result' && before.verdict !== after.verdict))
+        .map(y => ({layer: y.layer, node: y.node, from: y.node in stpB ? stpB[y.node].state : null, to: y.state,
+                    text: y.text}));
+      nums.push(...after.numbers);
+      bad.push(...after.unchecked);
+      events.push({hours: Math.floor(b * 1e6 + 0.5) / 1e6, verdict_before: before.verdict, verdict_after: after.verdict,
+                   layers: lay, steps: stp});
+    }
+    const first = pgs[0];
+    return {h_min: hMin, h_max: hMax, recovers,
+            start: {verdict: first.verdict, layers: first.layers.map(x => ({n: x.n, state: x.state}))},
+            events, numbers: nums, unchecked: bad};
+  }
+
   const pickWeakest = rows => {
     const flips = rows.filter(x => x.flips && !x.comparison);
     if (!flips.length) return null;
@@ -621,7 +860,7 @@
 
   const api = {lif, positionLoss, oracleFalls, slippageAt, decide, breakEven, sizeCurve, exitLaterAt, borrowerPreset, walletPresets, atSize,
                inject, decideAt, breakEvenSeverity,
-               sensitivity, decisionText, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
+               sensitivity, decisionText, propagation, propagationAtDuration, propagationEvents, carryOf, decideAtDuration, timeline, timelineSummary, vaultDecide, vaultRun, vaultLossAt, vaultDecideAt,
                vaultSensitivity, vaultTimeline, vaultTimelineSummary};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RiskModel = api;
