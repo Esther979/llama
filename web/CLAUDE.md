@@ -276,7 +276,9 @@ What is on the branch:
   the verdict an action-only line ("Sell all $X now." for EXIT, "Keep the position…" for STAY, none for REDUCE /
   SELL_TO_CAP whose badge already says "Sell $X"), the backend's full headline as its tooltip; the bars carry the
   amounts (exact in their tooltips), their key only when "Act" has two parts; the weakest assumption said once, on
-  the card (the fold's own line is gone). The reasons stay for now.
+  the card (the fold's own line is gone). The reasons stay for now. The verdict word (EXIT, STAY, SELL $X) is
+  92 px, twice its former size, with more space above and below; the line under it stays 14 px (PT card only; the
+  vault card keeps its 46 px verdict).
 - Decision card, trimmed (user decision, 11 Oct): the break-even sentence (`t.break_even`; it is on the severity
   slider and under the exit chart), the propagation rule (`t.rule`; the reasons say it) and the "Losses, the decision
   and these texts come from the backend model …" source note are no longer on the card (gate 2g). The headline,

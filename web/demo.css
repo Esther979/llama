@@ -2168,3 +2168,14 @@
       .tag.own {
         color: var(--muted);
       }
+      /* PT decision card (user decision, 11 Oct): the verdict word (EXIT, STAY, SELL $X) at twice its size, with more
+   room above and below; the line under it stays at 14 px. The vault card keeps its 46 px verdict. */
+      #decision .verdict {
+        font-size: 92px;
+        line-height: 0.95;
+        margin: 14px 0 16px;
+        row-gap: 8px;
+      }
+      #decision .verdict small {
+        font-size: 14px;
+      }
