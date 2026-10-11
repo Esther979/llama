@@ -142,7 +142,7 @@ liquidity-run table) decide behaviour.
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `50d2c16`; page code last changed in `7df75da`)
+## Current state (`frontend` at `778bf71`)
 
 What is on the branch:
 
@@ -171,9 +171,12 @@ What is on the branch:
   and node carry a "Past pattern" tag, the card label "Pattern from …".
 - First screen: `pt_reusd_aug_2026` on `lev_closest_to_liquidation` (EXIT, doing nothing loses $165k, selling
   costs $5.7k). With a real-borrower preset the card says it is "a real borrower of this market, read on chain, not
-  your position". The header still shows "position size $10.00M" (gap 2).
-- `sensitivity` and `decisionText` are not called yet, so `opts` reaches only `decideAt` and `breakEvenSeverity`;
-  pass it when to-do 5 and 6 add them.
+  your position". The header still shows "position size $10.00M" (gap 1).
+- "What would change the answer" is `RiskModel.sensitivity` (`778bf71`), called with the same inputs as `decideAt`,
+  a past event's `opts` included: the weakest assumption that flips the verdict (or "No tested assumption changes
+  the answer"), this position's own assumptions, the other positions as their own group (they never count as the
+  weakest), then the severity break-even and the rule. Shown with or without a loss. `decisionText` is not called
+  yet (to-do 6); pass it the same `opts`.
 - Off-chain dependencies (guide section 8): the `ethena` and `susde` drawers have an "Off-chain (issuer documents)"
   row from `d.offchain.USDe` (31 relations) and `d.offchain.sUSDe` (4): issuer, summary and count per kind,
   relations grouped by kind on demand, each with a source link, grade D and the quote ("re-checked" when
@@ -213,6 +216,11 @@ acceptance rows, 4b 192/192, no horizontal scroll at 390px, dark background in d
 checked: the first screen on desktop and at a real 390px viewport (device emulation; a plain `--window-size=390`
 screenshot crops the page and is not a valid phone check). `python3 check_js_port.py` passes all 22 gates at the
 `48e5ab9` merge (`f1a44c5` changed docs only).
+Checked at `778bf71`: everything below, plus gate 3b ("What would change the answer" is `sensitivity`: 112 cases,
+every preset x failure at two severities and every past event on every preset; the page's result equals the
+model's and the screen shows its rows, flips, groups and weakest line; 0/112 on the page before, the other gates
+print the same). Screenshots: the first screen, "PT held outright" (STAY, block now shown) and a case where no
+assumption flips.
 Checked at `7df75da`: everything above, plus vault gates 6a (switch; PT view exactly the same after switching
 back), 6b (the guide's 9 decision rows give its verdict and badge and exactly the model's numbers), 6c (run rows
 3/3), 6d (sentence equals `decision_text` with amounts converted to the short form, 41/41; the old full format
@@ -232,12 +240,9 @@ compared old vs new on 564 cases: no verdict changed, 9 REDUCE sizes moved by 1-
 
 Gaps, most visible first:
 
-1. "What would change the answer" is built by the page, not by `sensitivity`. Its numbers come from `decideAt`, and
-   it has no "cash earns 1% less" row, so it cannot carry that bug; what is missing is the content: the duration,
-   must-sell and carry alternatives and the weakest assumption.
-2. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
+1. No `atSize`: no position size or wallet input. The page is `web/demo.html` and shows the size as a fixed,
    assumed $10M; the header's "position size $10.00M" stays even when a real-borrower preset is selected.
-3. The incident path is built by the page, not by `propagation` (to-do 6b): layers 1 and 2 have no state, there
+2. The incident path is built by the page, not by `propagation` (to-do 6b): layers 1 and 2 have no state, there
    is no "How it spreads" list, and the path does not change with the incident's duration.
 
 Answered by the backend (guide section 0b, merged):
@@ -268,13 +273,12 @@ position's own curve, with gate 4b in `check_demo.mjs` (`8291329`, `098d44c`); `
 `7aa2500`); `main` merged at `48e5ab9` (`74993e8`) and `f1a44c5` (`642e57b`); off-chain quotes "not re-checked"
 when `quote_found` is null (`0c71c3f`); past incidents replace the invented examples, first screen on PT-reUSD
 with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`); vault view first cut with the header switch and
-gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`).
+gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would change the answer" from
+`RiskModel.sensitivity`, gate 3b (`778bf71`).
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
-the new 3 (past incidents) and 4 (vault view, first cut) are done.
+the new 3 (past incidents), 4 (vault view, first cut) and 5 (sensitivity) are done.
 
-5. "What would change the answer" from `RiskModel.sensitivity` (candidates table, other positions in their own
-   group, `weakest`); with a past event selected, pass its `opts`.
 6. Decision sentence and reasons from `RiskModel.decisionText` (guide section 5); with a past event selected, pass
    its `opts` (the reasons then say when the shock is over). It also removes page-built sentences, so fewer strings
    are left to move into `COPY`.
