@@ -18,7 +18,7 @@ Always ask for permission before commit and push.
 | `demo.css`                           | Design tokens in `:root`, then component styles    | Anything read from data                           |
 | `demo.copy.js`                       | User-facing strings, as one `COPY` object          | Logic                                             |
 | `demo.js`                            | State, calls to `RiskModel`, rendering, events     | Colours, sizes, literal sentences                 |
-| `vault.js` (not created yet)         | The vault view: state, calls to `RiskModel.vault*` | Anything of the PT view                           |
+| `vault.js`                           | The vault view: state, calls to `RiskModel.vault*` | Anything of the PT view                           |
 | `risk_model.js`                      | Backend's model, both views. Read-only here        | —                                                 |
 | `../sample_data/dashboard.sample.js` | PT view data (`window.DASHBOARD`). Read-only here  | —                                                 |
 | `../sample_data/vaults.sample.js`    | Vault view data (`window.VAULTS`). Read-only here  | —                                                 |
@@ -74,7 +74,9 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - No detector and no invented incidents (team decision). An incident is set by hand (node, failure, severity), or
   loaded from a past event through "Load a past incident pattern…" at the top right: the real events in
   `d.past_incidents`, grade C. No page text may describe a detector or an invented incident (gate 2b).
-- Two page views, switched at the top right of the header: Position (PT), the default, and Vaults.
+- Two page views, switched at the top right of the header: Position (PT), the default, and Vaults. In both views
+  the header's first row holds only the title and the switch, and the view's own inputs take the second row, so the
+  switch does not move when the view changes.
 - Header of the PT view, left to right, once to-do 7 is done: title; the position select; "Position size (USD)";
   "Cash earns after selling, % APY"; "Load a past incident pattern…"; the view switch at the far right.
   - The position select and the size input answer different questions and must not look like two size controls.
@@ -97,16 +99,18 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   is likewise someone else's position (a real borrower of this market), not the manager's: say so on the card.
   Because it is a real-borrower preset, the size field is read-only on the first screen (to-do 7): show next to it
   that choosing "PT held outright" or the market-average preset makes the size editable.
-- In the PT view, the dependency chain has two displays: Layers (default) and Graph. Same incident and numbers in
+- In both views, the dependency chain has two displays: Layers (default) and Graph. Same incident and numbers in
   both. In this file "view" means a page view (Position / Vaults); Layers and Graph are "displays".
 - Plain words. One number per sentence. PT view: amounts in USD, shares as % of the position. Vault view: amounts
-  in the vault's currency.
+  in the vault's currency, written after the number. Both views write money the same short way (3.0k, 456k,
+  3.00M; PT with "$"); an input field keeps the full number the manager typed.
 - Every number in the drawer shows its source and its evidence grade (A to D).
 - Works at phone width; the graph may scroll sideways inside its own container.
 
 ## Second view: Vaults (`../FRONTEND_VAULT_GUIDE.md`)
 
-Not started. The guide and its acceptance table (9 decision rows and a 3-row liquidity-run table) decide behaviour.
+First cut done (`a7be800`, `7df75da`). The guide and its acceptance table (9 decision rows and a 3-row
+liquidity-run table) decide behaviour.
 
 - **Switch.** A two-option control at the top right of the header, where the Prototype / Preview switch used to
   be: "Position (PT)" (default) | "Vaults". Reuse the existing `.mode` segmented style. Switching shows one
@@ -138,13 +142,24 @@ Not started. The guide and its acceptance table (9 decision rows and a 3-row liq
   guide has a message for that case. Show the message, leave the typed number in the field, and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
-## Current state (`frontend` at `b47402c`)
+## Current state (`frontend` at `7df75da`)
 
 What is on the branch:
 
 - `web/demo.html` (markup), `web/demo.css` (both former `<style>` blocks, in order) and `web/demo.js` (the former
   inline script), moved line for line: rebuilding the old single file from the three gives it byte for byte.
   The page loads `../sample_data/dashboard.sample.js` and `risk_model.js` in place, as shown above.
+- Vault view (`web/vault.js`, `COPY.vault`), first cut: the header switch; vault address (text or list) and amount
+  invested (your input; above the vault's assets: message, model gets the capped amount), alternative yield and
+  horizon; incidents grouped (not analysed ones greyed); severity on a log slider with historical anchors and the
+  break-even zones; badge from `vaultDecideAt`, the backend's sentence (amounts in short form), stay vs exit bars;
+  liquidity run as a `vaultRun` table (0 / 50 / 100%); the six-layer chain in Layers and Graph, the incident's path
+  marked in both. Not yet: markets, exit tranches, sensitivity, the run's share slider, layer-6 off-chain relations,
+  timeline, "share of my portfolio" input (to-do 8).
+- The vault graph's edges are derived by the page from data fields (`markets[].collateral`, "{symbol} issuer" /
+  `offchain`, a depeg incident's `affected_markets`, the vault-asset issuer), because the vault details carry no
+  edge list (`dependency_graph` holds counts only; its edges are in a git-ignored CSV). Ask the backend for a
+  vault `ui.edges`-like list; until then no match means no edge.
 - `web/demo.copy.js` holds the `COPY` object: so far the step-1 hint, the past-event wording, "not your position"
   and the off-chain row. The other user-facing strings are still in `demo.js` and move step by step (see
   "Separation rules").
@@ -198,6 +213,16 @@ acceptance rows, 4b 192/192, no horizontal scroll at 390px, dark background in d
 checked: the first screen on desktop and at a real 390px viewport (device emulation; a plain `--window-size=390`
 screenshot crops the page and is not a valid phone check). `python3 check_js_port.py` passes all 22 gates at the
 `48e5ab9` merge (`f1a44c5` changed docs only).
+Checked at `7df75da`: everything above, plus vault gates 6a (switch; PT view exactly the same after switching
+back), 6b (the guide's 9 decision rows give its verdict and badge and exactly the model's numbers), 6c (run rows
+3/3), 6d (sentence equals `decision_text` with amounts converted to the short form, 41/41; the old full format
+fails it), 6e (not analysed / unknown address / amount above the vault), 6f (graph: 12 vaults, 41 incidents, one
+node per item, every derived edge drawn, same marks as Layers, same card) and the phone width in the vault graph
+display. The PT gates print the same before and after the vault view. NOTE from 6b, to raise with the backend: 5
+of the vault guide's rows differ slightly from the model on today's `vaults.sample.js` (same verdicts; e.g.
+Confidential PST at 30%: loss if stay 123,807 vs the guide's 123,819; YIELD at 50%: 182,150 vs 182,023); the table
+looks older than the `4f5e9b9` data. Screenshots checked: Belem (default), NUVA (partial exit), EURCV (REVIEW), the
+run table, the graph for Belem, YIELD (25 nodes) and the EURCV path, dark mode, a 390px viewport.
 Earlier: screenshots of the ethena drawer collapsed and expanded, the usde drawer and the graph view.
 Gate 4b failed on the page before its fix (114/192, every failure with a real-borrower preset). Screenshots checked: the closest
 borrower at a 2% and a 0.5% USDe depeg, and the $10M position. Not checked: the guide's 1M / 7M / 50M rows (no size
@@ -240,17 +265,12 @@ position's own curve, with gate 4b in `check_demo.mjs` (`8291329`, `098d44c`); `
 (`5cda215`); no detector wording and off-chain row in the evidence drawer, with gates 2b / 2c (`a726d90`,
 `7aa2500`); `main` merged at `48e5ab9` (`74993e8`) and `f1a44c5` (`642e57b`); off-chain quotes "not re-checked"
 when `quote_found` is null (`0c71c3f`); past incidents replace the invented examples, first screen on PT-reUSD
-with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`).
+with the closest borrower, gates 1b / 2b / 2d / 2e (`b47402c`); vault view first cut with the header switch and
+gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`).
 
-Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b and
-the new 3 (past incidents) are done.
+Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
+the new 3 (past incidents) and 4 (vault view, first cut) are done.
 
-4. Vault view, first cut: header switch, address and amount inputs in the header (they replace the PT view's two
-   header inputs while this view is shown), scenario and severity, verdict badge, the
-   sentence, loss if staying versus cost of exiting, and the dependency chain. Add the vault acceptance rows and a
-   "PT view unchanged after switching back" gate to `check_demo.mjs`. The planned demo order opens on this view
-   (Belem vault, mGLOeuro, "exit above 20%", then the PT five layers, the 16 h oracle timelock, the timeline), so
-   it comes before the PT view's remaining refinements. That order is a plan only: no demo script is written yet.
 5. "What would change the answer" from `RiskModel.sensitivity` (candidates table, other positions in their own
    group, `weakest`); with a past event selected, pass its `opts`.
 6. Decision sentence and reasons from `RiskModel.decisionText` (guide section 5); with a past event selected, pass
