@@ -64,15 +64,16 @@
             <button data-mode="past" aria-pressed="true"></button
             ><button data-mode="manual" aria-pressed="false"></button>
           </div>
-          <span class="pastwrap">
-            <select id="replay" aria-label="Past incident" aria-describedby="pastBanner"></select>
-            <button type="button" class="pinfo" id="pastInfo" aria-describedby="pastBanner">*</button>
-            <div class="banner ptip" id="pastBanner" role="tooltip" hidden></div>
-          </span>
         </div>
         <div class="ctrls">
           <div class="ctl">
             <span class="q" id="q1"></span>
+            <!-- past mode: the past incident (line 1) and the incident type it sets (line 2, #ro1) -->
+            <span class="pastwrap">
+              <select id="replay" aria-label="Past incident" aria-describedby="pastBanner"></select>
+              <button type="button" class="pinfo" id="pastInfo" aria-describedby="pastBanner">*</button>
+              <div class="banner ptip" id="pastBanner" role="tooltip" hidden></div>
+            </span>
             <div class="casc" id="casc">
               <button type="button" class="cbtn" id="incBtn" aria-haspopup="menu" aria-expanded="false"
                 ><span id="incTxt"></span></button>

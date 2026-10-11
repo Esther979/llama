@@ -2140,3 +2140,18 @@
           border-top: 0;
         }
       }
+      /* past mode (user decision, 11 Oct): the past incident is chosen in the "Incident type" column, its select on the
+   first line and the incident type it sets on the second; the description tooltip opens to the asterisk's right */
+      .ctl .pastwrap {
+        flex: none;
+        width: 100%;
+      }
+      .ctl .pastwrap select {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .ctl #ro1 {
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 400;
+      }
