@@ -4,8 +4,10 @@
 const COPY = {
   /* Step hints. An incident is set by hand or loaded from a real past event (no detector, no invented incidents). */
   steps: {
-    /* a past event's steps 1 and 2, as text */
-    ro: (fail, sev) => `${fail} · ${sev}`,
+    q1: "Incident type",
+    q2: "Severity",
+    /* the incident as one line: where, then what */
+    inc: (node, fail) => `${node} · ${fail}`,
   },
 
   /* How the incident is set: a past event or by hand, one or the other. */
@@ -77,7 +79,7 @@ const COPY = {
   /* Time rail: how long the incident lasts (guide sections 5b and 6). Event texts are RiskModel.propagationEvents'
      own; the recovers reason is RiskModel.recoveryToggle's. */
   rail: {
-    q: "How long?",
+    q: "Time frame",
     lasted: "The incident has lasted:",
     durHint: "Drag the rail or type a duration: 16, 16h, 3d, 1w (1 hour to 180 days)",
     play: "Play",
@@ -86,7 +88,6 @@ const COPY = {
     recovers: "Recovers",
     stays: "Stays",
     recovery: "Recovery",
-    evHead: "How the path changes with the duration (step 3)",
     markTip: (dur, verdict, layers) => `From ${dur}: ${[verdict, layers].filter(Boolean).join("; ")}. Click to go there.`,
     layerShort: (n, from, to) => `layer ${n} ${from} → ${to}`,
     oracle: (dur) => `oracle switch ${dur}`,
@@ -185,7 +186,7 @@ const COPY = {
     assumed: (g, source) => `<span class="asm" title="${source}">assumed</span> ${g}`,
     typed: "your input",
     onChain: (g) => `read on chain ${g}`,
-    altLabel: (g) => `And if you sell: cash earns, % APY ${g}`,
+    altLabel: (g) => `Cash earns (if sell), % APY ${g}`,
     line: (units, price, share, cap) => `${units} PT at ${price}; sellable now: ${share} (${cap} pool limit).`,
     editHint: "Size of a real borrower, read on chain: pick “PT held outright” or the market-average preset to set your own.",
     editHintWallet: "Size of this wallet's position, read on chain.",
@@ -240,7 +241,7 @@ const COPY = {
       "This vault is not in the analysed list. Add it to sample_data/rockawayx_vaults.csv and run vault_pipeline.py.",
     notCovered: (name, note) => `${name}: ${note}. No numbers for this vault.`,
     above: (total, cur) => `Amount above the vault's total assets (${total} ${cur}): computed for the whole vault.`,
-    chainHead: "What this deposit depends on",
+    chainHead: "Dependency mapping",
     /* Edge labels of the vault graph, by dependency_edges[].type (backend). */
     edge: {
       settlement: "settles on",

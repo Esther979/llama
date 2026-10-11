@@ -70,33 +70,36 @@
             <div class="banner ptip" id="pastBanner" role="tooltip" hidden></div>
           </span>
         </div>
-        <div class="step s12">
-          <div class="sub">
-          <label class="q" for="node"><i>1</i><span id="q1"></span></label>
-          <select id="node"></select>
-          <p class="ro" id="ro1" hidden></p>
-          </div>
-          <div class="sub">
-          <label class="q" for="fail"><i>2</i>What happens, and how bad?</label>
-          <select id="fail"></select>
-          <p class="ro" id="ro2" hidden></p>
-          <div class="slide" id="sevRow">
-            <div class="tcol">
-              <input type="range" id="sev" aria-label="Severity" />
+        <div class="ctrls">
+          <div class="ctl">
+            <span class="q" id="q1"></span>
+            <div class="casc" id="casc">
+              <button type="button" class="cbtn" id="incBtn" aria-haspopup="menu" aria-expanded="false"
+                ><span id="incTxt"></span></button>
+              <div class="cmenu" id="incMenu" role="menu" hidden></div>
             </div>
-            <output id="sevOut" for="sev"></output>
+            <p class="ro" id="ro1" hidden></p>
           </div>
-          <label class="q2" for="alt" id="alt-lbl"></label>
-          <div class="slide">
-            <div class="tcol"><input type="range" id="alt" min="0" max="10" step="0.01" /></div>
-            <output id="altOut" for="alt"></output>
+          <div class="ctl">
+            <label class="q" for="sev" id="q2"></label>
+            <p class="ro" id="ro2" hidden></p>
+            <div class="slide" id="sevRow">
+              <div class="tcol"><input type="range" id="sev" aria-label="Severity" /></div>
+              <output id="sevOut" for="sev"></output>
+            </div>
           </div>
+          <div class="ctl">
+            <label class="q" for="alt" id="alt-lbl"></label>
+            <div class="slide">
+              <div class="tcol"><input type="range" id="alt" min="0" max="10" step="0.01" /></div>
+              <output id="altOut" for="alt"></output>
+            </div>
           </div>
         </div>
-        <div class="step s3">
+        <div class="tframe">
             <div class="rail" id="rail" role="group" aria-label="How long the incident lasts">
               <div class="rhead">
-                <span class="q"><i>3</i><span class="rq"></span></span>
+                <span class="q rq"></span>
                 <label class="rlbl" for="durIn"><span class="rlt"></span>
                   <input id="durIn" class="rdur" type="text" autocomplete="off" spellcheck="false"
                 /></label>
@@ -125,7 +128,7 @@
         <div class="main">
           <section class="panel">
             <div class="phead">
-              <h2>What this position depends on</h2>
+              <h2>Dependency mapping</h2>
               <div
                 class="mode sm"
                 role="group"
@@ -136,10 +139,6 @@
                 ><button id="v-graph" data-view="graph" aria-pressed="false" aria-label="Graph" title="Graph">
                   <svg class="dicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.6 5.4 7.2 10.9M11.4 5.4 8.8 10.9M5.6 3.8h4.8" /><circle cx="3.6" cy="3.8" r="2" /><circle cx="12.4" cy="3.8" r="2" /><circle cx="8" cy="12.4" r="2" /></svg></button>
               </div>
-            </div>
-            <div class="evbox" id="evBox">
-              <p class="lbl" id="evHead"></p>
-              <ul class="revents" id="revents"></ul>
             </div>
             <div class="chain" id="chain"></div>
             <details class="spread" id="d-spread">
@@ -177,12 +176,12 @@
         <div class="banner vmsg" id="v-msg" hidden></div>
         <section class="panel steps" id="v-steps" aria-label="Vault incident to test">
           <div class="step">
-            <label class="q" for="v-inc"><i>1</i><span id="v-q1"></span></label>
+            <label class="q" for="v-inc"><span id="v-q1"></span></label>
             <select id="v-inc"></select>
             <span class="note" id="v-n1"></span>
           </div>
           <div class="step" id="v-sevstep">
-            <label class="q" for="v-sev"><i>2</i><span id="v-q2"></span></label>
+            <label class="q" for="v-sev"><span id="v-q2"></span></label>
             <div class="slide">
               <div class="tcol">
                 <input type="range" id="v-sev" min="0" max="1000" step="1" aria-label="Severity" />
@@ -197,7 +196,7 @@
           <div class="main">
             <section class="panel rail" id="v-rail" role="group" aria-label="How long the incident lasts" hidden>
               <div class="rhead">
-                <span class="q"><i>3</i><span class="rq"></span></span>
+                <span class="q rq"></span>
                 <label class="rlbl" for="v-durIn"><span class="rlt"></span>
                   <input id="v-durIn" class="rdur" type="text" autocomplete="off" spellcheck="false"
                 /></label>

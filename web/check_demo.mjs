@@ -341,10 +341,10 @@ try {
        what-if with every control editable and no banner; Past again loads the last event chosen */
     fire(sel, PAST[0].key);
     const wrap = sel.closest(".pastwrap"), tip = document.querySelector("#pastBanner"), top0 = document.querySelector("#steps").getBoundingClientRect().top;
-    const ro = ["#node", "#fail", "#sev"].every((q) => document.querySelector(q).disabled) && !!wrap && !wrap.hidden && S.mode === "past"
+    const ro = ["#incBtn", "#sev"].every((q) => document.querySelector(q).disabled) && !!wrap && !wrap.hidden && S.mode === "past"
       /* shown as text, the controls hidden (plan C) */
-      && document.querySelector("#node").hidden && document.querySelector("#fail").hidden && document.querySelector("#sevRow").hidden
-      && document.querySelector("#ro1").textContent === NODES[S.node].label && document.querySelector("#ro2").textContent.includes(sevText());
+      && document.querySelector("#casc").hidden && document.querySelector("#sevRow").hidden
+      && document.querySelector("#ro1").textContent === COPY.steps.inc(NODES[S.node].label, FAIL[S.fail].label) && document.querySelector("#ro2").textContent === sevText();
     /* the event's description is a tooltip of the asterisk at the select's top right: not shown with the select
        focused, shown with the asterisk focused (keyboard; hover is checked below with the mouse), never moving the
        panel */
@@ -364,8 +364,8 @@ try {
     document.querySelector('[data-mode="manual"]').click();
     const still = document.querySelector("#steps").getBoundingClientRect().top === top0;
     const whatIf = S.mode === "manual" && S.past === null && [S.node, S.fail, S.sev].join() === before && wrap.hidden && still
-      && !document.querySelector("#node").hidden && !document.querySelector("#sevRow").hidden && document.querySelector("#ro1").hidden
-      && document.querySelector("#pastBanner").hidden && ["#node", "#fail", "#sev"].every((q) => !document.querySelector(q).disabled)
+      && !document.querySelector("#casc").hidden && !document.querySelector("#sevRow").hidden && document.querySelector("#ro1").hidden
+      && document.querySelector("#pastBanner").hidden && ["#incBtn", "#sev"].every((q) => !document.querySelector(q).disabled)
       && /What-if/.test(document.querySelector("#decision .lbl").textContent);
     document.querySelector('[data-mode="past"]').click();
     const back = S.mode === "past" && S.past === PAST[0].key;
@@ -388,8 +388,7 @@ try {
   gate(!overSel && overInfo, `2d. mouse: the past event's description shows over the asterisk (${overInfo}), not over the select (${overSel})`);
   /* every select opens downward under its box (real clicks; base-select where the browser has it) */
   const down = [];
-  for (const q of ["#pos", "#replay", "#node", "#fail"]) {
-    if (q === "#node") await p.ev(`document.querySelector('[data-mode="manual"]').click()`);
+  for (const q of ["#pos", "#replay"]) {
     const bx = await p.ev(`(() => { const e = document.querySelector("${q}"); e.scrollIntoView({ block: "center" }); const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
     await p.s("Input.dispatchMouseEvent", { type: "mousePressed", x: bx.x, y: bx.y, button: "left", clickCount: 1 });
     await p.s("Input.dispatchMouseEvent", { type: "mouseReleased", x: bx.x, y: bx.y, button: "left", clickCount: 1 });
@@ -400,9 +399,50 @@ try {
     await p.s("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
     down.push({ q, ...r });
   }
-  await p.ev(`document.querySelector('[data-mode="past"]').click()`);
   const badDown = down.filter((r) => r.base && !(r.open && r.below));
   gate(badDown.length === 0, `2d. selects open downward under their box (${down.map((r) => r.q + (r.base ? (r.open && r.below ? " down" : " NOT down") : " native")).join(", ")})`);
+  /* step 1's incident menu (user decision, 11 Oct): real mouse and keys. The first level opens downward; hovering a
+     dependency with several failures opens them to its right; a click there sets node and failure; a dependency with
+     one failure is chosen directly; arrows / right / Enter work; Escape closes */
+  const mbad = [];
+  await p.ev(`document.querySelector('[data-mode="manual"]').click()`);
+  const mmove = async (type, pt) => p.s("Input.dispatchMouseEvent", { type, x: pt.x, y: pt.y, button: "left", buttons: type === "mouseMoved" ? 0 : 1, clickCount: 1 });
+  const mclick = async (pt) => { await mmove("mousePressed", pt); await mmove("mouseReleased", pt); };
+  const mat = (q) => p.ev(`(() => { const e = document.querySelector(${JSON.stringify(q)}); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.left + Math.min(40, b.width / 2), y: b.top + b.height / 2, l: b.left, r: b.right, t: b.top, b: b.bottom }; })()`);
+  await p.ev(`document.querySelector("#incBtn").scrollIntoView({ block: "center" })`);
+  const btn = await mat("#incBtn");
+  await mclick(btn);
+  const menu = await mat("#incMenu");
+  if (!menu || menu.t < btn.b - 1) mbad.push("the first level does not open downward");
+  const multi = await p.ev(`Object.keys(NODES).find((k) => fails(k).length > 1)`), single = await p.ev(`Object.keys(NODES).find((k) => fails(k).length === 1)`);
+  const it = await mat(`#incMenu > .citem[data-cn="${multi}"]`);
+  await mmove("mouseMoved", it);
+  const fl = await p.ev(`fails(${JSON.stringify(multi)}).slice(-1)[0]`);
+  const sub = await mat(`#incMenu > .citem[data-cn="${multi}"] .citem[data-cf="${fl}"]`);
+  if (!sub || sub.l < it.r - 2 - 40) mbad.push("the second level does not open to the right");
+  if (sub) await mclick(sub);
+  let st = await p.ev(`({ node: S.node, fail: S.fail, open: !document.querySelector("#incMenu").hidden, txt: document.querySelector("#incTxt").textContent })`);
+  if (st.node !== multi || st.fail !== fl || st.open || !st.txt.includes(await p.ev(`FAIL[${JSON.stringify(fl)}].label`))) mbad.push("second-level click: " + JSON.stringify(st));
+  await mclick(await mat("#incBtn"));
+  await mclick(await mat(`#incMenu > .citem[data-cn="${single}"]`));
+  st = await p.ev(`({ node: S.node, fail: S.fail })`);
+  if (st.node !== single || st.fail !== (await p.ev(`fails(${JSON.stringify(single)})[0]`))) mbad.push("single-failure click: " + JSON.stringify(st));
+  /* keys: open, down, right into a second level, Enter */
+  const mkey = (k) => p.s("Input.dispatchKeyEvent", { type: "keyDown", key: k, code: k, windowsVirtualKeyCode: { ArrowDown: 40, ArrowRight: 39, Enter: 13, Escape: 27 }[k] });
+  await p.ev(`document.querySelector("#incBtn").focus()`);
+  await mkey("Enter");
+  for (let i = 0; i < 12; i++) { if (await p.ev(`!!(document.activeElement && document.activeElement.querySelector && document.activeElement.querySelector(".csub"))`)) break; await mkey("ArrowDown"); }
+  const kn = await p.ev(`document.activeElement.dataset.cn`);
+  await mkey("ArrowRight");
+  const kf = await p.ev(`document.activeElement.dataset.cf`);
+  await mkey("Enter");
+  st = await p.ev(`({ node: S.node, fail: S.fail, open: !document.querySelector("#incMenu").hidden })`);
+  if (!kf || st.node !== kn || st.fail !== kf || st.open) mbad.push("keys: " + JSON.stringify({ kn, kf, st }));
+  await p.ev(`document.querySelector("#incBtn").focus()`);
+  await mkey("Enter"); await mkey("Escape");
+  if (await p.ev(`!document.querySelector("#incMenu").hidden`)) mbad.push("Escape does not close");
+  await p.ev(`document.querySelector('[data-mode="past"]').click()`);
+  gate(mbad.length === 0, `2d. incident menu: downward, second level to the right on hover, click sets node and failure, single-failure dependency direct, keys, Escape${mbad.length ? ": " + mbad.join("; ") : ""}`);
   gate(past.whatIf, `2d. past or manual: past = steps 1-2 read-only (severity and chain clicks change nothing), the event's description a tooltip on the asterisk only (hidden with the select focused, the panel does not move), Manual = editable what-if from the same values, Past again = the last event${past.whatIf ? "" : " " + JSON.stringify(past.parts)}`);
 
   /* 2e. the guide's past-incident table (section 3c), on screen. The page values the position at the end of the
@@ -613,7 +653,6 @@ try {
       for (const k of Object.keys(NODES)) for (const f of fails(k)) {
         try {
           setNode(k, f);
-          fire(document.querySelector("#fail"), f);
           const v = document.querySelector("#decision .verdict");
           if (!v || !v.textContent.trim()) bad.push(pk + " " + k + ":" + f);
           n++;
@@ -855,9 +894,6 @@ try {
         const marks = [...document.querySelectorAll("#rmarks .rm.ev")].map((x) => +x.dataset.h);
         if (marks.length !== ev.events.length || marks.some((h, i) => Math.abs(h - ev.events[i].hours) > 1e-6))
           out.bad.push(tag + ": marks " + marks.join() + " vs events " + ev.events.map((e) => e.hours).join());
-        const items = document.querySelectorAll("#revents > li:not(.note)").length;
-        if (items !== ev.events.length) out.bad.push(tag + ": " + items + " listed events vs " + ev.events.length);
-        if (!ev.events.length && !document.querySelector("#revents > li.note")) out.bad.push(tag + ": no 'path does not change' line");
         const refs = [...document.querySelectorAll("#rmarks .rm.ref:not(.pm)")].map((x) => +x.dataset.h);
         if (refs.length !== 2 || Math.abs(refs[0] - TLH) > 1e-9 || Math.abs(refs[1] - EXP) > 1e-9) out.bad.push(tag + ": reference marks " + refs.join());
         out.marks += marks.length;
@@ -871,10 +907,9 @@ try {
     /* the range inputs are step 2's two sliders (severity, cash yield): neither is a duration */
     const sliders = document.querySelectorAll("#view-pt [role=slider]").length,
       ranges = [...document.querySelectorAll("#view-pt input[type=range]")].map((x) => x.id).sort().join();
-    /* the duration events are results: listed in the dependency panel, not in the inputs; each mark says its change */
-    const evIn = document.querySelector("#steps #revents"), evOut = document.querySelector("#evBox #revents");
+    /* the duration events are on the rail only (no list, user decision, 11 Oct): each mark says its change */
     const tips = [...document.querySelectorAll("#rmarks .rm.ev")].every((x) => /^From /.test(x.title));
-    if (evIn || !evOut || !tips || document.querySelector("#steps #d-tl")) out.bad.push("events list or timeline chart still in the inputs, or marks without a tooltip");
+    if (document.querySelector("#revents") || !tips || document.querySelector("#steps #d-tl")) out.bad.push("an events list is back, a mark has no tooltip, or the timeline chart is in the inputs");
     if (sliders !== 1 || ranges !== "alt,sev" || document.querySelector("#durNote"))
       out.bad.push("duration controls: " + sliders + " sliders, " + ranges + " range inputs");
     /* c. keys: arrows 1% of the rail, PageUp 10% */
@@ -897,8 +932,9 @@ try {
       if (Math.abs(S.hours - want) > 1e-9 || di.value !== durText(S.hours) || th.getAttribute("aria-valuetext") !== durText(S.hours))
         out.bad.push("typed duration '" + typed + "': " + S.hours + " h, field '" + di.value + "'");
     }
-    if (!/How long/.test(document.querySelector("#rail .q").textContent) || !/lasted:$/.test(document.querySelector("#rail .rlt").textContent))
-      out.bad.push("step 3 heading or label");
+    if (!/^Time frame$/.test(document.querySelector("#rail .q").textContent) || !/lasted:$/.test(document.querySelector("#rail .rlt").textContent)
+        || document.querySelector("#steps .q i, #view-vault .q i"))
+      out.bad.push("time frame heading, label, or a step number left");
     /* d. the guide's main example (section 6): the 3% USDe depeg on the closest borrower, recovers on, cash 4%: one
        event at 16 h, layers 3 and 5 unchanged -> hit, STAY -> EXIT; a click on it moves the thumb past it, the layers
        it names change, and they flash */
@@ -910,7 +946,7 @@ try {
         || e0.layers.map((l) => l.n).join() !== "3,5") out.bad.push("guide example 16 h: " + JSON.stringify(out.example));
     const before = e0 ? e0.layers.map((l) => lay(l.n)) : [];
     const wasVerdict = model().verdict;
-    document.querySelector('#revents button[data-evh="0"]').click();
+    document.querySelector('#rmarks .rm.ev[data-evh="0"]').click();
     if (!e0 || Math.abs(S.hours - e0.hours * 1.0005) > 1e-9) out.bad.push("event click: thumb at " + S.hours);
     const after = e0 ? e0.layers.map((l) => lay(l.n)) : [];
     if (e0 && (before.join() !== e0.layers.map((l) => l.from).join() || after.join() !== e0.layers.map((l) => l.to).join()))
@@ -918,7 +954,7 @@ try {
     if (wasVerdict !== "STAY" || model().verdict !== "EXIT") out.bad.push("event click: verdict " + wasVerdict + " -> " + model().verdict);
     const fl = [...document.querySelectorAll("#chain .lay.flash")].map((x) => x.dataset.ln).join();
     if (e0 && fl !== e0.layers.map((l) => l.n).join()) out.bad.push("flash on layers " + fl);
-    if (!document.querySelector("#revents > li.passed")) out.bad.push("the passed event is not marked");
+    if (!document.querySelector("#rmarks .rm.ev.passed")) out.bad.push("the passed event is not marked");
     /* the second example: susde:discount 0.5%, one event at 4,190.4 h, STAY -> EXIT */
     setNode("susde", "discount", 0.5);
     const ev2 = eventsOf().events;

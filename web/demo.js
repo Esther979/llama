@@ -748,21 +748,11 @@
         $("#raxis").innerHTML = T.ticks
           .map(([h, t]) => `<span style="left:${at(h)}">${t}</span>`)
           .join("");
-        $("#revents").innerHTML = ev.events.length
-          ? ev.events
-              .map(
-                (e, i) =>
-                  `<li class="${S.hours >= e.hours ? "passed" : ""}"><button class="link" data-evh="${i}">${T.from(durText(e.hours))}</button>${e.verdict_before !== e.verdict_after ? ` ${T.answer} ${vb(e.verdict_before)} → ${vb(e.verdict_after)}` : ""}<ul>${e.layers
-                    .map((l) => `<li data-state="${l.to}">${T.layer(l.n, T.state[l.from] || l.from, T.state[l.to] || l.to, l.text)}</li>`)
-                    .join("")}</ul></li>`,
-              )
-              .join("")
-          : `<li class="note">${T.none}</li>`;
+        /* the duration events are on the rail only (its red marks: tooltip and click); no list (user decision, 11 Oct) */
         const th = $("#rthumb");
         th.style.left = at(S.hours);
         th.setAttribute("aria-valuenow", +S.hours.toFixed(2));
         th.setAttribute("aria-valuetext", durText(S.hours));
-        $("#evHead").textContent = T.evHead;
       }
       /* Timeline chart (guide 5b), in a fold under the rail and on its axis: loss if staying at the model's grid of
    durations (RiskModel.timeline), the background coloured by the answer between the events' exact durations, grey
@@ -1083,28 +1073,19 @@
           b.setAttribute("aria-pressed", b.dataset.mode === S.mode);
         });
         $("#replay").closest(".pastwrap").hidden = !past;
-        ["#node", "#fail", "#sev"].forEach((q) => ($(q).disabled = past));
-        /* a past event fixes steps 1 and 2: shown as text, not as greyed controls (user decision, 11 Oct) */
-        $("#node").hidden = $("#fail").hidden = $("#sevRow").hidden = past;
+        $("#incBtn").disabled = $("#sev").disabled = past;
+        /* a past event fixes steps 1 and 2: shown as text, not as controls (user decision, 11 Oct) */
+        $("#casc").hidden = $("#sevRow").hidden = past;
         $("#ro1").hidden = $("#ro2").hidden = !past;
-        $("#ro1").textContent = NODES[S.node].label;
-        $("#ro2").textContent = COPY.steps.ro(FAIL[S.fail].label, sevText());
+        const inc = COPY.steps.inc(NODES[S.node].label, FAIL[S.fail].label);
+        $("#ro1").textContent = inc;
+        $("#ro2").textContent = sevText();
+        $("#incTxt").textContent = inc;
         $("#steps").dataset.sim = S.mode;
-        $("#q1").textContent = "Test a failure at…";
-        $("#node").innerHTML = LAY.map(
-              (L) =>
-                `<optgroup label="What-if · ${L.n} · ${L.name}">${L.nodes
-                  .filter((k) => fails(k).length)
-                  .map((k) => `<option value="${k}">${NODES[k].label}</option>`)
-                  .join("")}</optgroup>`,
-            )
-            .join("");
-        $("#node").value = S.node;
+        $("#q1").textContent = COPY.steps.q1;
+        $("#q2").textContent = COPY.steps.q2;
         $("#pos").value = S.pos;
-        $("#fail").innerHTML = fails(S.node)
-          .map((k) => `<option value="${k}">${FAIL[k].label}</option>`)
-          .join("");
-        $("#fail").value = S.fail;
+        closeInc();
         const f = FAIL[S.fail],
           sv = $("#sev");
         if (isLog(f)) {
@@ -1441,8 +1422,6 @@
           closeDrawer();
           render();
         }
-        if (t.id === "node" && S.mode !== "past") setNode(t.value);
-        if (t.id === "fail" && S.mode !== "past") setFail(t.value);
         if (t.id === "replay") loadPast(t.value);
         if (t.id === "alt") {
           S.alt = +t.value;
@@ -1477,6 +1456,105 @@
         },
         true,
       );
+      /* Step 1, "Select incident" (user decision, 11 Oct): one menu instead of the dependency and failure selects. The
+   first level lists the dependencies by layer; a dependency with several failures opens them in a second level to
+   its right (on hover, click, or the right arrow); one with a single failure is chosen directly. A choice sets both
+   (setNode). Keys: up / down, right opens a second level, left goes back, Enter chooses, Escape closes. */
+      function renderIncMenu() {
+        const it = (k) => {
+          const fs = fails(k),
+            cur = k === S.node,
+            sub = fs.length > 1;
+          return `<div class="citem ${cur ? "cur" : ""}" role="menuitem" tabindex="-1" data-cn="${k}"${sub ? ' aria-haspopup="menu" aria-expanded="false"' : ""}><span>${NODES[k].label}</span>${sub ? '<span class="carrow">▸</span>' : ""}${
+            sub
+              ? `<div class="csub" role="menu">${fs
+                  .map((f) => `<div class="citem ${cur && f === S.fail ? "cur" : ""}" role="menuitemradio" aria-checked="${cur && f === S.fail}" tabindex="-1" data-cn="${k}" data-cf="${f}">${FAIL[f].label}</div>`)
+                  .join("")}</div>`
+              : ""
+          }</div>`;
+        };
+        $("#incMenu").innerHTML = LAY.map((L) => {
+          const ks = L.nodes.filter((k) => fails(k).length);
+          return ks.length ? `<div class="cgrp">${COPY.layers.head(L.n, L.name)}</div>${ks.map(it).join("")}` : "";
+        }).join("");
+      }
+      function openInc() {
+        renderIncMenu();
+        $("#incMenu").hidden = false;
+        $("#incBtn").setAttribute("aria-expanded", "true");
+        const c = $("#incMenu .citem.cur") || $("#incMenu .citem");
+        if (c) c.focus();
+      }
+      function closeInc() {
+        const m = $("#incMenu");
+        if (!m || m.hidden) return;
+        m.hidden = true;
+        $("#incBtn").setAttribute("aria-expanded", "false");
+      }
+      const openSub = (item, on) => {
+        document.querySelectorAll("#incMenu > .citem.open").forEach((x) => x !== item && (x.classList.remove("open"), x.setAttribute("aria-expanded", "false")));
+        if (item && item.querySelector(".csub")) {
+          item.classList.toggle("open", on);
+          item.setAttribute("aria-expanded", String(on));
+        }
+      };
+      function pickInc(k, f) {
+        closeInc();
+        $("#incBtn").focus();
+        if (S.mode !== "past") setNode(k, f);
+      }
+      $("#incBtn").addEventListener("click", () => ($("#incMenu").hidden ? openInc() : closeInc()));
+      $("#incBtn").addEventListener("keydown", (ev) => {
+        if (ev.key === "ArrowDown" || ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          openInc();
+        }
+      });
+      $("#incMenu").addEventListener("mouseover", (ev) => {
+        const top = ev.target.closest("#incMenu > .citem");
+        if (top) openSub(top, true);
+      });
+      $("#incMenu").addEventListener("click", (ev) => {
+        const t = ev.target.closest(".citem");
+        if (!t) return;
+        if (t.dataset.cf) return pickInc(t.dataset.cn, t.dataset.cf);
+        if (t.querySelector(".csub")) return openSub(t, !t.classList.contains("open"));
+        pickInc(t.dataset.cn, fails(t.dataset.cn)[0]);
+      });
+      $("#incMenu").addEventListener("keydown", (ev) => {
+        const t = ev.target.closest(".citem");
+        if (!t) return;
+        const inSub = !!t.dataset.cf,
+          list = inSub ? [...t.parentElement.children] : [...document.querySelectorAll("#incMenu > .citem")],
+          i = list.indexOf(t);
+        if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+          ev.preventDefault();
+          const n = list[(i + (ev.key === "ArrowDown" ? 1 : list.length - 1)) % list.length];
+          if (!inSub) openSub(n, false);
+          n.focus();
+        } else if (ev.key === "ArrowRight" && !inSub && t.querySelector(".csub")) {
+          ev.preventDefault();
+          openSub(t, true);
+          (t.querySelector(".csub .citem.cur") || t.querySelector(".csub .citem")).focus();
+        } else if (ev.key === "ArrowLeft" && inSub) {
+          ev.preventDefault();
+          const top = t.closest("#incMenu > .citem");
+          openSub(top, false);
+          top.focus();
+        } else if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          t.click();
+        } else if (ev.key === "Escape") {
+          ev.preventDefault();
+          closeInc();
+          $("#incBtn").focus();
+        }
+      });
+      document.addEventListener("pointerdown", (ev) => {
+        if (!ev.target.closest("#casc")) closeInc();
+      });
+
       /* Time rail: drag (pointer capture; a click on the track jumps there) and keys (arrows 1% of the rail,
    PageUp / PageDown 10%, Home / End). */
       const RTRACK = $("#rtrack");

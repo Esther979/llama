@@ -1903,16 +1903,6 @@
       .rrec .rwhy {
         flex-basis: auto;
       }
-      .evbox {
-        margin: 0 0 12px;
-        padding: 8px 10px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: var(--sunk);
-      }
-      .evbox .revents {
-        margin-top: 4px;
-      }
       #hdr-pt .hline {
         font-size: 11.5px;
       }
@@ -1999,5 +1989,154 @@
           font-size: 12.5px;
           font-weight: 400;
           color: var(--ink);
+        }
+      }
+      /* Step 1's incident menu (user decision, 11 Oct): a select-like button, a first level of dependencies by layer
+   opening downward, a dependency's failures in a second level to its right (under it on a phone). */
+      .casc {
+        position: relative;
+      }
+      .cbtn {
+        width: 100%;
+        height: 28px;
+        padding: 0 24px 0 8px;
+        text-align: left;
+        font-size: 12.5px;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        position: relative;
+      }
+      .cbtn::after {
+        content: "▾";
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+      }
+      .cmenu {
+        position: absolute;
+        top: calc(100% + 2px);
+        left: 0;
+        min-width: 100%;
+        z-index: 20;
+        padding: 4px 0;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        font-size: 12.5px;
+      }
+      .cgrp {
+        padding: 6px 10px 2px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .citem {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px 5px 22px;
+        cursor: pointer;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .citem:hover,
+      .citem:focus-visible,
+      .citem.open {
+        background: var(--accent-tint);
+        outline: none;
+      }
+      .citem.cur {
+        font-weight: 600;
+      }
+      .citem.cur::before {
+        content: "✓";
+        position: absolute;
+        left: 8px;
+        color: var(--accent);
+      }
+      .carrow {
+        margin-left: auto;
+        color: var(--muted);
+      }
+      .csub {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: -5px;
+        min-width: 220px;
+        padding: 4px 0;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        font-weight: 400;
+      }
+      .citem:hover > .csub,
+      .citem.open > .csub {
+        display: block;
+      }
+      @media (max-width: 600px) {
+        .csub {
+          position: static;
+          border: 0;
+          padding: 0 0 0 8px;
+          background: none;
+        }
+        .citem {
+          flex-wrap: wrap;
+          white-space: normal;
+        }
+        .citem > .csub {
+          flex-basis: 100%;
+        }
+      }
+      /* Steps panel (user decision, 11 Oct): no step numbers; a three-column control bar (incident type, severity, cash
+   yield) and the time frame below it, full width. One column on a phone. */
+      #steps {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .ctrls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-bottom: 1px solid var(--line);
+      }
+      .ctl {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        padding: 12px 14px;
+        border-left: 1px solid var(--line);
+      }
+      .ctl:first-child {
+        border-left: 0;
+      }
+      .ctl .q,
+      .rhead .q {
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .tframe {
+        padding: 12px 14px;
+      }
+      .tframe .rail {
+        padding: 0;
+      }
+      @media (max-width: 860px) {
+        .ctrls {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .ctl {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+        .ctl:first-child {
+          border-top: 0;
         }
       }
