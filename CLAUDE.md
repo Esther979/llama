@@ -87,7 +87,7 @@ every borrower x (vault allocation / market supply) (Morpho takes bad debt pro r
 | `onchain_positions.py` | Morpho borrowers over JSON-RPC (stdlib, batched): `read_market` (any market), liquidation curve 0.5–40%, `--wallet` (PT balanceOf + Morpho position of given addresses, same block), gas price, borrow rate (IRM `borrowRateView`), oracle tree; 7 gates |
 | `export_dashboard.py` | Builds `data/dashboard.json` for the PT view (`--positions`, `--borrower`, `--js-out`) |
 | `frontend_contract.py` | PT-view contract: `ui` (9 nodes, layers, edges incl. to the position, injections), `failure_types`, `position_presets`, `size_input`, `size_curve`, `exit_later_at`, `borrower_preset`, `wallet_presets`, `at_size`, `carry_of`, `time_model`, `inject`, `decide_at`, `break_even_severity`, `sensitivity`, `decide_at_duration`, `timeline_pt`, `timeline_summary`, `past_incidents` (4 real events with node, failure, severity, opts), `decision_text` (reasons: headline, oracle / liquidation / recovery / exit, break-even, weakest assumption; every number checked), `propagation` (how the incident travels through the five layers, step by step with grades and edges; every number checked), `propagation_events` (durations at which the propagation changes, for the duration slider), `recovery_toggle` (recovers / stays shown only for off-chain causes: USDe, Ethena, sUSDe NAV) |
-| `vault_pipeline.py` | Vault view: RockawayX-format input → routing, per-vault crawl, markets / allocations, borrowers, oracle types, incidents (collateral, underlying, asset issuer, liquidity run) with severity and duration grids, `vault_decide_at`, `vault_sensitivity`, `vault_timeline(_summary)`, `--js-out` |
+| `vault_pipeline.py` | Vault view: RockawayX-format input → routing, per-vault crawl, markets / allocations, borrowers, oracle types, incidents (collateral, underlying, asset issuer, liquidity run) with severity and duration grids, `vault_decide_at`, `vault_sensitivity`, `vault_timeline(_summary)`, `--js-out`, `dependency_edges` + `incidents[].chain_items` (links between the chain items, like `ui.edges`) |
 | `web/risk_model.js` | JS port of every model function above (`RiskModel.*`) for the front end |
 | `check_js_port.py` | JS vs Python on thousands of cases (30 gates) |
 | `llama_graph.py` | DeFiLlama free endpoints: protocol edges, price and stablecoin replay |
@@ -109,6 +109,7 @@ cp data/dashboard.json sample_data/dashboard.sample.json   # + levered (--debt 8
 python3 offchain.py   # re-check off-chain sources (before the exports)
 python3 vault_pipeline.py sample_data/rockawayx_vaults.csv --js-out sample_data/vaults.sample.js   # ~10 min
 # off-chain sources only: python3 vault_pipeline.py --offchain-only --js-out sample_data/vaults.sample.js
+# chain item ids + dependency_edges only: python3 vault_pipeline.py --edges-only --js-out sample_data/vaults.sample.js
 cp data/vaults_report.json sample_data/vaults_report.sample.json
 python3 backtest_reusd.py && python3 calibrate_depeg.py && python3 check_js_port.py
 ```

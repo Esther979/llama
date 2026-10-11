@@ -798,6 +798,7 @@ def refresh_offchain(js_out=None, log=print):
         v["offchain"] = blocks
         v["dependency_chain"] = [x for x in v["dependency_chain"] if x["layer"] != 6] + \
             [issuers_layer(live, v["incidents"], v["asset"], v["asset_symbol"], blocks)]
+        edges_gate(v, attach_chain_edges(v))
         with open(p, "w") as f:
             json.dump(v, f, indent=1)
         n += 1
@@ -806,6 +807,139 @@ def refresh_offchain(js_out=None, log=print):
         with open(os.path.join(DATA, "vaults_report.json")) as f:
             bundle_js(json.load(f), js_out)
     return n
+
+
+def attach_chain_edges(v):
+    """Give every dependency_chain item an `id` and set v["dependency_edges"]: the links between the items, the vault
+    view's counterpart of the PT view's ui.edges ({from, to, type, grade, evidence}, from the dependency to what depends
+    on it). Built from the detail's own fields (markets, incidents, chain items), no chain reads. Returns the problems
+    found (ids not unique, an edge to an unknown item, an item without an edge); empty when consistent."""
+    chain = {x["layer"]: x["items"] for x in v["dependency_chain"]}
+    live = [m for m in v["markets"] if m.get("analyzed")]
+    sym, block = v["asset_symbol"], v["block"]
+    vid = f"vault:{v['vault_address'].lower()}"
+    problems = []
+    if len(chain[4]) != len(live) or len(chain[5]) != len(live):
+        problems.append(f"layers 4 / 5 have {len(chain[4])} / {len(chain[5])} items for {len(live)} analysed markets")
+        return problems
+    chain[1][0]["id"], chain[2][0]["id"], chain[3][0]["id"] = "chain:ethereum", vid, "protocol:morpho_blue"
+    for it, m in zip(chain[4], live):
+        it["id"] = f"market:{m['market_id']}"
+    for it, m in zip(chain[5], live):
+        it["id"] = f"collateral:{m['market_id']}"
+    under = sorted({(i["symbol"], i["type"]) for i in v["incidents"] if i.get("type") in ("depeg",) and i.get("symbol")})
+    cissuers = [m for m in live if m["collateral_type"] in ("rwa_or_credit", "yield_wrapper", "pt")]
+    l6 = [("asset", sym, None)] + [("underlying", s, None) for s, _ in under] + \
+         [("issuer", m["collateral_symbol"], m) for m in cissuers]
+    if len(chain[6]) != len(l6):
+        problems.append(f"layer 6 has {len(chain[6])} items, expected {len(l6)}")
+        return problems
+    used = set()
+    for it, (kind, s, m) in zip(chain[6], l6):
+        i = f"underlying:{s}" if kind == "underlying" else f"issuer:{s}"
+        if i in used:                                   # the same collateral in two markets: one issuer row each
+            i = f"{i}:{m['market_id'][:10]}"
+        used.add(i)
+        it["id"] = i
+    E = []
+
+    def add(a, b, t, g, ev):
+        E.append({"from": a, "to": b, "type": t, "grade": g, "evidence": ev})
+    vault_item, proto = chain[2][0], chain[3][0]
+    add("chain:ethereum", vid, "settlement", "A",
+        f"{vault_item['label']} ({v['vault_address'].lower()}) is a contract on Ethereum mainnet, read at block {block}")
+    add("protocol:morpho_blue", vid, "adapter", "A", f"{proto.get('detail')} (VaultV2.adapters, eth_call at block {block})")
+    a_it = chain[6][0]
+    add(a_it["id"], vid, "asset", a_it["evidence"],
+        f"the vault holds and pays out {sym} ({v['asset']}); its issuer is off-chain"
+        + (f" ({a_it['sources']})" if a_it.get("sources") else ", not verified"))
+    by_key = {m["key"]: m for m in live}
+    for m in live:
+        add(f"market:{m['market_id']}", "protocol:morpho_blue", "allocation", "A",
+            f"the vault's adapter {m['holder']} supplies {m['allocation']:,.0f} {sym} to this Morpho Blue market, "
+            f"{m['share_of_market']:.2%} of its supply (block {block})")
+        o = m.get("oracle") or {}
+        add(f"collateral:{m['market_id']}", f"market:{m['market_id']}", "collateral", "A",
+            f"marketParams.collateralToken = {m['collateral_symbol']} ({m['collateral']}), LLTV {m['lltv']:g}; "
+            f"oracle {o.get('contract_name') or o.get('kind')} (grade {(o.get('evidence') or {}).get('grade', 'D')})")
+    for it, (kind, s, m) in zip(chain[6], l6):
+        if kind == "underlying":
+            for inc in v["incidents"]:
+                if inc.get("type") == "depeg" and inc.get("symbol") == s:
+                    for k in inc.get("affected_markets") or []:
+                        if k in by_key:
+                            add(it["id"], f"collateral:{by_key[k]['market_id']}", "underlying", "A",
+                                (inc.get("propagation_paths") or [f"{s} underlies {by_key[k]['collateral_symbol']}"])[0])
+        elif kind == "issuer":
+            who = it["label"].split(": ", 1)[1] if ": " in it["label"] else "not identified"
+            add(it["id"], f"collateral:{m['market_id']}", "issuer", it["evidence"],
+                f"{s} depends on its issuer ({who}); " + (it.get("sources") or it.get("detail") or "not verified"))
+    ids = [it["id"] for items in chain.values() for it in items]
+    # each incident's items on the chain, from where it starts to the vault (the page highlights these and the edges
+    # between them); affected_markets says which markets it reaches
+    l6_id = {(kind, s_): it["id"] for it, (kind, s_, _) in zip(chain[6], l6)}
+    for inc in v["incidents"]:
+        mk = [by_key[k] for k in inc.get("affected_markets") or [] if k in by_key] or \
+            [m for m in live if inc.get("token") and inc["type"] != "asset_issuer"
+             and m["collateral"].lower() == inc["token"].lower()]          # e.g. volatile_crypto: no affected_markets
+        items = []
+        if inc.get("type") == "asset_issuer":
+            items = [l6_id.get(("asset", inc.get("symbol")))]
+        elif inc.get("type") == "liquidity_run":
+            items = ["protocol:morpho_blue"]
+        elif inc.get("type") == "depeg":
+            items = [l6_id.get(("underlying", inc.get("symbol")))]
+        elif inc.get("type") == "issuer_default" and inc.get("symbol"):    # other types start at the collateral
+            items = [i for i in ids if i == f"issuer:{inc['symbol']}" or i.startswith(f"issuer:{inc['symbol']}:")]
+        for m in mk:
+            items += [f"collateral:{m['market_id']}", f"market:{m['market_id']}"]
+        if mk:
+            items.append("protocol:morpho_blue")
+        items.append(vid)
+        inc["chain_items"] = [i for n, i in enumerate(items) if i and i not in items[:n]]
+        problems += [f"incident {inc['key']}: unknown item {i}" for i in inc["chain_items"] if i not in set(ids)]
+    if len(ids) != len(set(ids)):
+        problems.append("item ids are not unique")
+    known = set(ids)
+    problems += [f"edge {e['from']} -> {e['to']} to an unknown item" for e in E if e["from"] not in known or e["to"] not in known]
+    linked = {e["from"] for e in E} | {e["to"] for e in E}
+    problems += [f"item {i} has no edge" for i in ids if i not in linked]
+    v["dependency_edges"] = E
+    return problems
+
+
+def edges_gate(v, problems):
+    """Record the dependency_edges check in the detail's gates (replacing an earlier one) and update all_gates_pass."""
+    v["gates"] = [g for g in v["gates"] if not g["check"].startswith("dependency_edges:")]
+    v["gates"].append({"pass": not problems, "check": "dependency_edges: " + ("; ".join(problems) or
+                       f"{len(v.get('dependency_edges') or [])} edges, ids unique, every chain item linked")})
+    v["all_gates_pass"] = all(g["pass"] for g in v["gates"])
+
+
+def refresh_edges(js_out=None, log=print):
+    """Add item ids and dependency_edges to the existing vault detail files (no chain reads, numbers unchanged);
+    rewrite the bundle when js_out is given. Returns the number of files and the problems found."""
+    n, bad = 0, []
+    for name in sorted(os.listdir(OUT)):
+        if not (name.startswith("0x") and name.endswith(".json")):
+            continue
+        p = os.path.join(OUT, name)
+        with open(p) as f:
+            v = json.load(f)
+        if "dependency_chain" not in v:
+            continue
+        probs = attach_chain_edges(v)
+        edges_gate(v, probs)
+        bad += [f"{v['vault_name']}: {x}" for x in probs]
+        with open(p, "w") as f:
+            json.dump(v, f, indent=1)
+        n += 1
+        log(f"  {v['vault_name']}: {len(v.get('dependency_edges') or [])} edges"
+            + (f"  PROBLEMS {probs}" if probs else ""))
+    if js_out:
+        with open(os.path.join(DATA, "vaults_report.json")) as f:
+            bundle_js(json.load(f), js_out)
+    return n, bad
 
 
 def sentence(inc, ex):
@@ -918,6 +1052,8 @@ def bundle_js(report, path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", nargs="?")
+    ap.add_argument("--edges-only", action="store_true",
+                    help="only add item ids and dependency_edges to the existing data/vaults files (no chain reads)")
     ap.add_argument("--offchain-only", action="store_true",
                     help="only re-attach offchain_deps.json to the existing data/vaults files (no chain reads)")
     ap.add_argument("--only", nargs="*", help="vault addresses to analyze (default: all)")
@@ -935,6 +1071,12 @@ def main():
     ap.add_argument("--no-partial-crawl", action="store_true")
     ap.add_argument("--js-out", help="also write report + vault details as 'window.VAULTS = {...};' for the front end")
     a = ap.parse_args()
+    if a.edges_only:
+        n, bad = refresh_edges(a.js_out)
+        print(f"GATE {'PASS' if not bad else 'FAIL'}  dependency_edges added to {n} vault files: ids unique, every edge "
+              f"between known items, every chain item linked" + (f"  {bad[:3]}" if bad else "")
+              + (f"; bundle -> {a.js_out}" if a.js_out else ""))
+        sys.exit(1 if bad else 0)
     if a.offchain_only:
         n = refresh_offchain(a.js_out)
         print(f"off-chain dependencies re-attached to {n} vault files" + (f"; bundle -> {a.js_out}" if a.js_out else ""))
@@ -959,6 +1101,7 @@ def main():
         try:
             if cov == "full":
                 res = analyze_vault(r, rpc, block, now, cfg)
+                edges_gate(res, attach_chain_edges(res))
                 os.makedirs(OUT, exist_ok=True)
                 with open(os.path.join(OUT, f"{r['vault_address'].lower()}.json"), "w") as f:
                     json.dump(res, f, indent=1)

@@ -226,7 +226,8 @@
    "items": [
     {
      "label": "Ethereum mainnet",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "chain:ethereum"
     }
    ]
   },
@@ -238,7 +239,8 @@
      "label": "VaultV2",
      "address": "0xc207d3f66537d7f66456808379a0e560cf20da36",
      "detail": "adapterRegistry: 0x3696c5ea...; curator: 0xbbacdcfb...; owner: 0xbbacdcfb...; performanceFeeRecipient: 0x4e6514b9...; sendAssetsGate: 0x51f667a6...",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
     }
    ]
   },
@@ -250,7 +252,8 @@
      "label": "Morpho Blue",
      "address": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
      "detail": "adapters: MorphoMarketV1AdapterV2",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "protocol:morpho_blue"
     }
    ]
   },
@@ -263,21 +266,24 @@
      "market_id": "0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
      "allocation": 21868513.310378,
      "detail": "12 borrowers",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "market:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea"
     },
     {
      "label": "AUTO / USDC (LLTV 0.77)",
      "market_id": "0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
      "allocation": 600037.486536,
      "detail": "3 borrowers",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "market:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4"
     },
     {
      "label": "PT-reUSD-10DEC2026 / USDC (LLTV 0.915)",
      "market_id": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
      "allocation": 3976705.900028,
      "detail": "231 borrowers",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "market:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64"
     }
    ]
   },
@@ -289,19 +295,22 @@
      "label": "PST",
      "address": "0x22ae3d9a738471f405169af055d31c687087d4c7",
      "detail": "rwa_or_credit; oracle morpho_chainlink_v2 (follows market: False, underlying: None)",
-     "evidence": "C"
+     "evidence": "C",
+     "id": "collateral:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea"
     },
     {
      "label": "AUTO",
      "address": "0x997e2efbce91d170b00ea402e35a66c887ee1da9",
      "detail": "yield_wrapper; oracle morpho_chainlink_v2 (follows market: False, underlying: None)",
-     "evidence": "C"
+     "evidence": "C",
+     "id": "collateral:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4"
     },
     {
      "label": "PT-reUSD-10DEC2026",
      "address": "0xecfafdc7741323a945a163ed068b5a3c43483957",
      "detail": "pt; oracle morpho_chainlink_v2 (follows market: None, underlying: None)",
-     "evidence": "D"
+     "evidence": "D",
+     "id": "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64"
     }
    ]
   },
@@ -312,28 +321,33 @@
     {
      "label": "USDC issuer (vault asset)",
      "detail": "off-chain, not verified",
-     "evidence": "D"
+     "evidence": "D",
+     "id": "issuer:USDC"
     },
     {
      "label": "reUSD (depeg)",
-     "evidence": "A"
+     "evidence": "A",
+     "id": "underlying:reUSD"
     },
     {
      "label": "PST issuer: Huma Finance (Huma Global Ltd., BVI)",
      "detail": "Huma's PayFi Strategy Token: Solana pool lending to cross-border payment institutions, mostly through the affiliated originator Arf; the Ethereum token is a Chainlink CCIP burn/mint copy, so redemption goes back through Solana; priced by Huma's own NAV oracle.",
      "evidence": "D",
      "offchain": "PST",
-     "sources": "31 relations from documents (18 official, 13 third-party), 31 quotes re-checked on their page"
+     "sources": "31 relations from documents (18 official, 13 third-party), 31 quotes re-checked on their page",
+     "id": "issuer:PST"
     },
     {
      "label": "AUTO issuer",
      "detail": "off-chain, not verified",
-     "evidence": "D"
+     "evidence": "D",
+     "id": "issuer:AUTO"
     },
     {
      "label": "PT-reUSD-10DEC2026 issuer",
      "detail": "off-chain, not verified",
-     "evidence": "D"
+     "evidence": "D",
+     "id": "issuer:PT-reUSD-10DEC2026"
     }
    ]
   }
@@ -862,7 +876,14 @@
      "13.53%"
     ],
     "unchecked": []
-   }
+   },
+   "chain_items": [
+    "issuer:PST",
+    "collateral:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+    "market:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+    "protocol:morpho_blue",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   },
   {
    "key": "issuer_default:AUTO",
@@ -1397,7 +1418,14 @@
      "13.53%"
     ],
     "unchecked": []
-   }
+   },
+   "chain_items": [
+    "issuer:AUTO",
+    "collateral:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+    "market:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+    "protocol:morpho_blue",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   },
   {
    "key": "pt_market_dip:PT-reUSD-10DEC2026",
@@ -1885,7 +1913,13 @@
      "15.38%"
     ],
     "unchecked": []
-   }
+   },
+   "chain_items": [
+    "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+    "market:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+    "protocol:morpho_blue",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   },
   {
    "key": "issuer_default:PT-reUSD-10DEC2026",
@@ -2410,7 +2444,14 @@
      "13.53%"
     ],
     "unchecked": []
-   }
+   },
+   "chain_items": [
+    "issuer:PT-reUSD-10DEC2026",
+    "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+    "market:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+    "protocol:morpho_blue",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   },
   {
    "key": "depeg:reUSD",
@@ -2949,7 +2990,14 @@
      "13.53%"
     ],
     "unchecked": []
-   }
+   },
+   "chain_items": [
+    "underlying:reUSD",
+    "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+    "market:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+    "protocol:morpho_blue",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   },
   {
    "key": "asset_issuer:USDC",
@@ -3445,7 +3493,11 @@
      "8,414,444"
     ],
     "unchecked": []
-   }
+   },
+   "chain_items": [
+    "issuer:USDC",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   },
   {
    "key": "liquidity_run:Morpho",
@@ -3491,7 +3543,11 @@
     "numbers": [],
     "unchecked": []
    },
-   "note": "other depositors withdraw first and take the free liquidity: no direct loss, but more of your deposit stays locked, exposed to the worst credit incident"
+   "note": "other depositors withdraw first and take the free liquidity: no direct loss, but more of your deposit stays locked, exposed to the worst credit incident",
+   "chain_items": [
+    "protocol:morpho_blue",
+    "vault:0xc207d3f66537d7f66456808379a0e560cf20da36"
+   ]
   }
  ],
  "exit": {
@@ -3570,6 +3626,10 @@
   {
    "pass": true,
    "check": "every number in the decision texts comes from the computed values"
+  },
+  {
+   "pass": true,
+   "check": "dependency_edges: 13 edges, ids unique, every chain item linked"
   }
  ],
  "all_gates_pass": true,
@@ -4030,5 +4090,98 @@
     "quotes_checked_at": "2026-10-10T19:17:54+00:00"
    }
   }
- }
+ },
+ "dependency_edges": [
+  {
+   "from": "chain:ethereum",
+   "to": "vault:0xc207d3f66537d7f66456808379a0e560cf20da36",
+   "type": "settlement",
+   "grade": "A",
+   "evidence": "VaultV2 (0xc207d3f66537d7f66456808379a0e560cf20da36) is a contract on Ethereum mainnet, read at block 26163394"
+  },
+  {
+   "from": "protocol:morpho_blue",
+   "to": "vault:0xc207d3f66537d7f66456808379a0e560cf20da36",
+   "type": "adapter",
+   "grade": "A",
+   "evidence": "adapters: MorphoMarketV1AdapterV2 (VaultV2.adapters, eth_call at block 26163394)"
+  },
+  {
+   "from": "issuer:USDC",
+   "to": "vault:0xc207d3f66537d7f66456808379a0e560cf20da36",
+   "type": "asset",
+   "grade": "D",
+   "evidence": "the vault holds and pays out USDC (0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48); its issuer is off-chain, not verified"
+  },
+  {
+   "from": "market:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+   "to": "protocol:morpho_blue",
+   "type": "allocation",
+   "grade": "A",
+   "evidence": "the vault's adapter 0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65 supplies 21,868,513 USDC to this Morpho Blue market, 57.60% of its supply (block 26163394)"
+  },
+  {
+   "from": "collateral:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+   "to": "market:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+   "type": "collateral",
+   "grade": "A",
+   "evidence": "marketParams.collateralToken = PST (0x22ae3d9a738471f405169af055d31c687087d4c7), LLTV 0.86; oracle MorphoChainlinkOracleV2 (grade C)"
+  },
+  {
+   "from": "market:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+   "to": "protocol:morpho_blue",
+   "type": "allocation",
+   "grade": "A",
+   "evidence": "the vault's adapter 0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65 supplies 600,037 USDC to this Morpho Blue market, 100.01% of its supply (block 26163394)"
+  },
+  {
+   "from": "collateral:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+   "to": "market:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+   "type": "collateral",
+   "grade": "A",
+   "evidence": "marketParams.collateralToken = AUTO (0x997e2efbce91d170b00ea402e35a66c887ee1da9), LLTV 0.77; oracle MorphoChainlinkOracleV2 (grade C)"
+  },
+  {
+   "from": "market:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+   "to": "protocol:morpho_blue",
+   "type": "allocation",
+   "grade": "A",
+   "evidence": "the vault's adapter 0xedee08b242d4cd94127cec8a4c334cd2d0ca3f65 supplies 3,976,706 USDC to this Morpho Blue market, 3.30% of its supply (block 26163394)"
+  },
+  {
+   "from": "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+   "to": "market:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+   "type": "collateral",
+   "grade": "A",
+   "evidence": "marketParams.collateralToken = PT-reUSD-10DEC2026 (0xecfafdc7741323a945a163ed068b5a3c43483957), LLTV 0.915; oracle MorphoChainlinkOracleV2 (grade D)"
+  },
+  {
+   "from": "underlying:reUSD",
+   "to": "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+   "type": "underlying",
+   "grade": "A",
+   "evidence": "VaultV2 -> [adapters[0]] MorphoMarketV1AdapterV2 -> [marketIds[2]] Morpho Blue market -> [marketParams.collateralToken] PT-reUSD-10DEC2026 -> [SY] PendleREUSDSY -> [REUSD] ShareToken"
+  },
+  {
+   "from": "issuer:PST",
+   "to": "collateral:0x002278ea242ec722813b4fe3c8eeaa07dbc331c731cc0b4248a1bf0771f933ea",
+   "type": "issuer",
+   "grade": "D",
+   "evidence": "PST depends on its issuer (Huma Finance (Huma Global Ltd., BVI)); 31 relations from documents (18 official, 13 third-party), 31 quotes re-checked on their page"
+  },
+  {
+   "from": "issuer:AUTO",
+   "to": "collateral:0x2bbdd81580c750491207e798bdcd31596a6254c5e5d1541ad901ab08c75671e4",
+   "type": "issuer",
+   "grade": "D",
+   "evidence": "AUTO depends on its issuer (not identified); off-chain, not verified"
+  },
+  {
+   "from": "issuer:PT-reUSD-10DEC2026",
+   "to": "collateral:0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+   "type": "issuer",
+   "grade": "D",
+   "evidence": "PT-reUSD-10DEC2026 depends on its issuer (not identified); off-chain, not verified"
+  }
+ ]
 }
