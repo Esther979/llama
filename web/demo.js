@@ -629,12 +629,14 @@
    APY, never recomputed on drag. The track and its thumb are static markup: only the marks, labels and list are
    rebuilt, so a drag keeps its pointer capture and the thumb keeps focus. */
       let EVK = null,
-        EV = null;
+        EV = null,
+        TLR = null;
       const eventsOf = () => {
         const k = [S.pos, S.node, S.fail, S.sev, S.recovers, S.alt].join("|");
         if (k !== EVK) {
           EVK = k;
           EV = RM.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);
+          TLR = RM.timeline(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);
         }
         return EV;
       };
@@ -685,6 +687,43 @@
         th.setAttribute("aria-valuenow", +S.hours.toFixed(2));
         th.setAttribute("aria-valuetext", durText(S.hours));
         $("#durNote").textContent = T.stepLine(durText(S.hours), rt.show ? S.recovers : null);
+      }
+      /* Timeline chart (guide 5b), in a fold under the rail and on its axis: loss if staying at the model's grid of
+   durations (RiskModel.timeline), the background coloured by the answer between the events' exact durations, grey
+   marks at the oracle switch and expiry, the rail's duration as a line. Shapes in a 0..1000 x 0..100 box stretched
+   to the width; labels are HTML placed by percentage. */
+      function renderTimeline() {
+        const T = COPY.tl,
+          ev = eventsOf(),
+          rows = TLR,
+          sum = RM.timelineSummary(d, S.pos, rows),
+          vb = (v) => `<span class="vb ${VCLASS[v]}">${COPY.sens.verdict[v] || v}</span>`;
+        $("#tlSum").textContent = T.title;
+        $("#d-tl").open = !!S.open["d-tl"];
+        const X = (h) => uOf(Math.min(H_MAX, Math.max(H_MIN, h))) * 1000,
+          top = Math.max(...rows.map((r) => r.loss_if_stay_usd)),
+          Y = (v) => 96 - (top > 0 ? (v / top) * 88 : 0);
+        const cuts = [[H_MIN, ev.start.verdict]].concat(ev.events.map((e) => [e.hours, e.verdict_after]));
+        const bands = cuts
+          .map(([h, v], i) => {
+            const x0 = X(h),
+              x1 = i + 1 < cuts.length ? X(cuts[i + 1][0]) : 1000;
+            return `<rect class="tb ${VCLASS[v]}" x="${x0}" y="0" width="${x1 - x0}" height="100"/>`;
+          })
+          .join("");
+        const refs = [TL !== null ? +TL : null, d.time_model.days_to_expiry * 24]
+          .filter((h) => h !== null)
+          .map((h) => `<line class="tref" x1="${X(h)}" x2="${X(h)}" y1="0" y2="100"/>`)
+          .join("");
+        const line = rows.map((r) => `${X(r.hours).toFixed(1)},${Y(r.loss_if_stay_usd).toFixed(2)}`).join(" ");
+        const lines = sum.duration_matters
+          ? sum.changes.map((c) => `<li>${T.change(durText(c.to_hours), vb(c.verdict_before), vb(c.verdict_after), c.reason)}</li>`).join("")
+          : `<li>${T.flat(sum.why_flat)}</li>`;
+        $("#tl").innerHTML = `<ul class="tlsum">${lines}</ul>
+   <div class="tlbox"><svg class="tlc" viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="${T.aria(rows.length)}">${bands}${refs}<polyline class="tline" points="${line}"/><line class="tnow" x1="${X(S.hours)}" x2="${X(S.hours)}" y1="0" y2="100"/></svg>
+   <span class="tly" style="top:${Y(top)}%">${money(top)}</span><span class="tly" style="top:96%">${money(0)}</span></div>
+   <div class="raxis">${COPY.rail.ticks.map(([h, t]) => `<span style="left:${at(h)}">${t}</span>`).join("")}</div>
+   <p class="note">${T.assume} ${gr("D")}</p>`;
       }
       function setHours(h, live) {
         S.hours = Math.min(H_MAX, Math.max(H_MIN, h));
@@ -952,6 +991,7 @@
         trackFlash(m.pg);
         renderSteps(m);
         renderRail(m);
+        renderTimeline();
         renderChain(m);
         applyFlash();
         renderSpread(m);

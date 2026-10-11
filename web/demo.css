@@ -1521,3 +1521,61 @@
           outline-offset: 1px;
         }
       }
+      /* Timeline chart (guide 5b): under the rail, on the same log axis (same side margins as the track). The
+   background is the answer at each duration; strokes keep their width when the box is stretched. */
+      .tl {
+        margin-top: 10px;
+      }
+      .tl summary {
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--accent);
+      }
+      .tlsum {
+        margin: 6px 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .tlbox {
+        position: relative;
+        height: 120px;
+        margin: 0 9px;
+        border-bottom: 1px solid var(--line-strong);
+      }
+      .tlc {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .tb.stay {
+        fill: var(--good-tint);
+      }
+      .tb.reduce {
+        fill: var(--warn-tint);
+      }
+      .tb.cap {
+        fill: var(--crit-tint);
+      }
+      .tref {
+        stroke: var(--muted);
+        stroke-dasharray: 4 4;
+        vector-effect: non-scaling-stroke;
+      }
+      .tline {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2;
+        vector-effect: non-scaling-stroke;
+      }
+      .tnow {
+        stroke: var(--accent);
+        stroke-width: 2;
+        vector-effect: non-scaling-stroke;
+      }
+      .tly {
+        position: absolute;
+        left: 4px;
+        transform: translateY(-100%);
+        font-size: 11px;
+        color: var(--muted);
+      }

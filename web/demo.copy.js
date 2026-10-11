@@ -106,6 +106,17 @@ const COPY = {
       `Sale cost includes the yield given up over the incident (${dur}, at most until expiry): ${v} of the amount sold.`,
   },
 
+  /* Timeline chart (guide 5b): RiskModel.timeline's loss if staying against the duration, on the rail's log axis;
+     the summary is RiskModel.timelineSummary's. Not a control. */
+  tl: {
+    title: "Loss if staying, by how long the incident lasts",
+    flat: (why) => `The duration does not change the answer: ${why}.`,
+    change: (dur, a, b, why) => `From ${dur}: ${a} → ${b} (${why}).`,
+    now: "now",
+    aria: (n) => `Loss if staying at ${n} durations from 1 hour to 180 days, on a log scale; background coloured by the answer.`,
+    assume: "Held constant over the incident: pool depth as today, the borrow APR and the PT's implied APY.",
+  },
+
   /* "How it spreads": RiskModel.propagation's steps in causal order (guide section 6). */
   spread: {
     title: (n) => `How it spreads, step by step (${n})`,

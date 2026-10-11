@@ -794,6 +794,40 @@ try {
   gate(rail.bad.length === 0, `7. time rail (pointer drag included): ${rail.marks} event marks and the two reference marks as the model's events (48 cases), recovers toggle on ${rail.toggles} of them, one duration control, keys, event click (thumb, layers, verdict, flash), guide examples ${JSON.stringify(rail.example)} and ${JSON.stringify(rail.example2)}, Play ${rail.play ? rail.play.ms + " ms" : "-"}`);
   rail.bad.slice(0, 8).forEach((x) => console.log("           " + x));
 
+  /* 7b. timeline chart (guide 5b): RiskModel.timeline's points, timelineSummary's lines, one band per answer between
+     the events, the rail's duration as a line; a picture, not a control */
+  const tlc = await p.ev(`(() => {
+    const bad = []; let n = 0;
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    fire(document.querySelector("#replay"), "");
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const k of Object.keys(NODES)) for (const f of fails(k)) for (const rec of [true, false]) {
+        setNode(k, f); S.recovers = rec; setHours(30);
+        const tag = pk + " " + k + ":" + f + " rec " + rec, T = COPY.tl;
+        const rows = RiskModel.timeline(d, pk, k, f, S.sev, rec, S.alt / 100), sum = RiskModel.timelineSummary(d, pk, rows),
+          ev = RiskModel.propagationEvents(d, pk, k, f, S.sev, rec, S.alt / 100);
+        const pts = document.querySelector("#tl .tline").getAttribute("points").trim().split(/\\s+/);
+        if (pts.length !== rows.length) bad.push(tag + ": " + pts.length + " points vs " + rows.length + " rows");
+        const top = Math.max(...rows.map((r) => r.loss_if_stay_usd));
+        rows.forEach((r, i) => { const [x, y] = pts[i].split(",").map(Number);
+          if (Math.abs(x - uOf(r.hours) * 1000) > 0.06 || Math.abs(y - (96 - (top > 0 ? r.loss_if_stay_usd / top * 88 : 0))) > 0.006) bad.push(tag + ": point " + i); });
+        const lis = [...document.querySelectorAll("#tl .tlsum li")].map((x) => x.textContent);
+        if (sum.duration_matters ? lis.length !== sum.changes.length : lis.join() !== T.flat(sum.why_flat)) bad.push(tag + ": summary '" + lis.join(" / ") + "'");
+        const bands = [...document.querySelectorAll("#tl rect.tb")].map((x) => x.getAttribute("class").split(" ")[1]);
+        const want = [ev.start.verdict].concat(ev.events.map((e) => e.verdict_after)).map((v) => VCLASS[v]);
+        if (bands.join() !== want.join()) bad.push(tag + ": bands " + bands.join() + " vs " + want.join());
+        const now = +document.querySelector("#tl .tnow").getAttribute("x1");
+        if (Math.abs(now - uOf(S.hours) * 1000) > 1e-6) bad.push(tag + ": duration line at " + now);
+        n++;
+      }
+    }
+    if (document.querySelector("#d-tl [role=slider], #d-tl input")) bad.push("the chart holds a control");
+    return { n, bad };
+  })()`);
+  gate(tlc.n > 0 && tlc.bad.length === 0, `7b. timeline chart equals RiskModel.timeline / timelineSummary, bands from the events, duration line: ${tlc.n - tlc.bad.length}/${tlc.n} cases`);
+  tlc.bad.slice(0, 5).forEach((x) => console.log("           " + x));
+
   /* 6. vault view (FRONTEND_VAULT_GUIDE.md) */
   const vr = vaultRows();
   const vault = await p.ev(`(() => {
