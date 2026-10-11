@@ -18,11 +18,35 @@
     <div class="app">
       <header>
         <h1>Dependency Risk Desk</h1>
-        <select id="pos" aria-label="Position"></select>
-        <select id="replay" aria-label="Load a past incident pattern"></select>
-        <span class="stamp" id="stamp"></span>
+        <div class="view-part" id="hdr-pt">
+          <select id="pos" aria-label="Position"></select>
+          <select id="replay" aria-label="Load a past incident pattern"></select>
+          <span class="stamp" id="stamp"></span>
+        </div>
+        <div class="view-part" id="hdr-vault" hidden>
+          <label class="hin wide" for="v-addr"
+            ><span id="v-addr-lbl"></span
+            ><input id="v-addr" type="text" spellcheck="false" autocomplete="off"
+          /></label>
+          <select id="v-pick" aria-label="Vaults in the list"></select>
+          <label class="hin" for="v-amt"
+            ><span id="v-amt-lbl"></span><input id="v-amt" type="text" inputmode="decimal"
+          /></label>
+          <label class="hin" for="v-alt"
+            ><span id="v-alt-lbl"></span><input id="v-alt" type="text" inputmode="decimal"
+          /></label>
+          <label class="hin" for="v-hz"
+            ><span id="v-hz-lbl"></span><input id="v-hz" type="text" inputmode="decimal"
+          /></label>
+        </div>
+        <div class="mode" role="group" aria-label="Page view">
+          <button data-page="pt" aria-pressed="true">Position (PT)</button
+          ><button data-page="vault" aria-pressed="false">Vaults</button>
+        </div>
       </header>
       <div class="banner" id="banner" hidden></div>
+
+      <div class="view-part" id="view-pt">
       <div class="banner" id="pastBanner" hidden></div>
 
       <section class="panel steps" id="steps" aria-label="Incident to test">
@@ -107,6 +131,39 @@
           <p class="note" id="advNote"></p>
         </div>
       </details>
+      </div>
+
+      <main class="view-part" id="view-vault" hidden>
+        <div class="banner vmsg" id="v-msg" hidden></div>
+        <section class="panel steps" id="v-steps" aria-label="Vault incident to test">
+          <div class="step">
+            <label class="q" for="v-inc"><i>1</i><span id="v-q1"></span></label>
+            <select id="v-inc"></select>
+            <span class="note" id="v-n1"></span>
+          </div>
+          <div class="step" id="v-sevstep">
+            <label class="q" for="v-sev"><i>2</i><span id="v-q2"></span></label>
+            <div class="slide">
+              <div class="tcol">
+                <input type="range" id="v-sev" min="0" max="1000" step="1" aria-label="Severity" />
+                <div class="vticks" id="v-ticks"></div>
+                <div id="v-zones"></div>
+              </div>
+              <output id="v-sevOut" for="v-sev"></output>
+            </div>
+            <span class="note" id="v-sevNote"></span>
+          </div>
+        </section>
+        <div class="cols" id="v-cols">
+          <section class="panel">
+            <div class="phead"><h2 id="v-chainHead"></h2></div>
+            <div class="vchain" id="v-chain"></div>
+          </section>
+          <aside class="side">
+            <section class="panel decision" id="v-decision" aria-live="polite"></section>
+          </aside>
+        </div>
+      </main>
     </div>
 
     <div class="drawer" id="drawer" hidden>
@@ -115,7 +172,9 @@
 
     <script src="../sample_data/dashboard.sample.js"></script>
     <script src="risk_model.js"></script>
+    <script src="../sample_data/vaults.sample.js"></script>
     <script src="demo.copy.js"></script>
     <script src="demo.js"></script>
+    <script src="vault.js"></script>
   </body>
 </html>

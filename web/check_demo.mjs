@@ -13,6 +13,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PAGE = pathToFileURL(resolve(process.argv[2] || join(HERE, "demo.html"))).href;
 const GUIDE = resolve(HERE, "..", "FRONTEND_GUIDE.md");
+const VGUIDE = resolve(HERE, "..", "FRONTEND_VAULT_GUIDE.md");
 const CHROME =
   process.env.CHROME ||
   [
@@ -78,6 +79,26 @@ function pastRows() {
       oracle: { true: true, false: false }[c[6]], liquidated: c[7] === "yes", beStart: bs, beCap: bc });
   }
   return rows;
+}
+
+/* ---- the vault guide's acceptance tables (section 6), read at run time */
+function vaultRows() {
+  const md = readFileSync(VGUIDE, "utf8");
+  const i = md.indexOf("## 6."), sec = i < 0 ? "" : md.slice(i, md.indexOf("\n## ", i + 5));
+  const n = (t) => +t.replace(/[,%]/g, "");
+  const dec = [], run = [];
+  for (const line of sec.split("\n")) {
+    const c = line.split("|").slice(1, -1).map((x) => x.trim().replace(/`/g, ""));
+    if (c.length === 10 && c[0] !== "Vault" && !/^-+$/.test(c[0])) {
+      const [bf, bc] = c[9].split("/").map((t) => n(t.trim()) / 100);
+      dec.push({ vault: c[0], inc: c[1], amount: n(c[2]), sev: /default/.test(c[3]) ? null : n(c[3]) / 100,
+        verdict: c[4], stay: n(c[5]), exit: n(c[6]), cost: n(c[7]), locked: n(c[8]), beFree: bf, beForced: bc });
+    } else if (c.length === 5 && /^\d+%$/.test(c[0])) {
+      run.push({ share: n(c[0]) / 100, free: n(c[1]), forced: n(c[2]), locked: n(c[3]), loss: n(c[4]) });
+    }
+  }
+  const m = sec.match(/Liquidity run, ([^,]+), amount ([\d,]+)/);
+  return { dec, run, runVault: m ? m[1].trim() : null, runAmount: m ? n(m[2]) : null };
 }
 
 /* ---- minimal DevTools client */
@@ -441,12 +462,133 @@ try {
   const other = rows.length - atPage.length;
   if (other) console.log(`SKIPPED    4. ${other} acceptance rows at other sizes: the page has no position-size input yet`);
 
+  /* 6. vault view (FRONTEND_VAULT_GUIDE.md) */
+  const vr = vaultRows();
+  const vault = await p.ev(`(() => {
+    const out = { bad: [], dec: [], run: [], sent: { n: 0, bad: [] }, msgs: {} };
+    const VV = window.VaultView;
+    if (!VV) { out.bad.push("no vault view"); return out; }
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    /* 6a. snapshot the PT view, use the vault view, switch back, compare */
+    fire(document.querySelector("#replay"), PAST.length ? PAST[0].key : "");
+    nodeEvidence("oracle");
+    const snap = () => JSON.stringify({ S, pt: document.querySelector("#view-pt").innerText,
+      hdr: [...document.querySelectorAll("#hdr-pt select")].map((x) => x.value), sev: document.querySelector("#sev").value });
+    const before = snap();
+    document.querySelector('[data-page="vault"]').click();
+    out.vaultShown = !document.querySelector("#view-vault").hidden && document.querySelector("#view-pt").hidden
+      && document.querySelector("#drawer").hidden;
+    const addrOf = (name) => (VAULTS.report.vaults.find((x) => x.vault_name === name) || {}).vault_address;
+    /* 6b. the decision table */
+    for (const r of ${JSON.stringify(vr.dec)}) {
+      const a = addrOf(r.vault);
+      if (!a) { out.dec.push({ row: r.vault, d: ["vault not in the list"] }); continue; }
+      fire(document.querySelector("#v-pick"), a);
+      fire(document.querySelector("#v-amt"), String(r.amount));
+      fire(document.querySelector("#v-inc"), r.inc);
+      if (r.sev !== null) VV.set({ sev: r.sev });
+      /* the page must give exactly the guide's call on today's data, and the guide's verdict; the guide's numbers
+         are compared too, but only reported (they may predate a data refresh) */
+      const L = VV.last(), x = L.r || {}, d2 = [], drift = [];
+      const v = VAULTS.details[a.toLowerCase()], inc = v.incidents.find((i) => i.key === r.inc);
+      const want = RiskModel.vaultDecideAt(inc, v.exit, Math.min(r.amount, v.total_assets), r.sev, null, null);
+      for (const k of ["verdict", "loss_if_stay_usd", "exit_usd", "exit_cost_usd", "locked_usd", "severity_break_even_free", "severity_break_even_forced"])
+        if (x[k] !== want[k]) d2.push(k + " page " + x[k] + " vs model " + want[k]);
+      if (x.verdict !== r.verdict) d2.push("verdict " + x.verdict + " vs guide " + r.verdict);
+      const badge = document.querySelector("#v-decision .verdict").textContent.toUpperCase();
+      if (!badge.startsWith(r.verdict === "EXIT_PARTIAL" ? "EXIT " : r.verdict)) d2.push("badge '" + badge + "'");
+      const pc2 = (f) => (f === null ? null : Math.round(f * 10000) / 100);
+      [["loss if stay", Math.round(x.loss_if_stay_usd), r.stay], ["exit", Math.round(x.exit_usd), r.exit],
+       ["exit cost", Math.round(x.exit_cost_usd), r.cost], ["locked", Math.round(x.locked_usd), r.locked],
+       ["break-even free %", pc2(x.severity_break_even_free), pc2(r.beFree)],
+       ["break-even forced %", pc2(x.severity_break_even_forced), pc2(r.beForced)]]
+        .forEach(([n, g, w]) => { if (g === null || w === null ? g !== w : Math.abs(g - w) > (n.endsWith("%") ? 0.005 : 1)) drift.push(n + " " + g + " (guide " + w + ")"); });
+      out.dec.push({ row: r.vault + " " + r.inc + " " + r.amount, d: d2, drift });
+    }
+    /* 6c. the liquidity-run table */
+    const ra = addrOf(${JSON.stringify(vr.runVault)});
+    if (ra) {
+      fire(document.querySelector("#v-pick"), ra);
+      fire(document.querySelector("#v-amt"), String(${vr.runAmount}));
+      const run = VAULTS.details[ra.toLowerCase()].incidents.find((i) => i.type === "liquidity_run");
+      fire(document.querySelector("#v-inc"), run.key);
+      const rows = VV.last().run || [];
+      for (const w of ${JSON.stringify(vr.run)}) {
+        const g = rows.find((x) => Math.abs(x.others_take - w.share) < 1e-9);
+        const ok = g && [["free_usd", w.free], ["forced_usd", w.forced], ["locked_usd", w.locked], ["expected_loss_on_locked_usd", w.loss]]
+          .every(([k, v]) => Math.abs(Math.round(g[k]) - v) <= 1);
+        out.run.push({ share: w.share, ok: !!ok, got: g ? [g.free_usd, g.forced_usd, g.locked_usd, g.expected_loss_on_locked_usd].map(Math.round) : null });
+      }
+      out.runShown = document.querySelector("#v-decision table") !== null && document.querySelector("#v-sevstep").hidden;
+    }
+    /* 6d. the sentence equals the backend's at the default severity and amount */
+    for (const e of VAULTS.report.vaults.filter((x) => x.coverage === "full")) {
+      fire(document.querySelector("#v-pick"), e.vault_address);
+      fire(document.querySelector("#v-amt"), "10000000");
+      const v = VAULTS.details[e.vault_address.toLowerCase()];
+      for (const inc of v.incidents.filter((i) => i.analyzed !== false && i.type !== "liquidity_run" && i.decision_text)) {
+        fire(document.querySelector("#v-inc"), inc.key);
+        out.sent.n++;
+        /* the backend writes money in full ("2,902,610"); the page writes it as the PT view does ("2.90M"):
+           convert the backend's amounts, then every word and every value must match */
+        /* the PT view's money rule, written here so the gate does not trust the page's own formatter */
+        const short = (v) => { const a = Math.abs(v); return a >= 999500 ? (v / 1e6).toFixed(2) + "M"
+          : a >= 1e4 ? Math.round(v / 1e3) + "k" : a >= 1e3 ? (v / 1e3).toFixed(1) + "k" : String(Math.round(v)); };
+        const want = inc.decision_text.text.replace(/\\b\\d{1,3}(?:,\\d{3})+\\b(?!\\.\\d|%)/g, (t) => short(+t.replace(/,/g, "")));
+        const got = VV.last().sentence, shown = document.querySelector("#v-decision .why").textContent;
+        if (got !== want || shown !== got) out.sent.bad.push(e.vault_name + " " + inc.key + ": " + got + " || want " + want);
+      }
+    }
+    /* 6e. messages: a listed vault without numbers, an unknown address, an amount above the vault */
+    const other = VAULTS.report.vaults.find((x) => x.coverage !== "full");
+    fire(document.querySelector("#v-pick"), other.vault_address);
+    out.msgs.notCovered = !document.querySelector("#v-msg").hidden && document.querySelector("#v-cols").hidden;
+    fire(document.querySelector("#v-addr"), "0x0000000000000000000000000000000000000001");
+    out.msgs.notFound = !document.querySelector("#v-msg").hidden && /not in the analysed list/.test(document.querySelector("#v-msg").textContent);
+    fire(document.querySelector("#v-addr"), "0xD6D4B804014EF27836DBE9F8F6BF6C71251548EC");
+    fire(document.querySelector("#v-amt"), "10,000,000");
+    out.msgs.above = /above the vault's total assets/.test(document.querySelector("#v-msg").textContent)
+      && document.querySelector("#v-amt").value === "10,000,000" && VV.last().r.amount < 1e7;
+    /* back to the PT view: same state and text as before */
+    document.querySelector('[data-page="pt"]').click();
+    out.ptSame = snap() === before && !document.querySelector("#view-pt").hidden && document.querySelector("#view-vault").hidden;
+    fire(document.querySelector("#replay"), "");
+    return out;
+  })()`);
+  gate(vault.vaultShown, "6a. the Vaults switch shows the vault view and hides the PT view (drawer closed)");
+  const vok = vault.dec.filter((r) => !r.d.length).length;
+  gate(vault.dec.length > 0 && vok === vault.dec.length,
+    `6b. vault guide decision rows: ${vok}/${vault.dec.length} give the guide's verdict and badge, and exactly the model's numbers`);
+  vault.dec.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
+  const drifted = vault.dec.filter((r) => r.drift && r.drift.length);
+  if (drifted.length) {
+    console.log(`NOTE       6b. ${drifted.length} of the guide's rows differ from the model on today's vault data (raise with the backend):`);
+    drifted.forEach((r) => console.log(`           ${r.row}: ${r.drift.join("; ")}`));
+  }
+  gate(vault.run.length > 0 && vault.run.every((r) => r.ok) && vault.runShown,
+    `6c. liquidity-run rows: ${vault.run.filter((r) => r.ok).length}/${vault.run.length} match, shown as a table without a severity slider`);
+  vault.run.filter((r) => !r.ok).forEach((r) => console.log(`           share ${r.share}: got ${JSON.stringify(r.got)}`));
+  gate(vault.sent.n > 0 && vault.sent.bad.length === 0,
+    `6d. vault sentence equals the backend's decision_text (amounts in the page's short form): ${vault.sent.n - vault.sent.bad.length}/${vault.sent.n}`);
+  vault.sent.bad.slice(0, 3).forEach((x) => console.log("           " + x));
+  gate(vault.msgs.notCovered && vault.msgs.notFound && vault.msgs.above,
+    `6e. vault messages: not analysed ${vault.msgs.notCovered}, unknown address ${vault.msgs.notFound}, amount above the vault ${vault.msgs.above}`);
+  gate(vault.ptSame, "6a. switching back restores the PT view exactly (state, text, controls)");
+  vault.bad.forEach((x) => console.log("           " + x));
+
   gate(p.errors.length === 0, `1. no console errors during checks 1-4${p.errors.length ? ": " + p.errors.slice(0, 3).join(" | ") : ""}`);
 
   /* phone width and dark mode */
   const phone = await openPage(b, { width: 390 });
-  const ph = await phone.ev(`({ sw: document.documentElement.scrollWidth, w: innerWidth })`);
-  gate(ph.sw <= ph.w + 1 && phone.errors.length === 0, `5. phone width 390px: no horizontal page scroll (scrollWidth ${ph.sw}), no errors`);
+  /* read after a pause: on a phone, the browser widens the layout viewport after layout when content overflows */
+  const settle = (expr) => `new Promise((ok) => setTimeout(() => ok(${expr}), 600))`;
+  const ph = await phone.ev(settle(`({ sw: document.documentElement.scrollWidth, w: innerWidth })`));
+  gate(ph.sw <= 391 && ph.w <= 391 && phone.errors.length === 0, `5. phone width 390px: layout ${ph.w}px wide, scrollWidth ${ph.sw}, no errors`);
+  const phv = await phone.ev(`(() => { const b = document.querySelector('[data-page="vault"]');
+    if (b) b.click();
+    return ${settle(`{ has: !!b, sw: document.documentElement.scrollWidth, w: innerWidth }`)}; })()`);
+  gate(phv.has && phv.sw <= 391 && phv.w <= 391 && phone.errors.length === 0,
+    `5. phone width 390px, vault view: ${phv.has ? `layout ${phv.w}px wide, scrollWidth ${phv.sw}` : "no vault view"}`);
   const dark = await openPage(b, { dark: true });
   const dk = await dark.ev(`(() => { const c = getComputedStyle(document.body).backgroundColor.match(/\\d+/g).map(Number);
     return { bg: getComputedStyle(document.body).backgroundColor, lum: (c[0] + c[1] + c[2]) / 3 }; })()`);
