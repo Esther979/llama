@@ -38,6 +38,16 @@
           : String(Math.round(v));
   };
   const full = (v) => Math.round(v).toLocaleString("en-US");
+  /* the amount field reads and shows k / m units as the PT view's size field: 3,000 = 3k, 3,000,000 = 3m */
+  const unitAmt = (v) => {
+    const a = Math.abs(v),
+      t = (x) => String(+x.toFixed(3));
+    return a >= 1e6 ? t(v / 1e6) + "m" : a >= 1e3 ? t(v / 1e3) + "k" : t(v);
+  };
+  const amtOf = (t) => {
+    const m = String(t).trim().replace(/[\s,_']/g, "").match(/^(\d*\.?\d+)([kKmM]?)$/);
+    return m ? +m[1] * { "": 1, k: 1e3, K: 1e3, m: 1e6, M: 1e6 }[m[2]] : null;
+  };
   const frac = (v) =>
     (Math.abs(v) >= 0.01 || v === 0 ? (v * 100).toFixed(2) : String(+(v * 100).toPrecision(3))) + "%";
   const gr = (g) => (/^[ABCD]$/.test(g || "") ? `<span class="gr ${g}">${g}</span>` : "");
@@ -473,7 +483,8 @@
       msg.hidden = false;
       msg.textContent = C.above(money(v.total_assets), cur);
     }
-    $("#v-amt").value = full(VS.amount);
+    $("#v-amt").value = unitAmt(VS.amount);
+    $("#v-amt").title = full(VS.amount);
     $("#v-alt").value = String(+(VS.alt * 100).toFixed(4));
 
     /* incident list, grouped; not analysed ones greyed (disabled) with their note */
@@ -565,7 +576,7 @@
   $("#v-addr-lbl").textContent = C.addrLabel;
   $("#v-amt-lbl").textContent = C.amountLabel;
   $("#v-alt-lbl").textContent = C.altLabel;
-  $("#v-amt").placeholder = "e.g. 100,000";
+  $("#v-amt").placeholder = "e.g. 100k or 3m";
   const opt = (x) =>
     `<option value="${x.vault_address}">${x.vault_name} · ${x.chain} · ${x.protocol} · $${money(x.tvl_usd || 0)}</option>`;
   $("#v-pick").innerHTML =
@@ -580,8 +591,8 @@
   $("#v-pick").addEventListener("change", (ev) => ev.target.value && setVault(ev.target.value));
   $("#v-addr").addEventListener("change", (ev) => setVault(ev.target.value.trim()));
   $("#v-amt").addEventListener("change", (ev) => {
-    const v = num(ev.target.value, false);
-    if (v !== null && v > 0) VS.amount = v;
+    const v = amtOf(ev.target.value);
+    if (v !== null && v > 0 && isFinite(v)) VS.amount = v;
     render();
   });
   $("#v-alt").addEventListener("change", (ev) => {

@@ -336,16 +336,53 @@ try {
     const u = PAST.find((x) => x.key === "usde_feb_2026");
     const optsMatter = !!u && RiskModel.decideAtDuration(d, "spot", u.node, u.fail, u.sev, u.hours, true).loss_if_stay_usd
       !== RiskModel.decideAtDuration(d, "spot", u.node, u.fail, u.sev, u.hours, false).loss_if_stay_usd;
+    /* past or manual, one or the other (user decision, 11 Oct): in past mode steps 1 and 2 are read-only and a
+       severity input changes nothing, a click on a chain node only opens its drawer; Manual keeps the values as a
+       what-if with every control editable and no banner; Past again loads the last event chosen */
     fire(sel, PAST[0].key);
-    const sv = document.querySelector("#sev");
+    const wrap = sel.closest(".pastwrap"), tip = document.querySelector("#pastBanner"), top0 = document.querySelector("#steps").getBoundingClientRect().top;
+    const ro = ["#node", "#fail", "#sev"].every((q) => document.querySelector(q).disabled) && !!wrap && !wrap.hidden && S.mode === "past";
+    /* the event's description is a tooltip of the asterisk at the select's top right: not shown with the select
+       focused, shown with the asterisk focused (keyboard; hover is checked below with the mouse), never moving the
+       panel */
+    const info = document.querySelector("#pastInfo");
+    sel.focus();
+    const tipOff = !!wrap && wrap.contains(tip) && !!info && getComputedStyle(tip).display === "none" && sel.getAttribute("aria-describedby") === "pastBanner";
+    sel.blur();
+    info && info.focus({ focusVisible: true });
+    const tipOn = getComputedStyle(tip).display === "block" && /Pattern from/.test(tip.textContent);
+    info && info.blur();
+    const sv = document.querySelector("#sev"), before = [S.node, S.fail, S.sev].join();
     sv.value = String(+sv.value + 1); sv.dispatchEvent(new Event("input", { bubbles: true }));
-    const whatIf = S.past === null && document.querySelector("#pastBanner").hidden && document.querySelector("#replay").value === "";
-    fire(sel, "");
-    return { n: keys.length, bad, optsMatter, whatIf };
+    const nb = document.querySelector('button[data-n="usde"]');
+    if (nb) nb.click();
+    closeDrawer();
+    const fixed = [S.node, S.fail, S.sev].join() === before && S.past === PAST[0].key;
+    document.querySelector('[data-mode="manual"]').click();
+    const still = document.querySelector("#steps").getBoundingClientRect().top === top0;
+    const whatIf = S.mode === "manual" && S.past === null && [S.node, S.fail, S.sev].join() === before && wrap.hidden && still
+      && document.querySelector("#pastBanner").hidden && ["#node", "#fail", "#sev"].every((q) => !document.querySelector(q).disabled)
+      && /What-if/.test(document.querySelector("#decision .lbl").textContent);
+    document.querySelector('[data-mode="past"]').click();
+    const back = S.mode === "past" && S.past === PAST[0].key;
+    document.querySelector('[data-mode="manual"]').click();
+    return { n: keys.length, bad, optsMatter, whatIf: ro && tipOff && tipOn && fixed && whatIf && back, parts: { ro, tipOff, tipOn, fixed, whatIf, still, back } };
   })()`);
   gate(past.bad.length === 0 && past.n > 0, `2d. past events: ${past.n} listed, each sets its incident, duration and recovers toggle; the page equals decideAtDuration${past.bad.length ? ": " + past.bad.slice(0, 3).join("; ") : ""}`);
   gate(past.optsMatter, "2d. the recovers toggle changes the result (USDe Feb 2026 on spot), so the gate above is meaningful");
-  gate(past.whatIf, "2d. moving the severity turns a past event into a what-if (banner hidden, dropdown reset)");
+  /* hover with a real mouse: over the select the description stays hidden, over the asterisk it shows */
+  const hv = await p.ev(`(() => { const s = document.querySelector("#replay"); s.value = PAST[0].key; s.dispatchEvent(new Event("change", { bubbles: true }));
+    window.scrollTo(0, 0);
+    const box = (q) => { const r = document.querySelector(q).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+    return { sel: box("#replay"), info: box("#pastInfo") }; })()`);
+  const tipShown = async (pt) => {
+    await p.s("Input.dispatchMouseEvent", { type: "mouseMoved", x: pt.x, y: pt.y });
+    return p.ev(`getComputedStyle(document.querySelector("#pastBanner")).display === "block"`);
+  };
+  const overSel = await tipShown(hv.sel), overInfo = await tipShown(hv.info);
+  await p.s("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
+  gate(!overSel && overInfo, `2d. mouse: the past event's description shows over the asterisk (${overInfo}), not over the select (${overSel})`);
+  gate(past.whatIf, `2d. past or manual: past = steps 1-2 read-only (severity and chain clicks change nothing), the event's description a tooltip on the asterisk only (hidden with the select focused, the panel does not move), Manual = editable what-if from the same values, Past again = the last event${past.whatIf ? "" : " " + JSON.stringify(past.parts)}`);
 
   /* 2e. the guide's past-incident table (section 3c), on screen. The page values the position at the end of the
      incident (guide 5b: $164,900 instead of $164,903), so amounts match within 0.1%. The table's oracle and
@@ -376,7 +413,7 @@ try {
       if (!txt.startsWith(want)) d2.push("screen '" + txt + "' vs '" + want + "'");
       out.push({ row: r.key + " " + r.preset, d: d2 });
     }
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     return { rows: out, noDur, defH: DEF_H };
   })()`);
   const pres = presAll.rows, pnod = presAll.noDur;
@@ -445,7 +482,7 @@ try {
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     for (const r of rows) {
       const tag = r.preset + " " + r.node + ":" + r.fail + " " + r.sev + "% " + JSON.stringify(r.opts);
-      fire(document.querySelector("#replay"), "");
+      document.querySelector('[data-mode="manual"]').click();
       fire(document.querySelector("#pos"), r.preset);
       const ev = r.opts && PAST.find((x) => x.node === r.node && x.fail === r.fail && Math.abs(x.sev - r.sev) < 1e-9 && same(x.opts, r.opts));
       if (ev) fire(document.querySelector("#replay"), ev.key);
@@ -477,7 +514,7 @@ try {
       document.querySelector('[data-view="list"]').click();
       out.push({ tag, d: d2 });
     }
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     return out;
   })()`);
   const pdone = prop, prok = pdone.filter((r) => !r.d.length).length;
@@ -515,7 +552,7 @@ try {
     };
     const check = (tag) => { n++; const b = bad.length; try { one(tag); } catch (e) { bad.push(tag + ": " + e); } if (bad.length > b) failed++; };
     document.querySelector('[data-view="list"]').click();
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
       for (const [h, rec] of ${QUICK} ? [[24, false]] : [[6, true], [6, false], [24, true], [24, false]]) {
@@ -523,7 +560,7 @@ try {
         for (const k of Object.keys(NODES)) for (const f of fails(k))
           for (const sv of [FAIL[f].def, FAIL[f].max]) { setNode(k, f, sv); check(pk + " " + k + ":" + f + " @" + sv + " " + h + "h rec " + rec); }
       }
-      for (const x of (typeof PAST !== "undefined" ? PAST : [])) { fire(document.querySelector("#replay"), x.key); check(pk + " past " + x.key); fire(document.querySelector("#replay"), ""); }
+      for (const x of (typeof PAST !== "undefined" ? PAST : [])) { fire(document.querySelector("#replay"), x.key); check(pk + " past " + x.key); document.querySelector('[data-mode="manual"]').click(); }
     }
     return { n, failed, bad };
   })()`);
@@ -534,7 +571,7 @@ try {
   const sweep = await p.ev(`(() => {
     const bad = []; let n = 0;
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
-    fire(document.querySelector("#replay"), "");   /* what-if tests: no past event */
+    document.querySelector('[data-mode="manual"]').click();   /* what-if tests: no past event */
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
       for (const k of Object.keys(NODES)) for (const f of fails(k)) {
@@ -589,7 +626,7 @@ try {
       if (want.weakest ? !head.includes(want.weakest.alternative) : head !== (COPY.sens || {}).robust) bad.push(tag + ": weakest line '" + head + "'");
       if (/Position preset/.test(box.textContent)) bad.push(tag + ": the page-built 'Position preset' row is still there");
     };
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
       for (const k of Object.keys(NODES)) for (const f of fails(k))
@@ -599,7 +636,7 @@ try {
       fire(document.querySelector("#pos"), pk);
       for (const x of PAST) { fire(document.querySelector("#replay"), x.key); check(pk + " past " + x.key); }
     }
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     return { n, bad, failed };
   })()`);
   gate(sens.n > 0 && sens.bad.length === 0, `3b. "What would change the answer" is RiskModel.sensitivity: ${sens.n - sens.failed}/${sens.n} cases (model, rows, flips, groups, weakest)`);
@@ -635,7 +672,7 @@ try {
   const res = await p.ev(`(() => {
     const rows = ${JSON.stringify(atPage)}, out = [];
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
-    fire(document.querySelector("#replay"), "");   /* section 9 rows are what-if tests */
+    document.querySelector('[data-mode="manual"]').click();   /* section 9 rows are what-if tests */
     for (const r of rows) {
       /* the size through the page's own field, typed as a manager would ("7,000,000") */
       fire(document.querySelector("#pos"), "spot");
@@ -677,7 +714,7 @@ try {
       return +m[1].replace(/,/g, "") * (m[2] === "M" ? 1e6 : m[2] === "k" ? 1e3 : 1); };
     const dd = (label) => { const dt = [...document.querySelectorAll("#exit dt")].find((x) => x.textContent === label);
       return dt ? dt.nextElementSibling.textContent : ""; };
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
       for (const k of Object.keys(NODES)) for (const f of fails(k)) {
@@ -707,7 +744,7 @@ try {
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     const lay = (n) => document.querySelector('#chain .lay[data-ln="' + n + '"]').dataset.state;
     document.querySelector('[data-view="list"]').click();
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     const TLH = d.oracle.challenge_timelock_s / 3600, EXP = d.time_model.days_to_expiry * 24;
     /* a. one red mark per event at its duration, the two grey reference marks; the toggle exactly where the model
        shows it, its reason otherwise */
@@ -800,7 +837,7 @@ try {
     return out;
   })()`);
   /* a real pointer drag on the track: press at 20% of the rail, move to 60%, release (pointer capture) */
-  const tr = await p.ev(`(() => { const st = document.querySelector("#replay"); st.value = ""; st.dispatchEvent(new Event("change", { bubbles: true }));
+  const tr = await p.ev(`(() => { document.querySelector('[data-mode="manual"]').click();
     document.querySelector("#rail").scrollIntoView({ block: "center" });
     const r = document.querySelector("#rtrack").getBoundingClientRect(); return { x: r.left, w: r.width, y: r.top + r.height / 2 }; })()`);
   const mouse = (type, u) => p.s("Input.dispatchMouseEvent", { type, x: tr.x + tr.w * u, y: tr.y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1 });
@@ -820,7 +857,7 @@ try {
   const tlc = await p.ev(`(() => {
     const bad = []; let n = 0;
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
       for (const k of Object.keys(NODES)) for (const f of fails(k)) for (const rec of ${QUICK} ? [false] : [true, false]) {
@@ -863,16 +900,17 @@ try {
     /* real borrowers: on-chain size, read-only, grade A, with the hint */
     for (const k of Object.keys(PRE).filter((k) => PRE[k].sized === false)) {
       fire(document.querySelector("#pos"), k);
-      if (!f.readOnly || f.value !== Math.round(PRE[k].collateral_usd).toLocaleString("en-US") || !/read on chain/.test(mark()) || !/A/.test(mark()))
+      if (!f.readOnly || f.title !== Math.round(PRE[k].collateral_usd).toLocaleString("en-US") || !/^\\d+(\\.\\d{1,3})?m$/.test(f.value) || !/read on chain/.test(mark()) || !/A/.test(mark()))
         bad.push(k + ": field '" + f.value + "' readOnly " + f.readOnly + " mark '" + mark() + "'");
       if (!line().includes(Math.round(PRE[k].pt_units).toLocaleString("en-US") + " PT")) bad.push(k + ": line '" + line() + "'");
     }
     /* sized presets: the default 10,000,000 is an assumption (D) until typed */
     fire(document.querySelector("#pos"), "spot");
-    if (f.readOnly || f.value !== "10,000,000" || !/assumed/.test(mark()) || S.sizeTyped) bad.push("default: '" + f.value + "' mark '" + mark() + "'");
-    for (const [typed, want] of [["1,000,000", 1e6], ["5M", 5e6], ["250k", 2.5e5], ["50 000 000", 5e7]]) {
+    if (f.readOnly || f.value !== "10m" || f.title !== "10,000,000" || !/assumed/.test(mark()) || S.sizeTyped) bad.push("default: '" + f.value + "' mark '" + mark() + "'");
+    /* typed in any form, shown back in k / m units (3,000 = 3k, 3,000,000 = 3m) */
+    for (const [typed, want, shown] of [["1,000,000", 1e6, "1m"], ["5M", 5e6, "5m"], ["250k", 2.5e5, "250k"], ["3,000", 3e3, "3k"], ["3.5m", 3.5e6, "3.5m"], ["50 000 000", 5e7, "50m"]]) {
       fire(f, typed);
-      if (S.size !== want || d.size_usd !== want || PRE.spot.collateral_usd !== want || PRE.lev_market_avg.collateral_usd !== want || f.value !== typed || mark() !== COPY.size.typed)
+      if (S.size !== want || d.size_usd !== want || PRE.spot.collateral_usd !== want || PRE.lev_market_avg.collateral_usd !== want || f.value !== shown || mark() !== COPY.size.typed)
         bad.push("typed " + typed + ": size " + S.size + " field '" + f.value + "'");
       const want2 = RiskModel.decideAtDuration(RiskModel.atSize(window.DASHBOARD, want), "spot", S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
       if (JSON.stringify(model().sev) !== JSON.stringify(want2)) bad.push("typed " + typed + ": card differs from the model at that size");
@@ -880,12 +918,12 @@ try {
         bad.push("typed " + typed + ": line '" + line() + "'");
     }
     fire(f, "abc");
-    if (S.size !== 5e7 || f.value !== "50,000,000") bad.push("invalid input: size " + S.size + " field '" + f.value + "'");
+    if (S.size !== 5e7 || f.value !== "50m") bad.push("invalid input: size " + S.size + " field '" + f.value + "'");
     /* real borrowers keep their size whatever is typed; back to spot shows the typed size again */
     fire(document.querySelector("#pos"), "lev_closest_to_liquidation");
     const rb = PRE.lev_closest_to_liquidation.collateral_usd;
     fire(document.querySelector("#pos"), "spot");
-    if (Math.abs(rb - 3249471.575060609) > 1 || f.value !== "50,000,000" || f.readOnly) bad.push("after a real borrower: '" + f.value + "', borrower " + rb);
+    if (Math.abs(rb - 3249471.575060609) > 1 || f.value !== "50m" || f.readOnly) bad.push("after a real borrower: '" + f.value + "', borrower " + rb);
     fire(f, "10,000,000");
     /* the cash yield: decimal comma */
     const alt0 = S.alt;
@@ -906,7 +944,7 @@ try {
     if (!wm || S.pos !== "wallet_morpho" || document.querySelector("#pos").value !== "wallet_morpho") bad.push("wallet: preset not selected (" + S.pos + ")");
     else {
       if (Math.round(wm.collateral_usd) !== 3249472 || Math.round(wm.debt_usd) !== 2941927 || JSON.stringify(wm) !== JSON.stringify(ref)) bad.push("wallet_morpho numbers");
-      if (!f.readOnly || f.value !== "3,249,472" || msg.hidden || msg.dataset.state !== "found") bad.push("wallet: field '" + f.value + "' message " + msg.dataset.state);
+      if (!f.readOnly || f.value !== "3.249m" || f.title !== "3,249,472" || msg.hidden || msg.dataset.state !== "found") bad.push("wallet: field '" + f.value + "' message " + msg.dataset.state);
       const want = RiskModel.decideAtDuration(RiskModel.atSize(D0, S.size, A), "wallet_morpho", S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
       if (JSON.stringify(model().sev) !== JSON.stringify(want)) bad.push("wallet: card differs from the model");
       if (/not your position/.test(document.querySelector("#decision").textContent)) bad.push("wallet: the card calls it someone else's position");
@@ -1012,7 +1050,12 @@ try {
     fire(document.querySelector("#v-addr"), "0xD6D4B804014EF27836DBE9F8F6BF6C71251548EC");
     fire(document.querySelector("#v-amt"), "10,000,000");
     out.msgs.above = /above the vault's total assets/.test(document.querySelector("#v-msg").textContent)
-      && document.querySelector("#v-amt").value === "10,000,000" && VV.last().r.amount < 1e7;
+      && document.querySelector("#v-amt").value === "10m" && VV.last().r.amount < 1e7;
+    /* the amount field reads and shows k / m like the PT size field */
+    fire(document.querySelector("#v-amt"), "3k");
+    out.msgs.units = VV.state.amount === 3e3 && document.querySelector("#v-amt").value === "3k";
+    fire(document.querySelector("#v-amt"), "2.5M");
+    out.msgs.units = out.msgs.units && VV.state.amount === 2.5e6 && document.querySelector("#v-amt").value === "2.5m";
     /* 6f. both displays from the backend's lists (guide 3): one node per chain item, exactly dependency_edges drawn
        (dashed when grade D), the path = inc.chain_items in Layers and Graph, the hot edges = those with both ends on
        it; the card does not change with the display */
@@ -1112,7 +1155,7 @@ try {
     /* back to the PT view: same state and text as before */
     document.querySelector('[data-page="pt"]').click();
     out.ptSame = snap() === before && !document.querySelector("#view-pt").hidden && document.querySelector("#view-vault").hidden;
-    fire(document.querySelector("#replay"), "");
+    document.querySelector('[data-mode="manual"]').click();
     return out;
   })()`);
   gate(vault.vaultShown, "6a. the Vaults switch shows the vault view and hides the PT view (drawer closed)");
@@ -1131,8 +1174,8 @@ try {
   gate(vault.sent.n > 0 && vault.sent.bad.length === 0,
     `6d. vault sentence equals the backend's decision_text (amounts in the page's short form): ${vault.sent.n - vault.sent.bad.length}/${vault.sent.n}`);
   vault.sent.bad.slice(0, 3).forEach((x) => console.log("           " + x));
-  gate(vault.msgs.notCovered && vault.msgs.notFound && vault.msgs.above,
-    `6e. vault messages: not analysed ${vault.msgs.notCovered}, unknown address ${vault.msgs.notFound}, amount above the vault ${vault.msgs.above}`);
+  gate(vault.msgs.notCovered && vault.msgs.notFound && vault.msgs.above && vault.msgs.units,
+    `6e. vault messages: not analysed ${vault.msgs.notCovered}, unknown address ${vault.msgs.notFound}, amount above the vault ${vault.msgs.above}, k / m units ${vault.msgs.units}`);
   gate(vault.graph && vault.graph.bad.length === 0 && vault.graph.incidents > 0,
     `6f. vault graph: ${vault.graph ? vault.graph.vaults : 0} vaults, ${vault.graph ? vault.graph.incidents : 0} incidents: one node per item, exactly dependency_edges drawn (D dashed), the path = chain_items in both displays, same card`);
   if (vault.graph) vault.graph.bad.slice(0, 5).forEach((x) => console.log("           " + x));

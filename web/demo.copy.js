@@ -4,7 +4,15 @@
 const COPY = {
   /* Step hints. An incident is set by hand or loaded from a real past event (no detector, no invented incidents). */
   steps: {
-    hint: "Pick any dependency, then set the failure and how bad by hand, or load a past event at the top right.",
+    hint: "Pick any dependency, then set the failure and how bad by hand.",
+    pastHint: "Set by the past event. Switch to Manual to test other values.",
+  },
+
+  /* How the incident is set: a past event or by hand, one or the other. */
+  mode: {
+    label: "Simulate",
+    past: "A past incident",
+    manual: "Manual",
   },
 
   /* Past events (d.past_incidents, guide section 3c): a pattern applied to this position, not something that
@@ -13,8 +21,9 @@ const COPY = {
     tag: "Past pattern",
     band: (label) => `Pattern from ${label}`,
     banner: (label, what, source) =>
-      `<b>Pattern from ${label}</b>: ${what}, applied to this position. It did not happen to PT-sUSDe. ${source}. Moving the dependency, the failure or the severity turns it into a what-if test.`,
-    sevNote: (v) => `Severity of the past event: ${v}. Move the slider to turn it into a what-if test.`,
+      `<b>Pattern from ${label}</b>: ${what}, applied to this position. It did not happen to PT-sUSDe. ${source}. Switch to Manual to test other values.`,
+    sevNote: (v) => `Severity of the past event: ${v}.`,
+    info: "About this past event: what happened, the source, how it applies here",
     lasting: (dur, recovered) => `, lasting ${dur}${recovered ? ", then recovered" : ""}`,
     drawerRow: "Past pattern",
   },

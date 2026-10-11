@@ -223,7 +223,11 @@
       let CUR = { type: "none" };
       const S = {
         view: "list",
+        /* how the incident is set (user decision, 11 Oct): "past" = one of d.past_incidents, steps 1 and 2 read-only;
+   "manual" = dependency, failure and severity by hand. One or the other, never both. */
+        mode: FIRST ? "past" : "manual",
         past: FIRST ? FIRST.key : null,
+        lastPast: FIRST ? FIRST.key : null,
         pos: PRE.lev_closest_to_liquidation
           ? "lev_closest_to_liquidation"
           : Object.keys(PRE)[0],
@@ -637,6 +641,17 @@
       /* Position size (guide 3b, to-do 8): the data at the manager's size. The size field sets spot and
    lev_market_avg (sized presets); a real borrower's size is read on chain, so the field then shows it, read-only. */
       const fullUsd = (v) => Math.round(v).toLocaleString("en-US");
+      /* Amount fields (size here, amount invested in the vault view) read and show k / m units (user decision,
+   11 Oct): 3,000 = 3k, 3,000,000 = 3m, up to three decimals; the full number is the field's tooltip. */
+      const unitAmt = (v) => {
+        const a = Math.abs(v),
+          t = (x) => String(+x.toFixed(3));
+        return a >= 1e6 ? t(v / 1e6) + "m" : a >= 1e3 ? t(v / 1e3) + "k" : t(v);
+      };
+      const showAmt = (f, v) => {
+        f.value = unitAmt(v);
+        f.title = fullUsd(v);
+      };
       function resize() {
         d = RM.atSize(D0, S.size, S.wallet || null);
         PRE = d.position_presets;
@@ -667,8 +682,8 @@
           K = COPY.size,
           f = $("#size"),
           real = isReal(S.pos);
-        if (real) f.value = fullUsd(P.collateral_usd);
-        else if (f.readOnly) f.value = fullUsd(S.size);
+        if (real) showAmt(f, P.collateral_usd);
+        else if (f.readOnly) showAmt(f, S.size);
         f.readOnly = real;
         $("#size-mark").innerHTML = real
           ? K.onChain(gr("A"))
@@ -1026,8 +1041,18 @@
         $("#zoneBox").innerHTML = h;
       }
       function syncSteps() {
+        const past = S.mode === "past",
+          M = COPY.mode;
+        $("#simLbl").textContent = M.label;
+        document.querySelectorAll("#steps .smode [data-mode]").forEach((b) => {
+          b.textContent = M[b.dataset.mode];
+          b.setAttribute("aria-pressed", b.dataset.mode === S.mode);
+        });
+        $("#replay").closest(".pastwrap").hidden = !past;
+        ["#node", "#fail", "#sev"].forEach((q) => ($(q).disabled = past));
+        $("#steps").dataset.sim = S.mode;
         $("#q1").textContent = "Test a failure at…";
-        $("#n1").textContent = COPY.steps.hint;
+        $("#n1").textContent = past ? COPY.steps.pastHint : COPY.steps.hint;
         $("#node").innerHTML = LAY.map(
               (L) =>
                 `<optgroup label="What-if · ${L.n} · ${L.name}">${L.nodes
@@ -1099,7 +1124,28 @@
               src(p.evidence),
             )
           : "";
-        $("#replay").value = S.past || "";
+        $("#replay").value = S.past || S.lastPast || "";
+      }
+      /* Past: load one of the past events (the last one chosen, else the first screen's); its node, failure,
+   severity, duration and recovers preset the controls, steps 1 and 2 read-only. Manual: keep the current values as
+   the starting point of a what-if, every control editable. */
+      function loadPast(key) {
+        const p = PAST.find((x) => x.key === key);
+        if (!p) return setMode("manual");
+        closeDrawer();
+        S.mode = "past";
+        S.past = S.lastPast = p.key;
+        /* the event presets the duration and the recovers toggle too (guide 5b); without a stated duration: the
+   default duration, stays */
+        S.hours = p.hours != null ? p.hours : DEF_H;
+        S.recovers = p.hours != null && !!p.recovers;
+        setNode(p.node, p.fail, p.sev);
+      }
+      function setMode(m) {
+        if (m === "past" && PAST.length) return loadPast(S.lastPast || PAST[0].key);
+        S.mode = "manual";
+        S.past = null;
+        apply();
       }
 
       function openDrawer(title, rows) {
@@ -1284,10 +1330,13 @@
           S.recovers = t.dataset.rec === "1";
           render();
         } else if (t.dataset.drawer) nodeEvidence(t.dataset.drawer);
+        else if (t.dataset.mode) setMode(t.dataset.mode);
         else if (t.dataset.layer) {
-          S.past = null;
-          const n = +t.dataset.layer;
-          setNode(MAIN[n] || LAY[n - 1].nodes[0]);
+          /* a past event fixes the incident: a layer then only opens its evidence */
+          const n = +t.dataset.layer,
+            k = MAIN[n] || LAY[n - 1].nodes[0];
+          if (S.mode === "past") nodeEvidence(k);
+          else setNode(k);
         } else if (t.dataset.e) edgeEvidence(+t.dataset.e);
         else if (t.dataset.view) {
           S.view = t.dataset.view;
@@ -1300,9 +1349,8 @@
           S.more[k] = !S.more[k];
           render();
         } else if (t.dataset.n) {
-          S.past = null;
           const id = t.dataset.n;
-          setNode(id);
+          if (S.mode !== "past") setNode(id);
           nodeEvidence(id);
         } else if (t.id === "closeDrawer") closeDrawer();
         else if (t.id === "copy") {
@@ -1326,13 +1374,9 @@
       document.addEventListener("input", (ev) => {
         const t = ev.target;
         stopPlay();
-        if (t.id === "sev") {
+        if (t.id === "sev" && S.mode !== "past") {
           const f = FAIL[S.fail];
           S.sev = isLog(f) ? posSev(f, +t.value) : +t.value;
-          if (S.past) {
-            S.past = null;
-            renderBanner();
-          }
           render();
         }
       });
@@ -1348,27 +1392,9 @@
           closeDrawer();
           render();
         }
-        if (t.id === "node") {
-          S.past = null;
-          setNode(t.value);
-        }
-        if (t.id === "fail") {
-          S.past = null;
-          setFail(t.value);
-        }
-        if (t.id === "replay") {
-          closeDrawer();
-          const p = PAST.find((x) => x.key === t.value);
-          S.past = p ? p.key : null;
-          /* the event presets the duration and the recovers toggle too (guide 5b); without a stated duration: the
-   default duration, stays */
-          if (p) {
-            S.hours = p.hours != null ? p.hours : DEF_H;
-            S.recovers = p.hours != null && !!p.recovers;
-          }
-          if (p) setNode(p.node, p.fail, p.sev);
-          else apply();
-        }
+        if (t.id === "node" && S.mode !== "past") setNode(t.value);
+        if (t.id === "fail" && S.mode !== "past") setFail(t.value);
+        if (t.id === "replay") loadPast(t.value);
         if (t.id === "alt") {
           S.alt = num(0, 50, 0);
           t.value = trim(S.alt);
@@ -1376,14 +1402,15 @@
         }
         if (t.id === "wallet") setWallet(t.value);
         if (t.id === "size" && !t.readOnly) {
-          /* the field keeps the number as typed; "5M" and "250k" are read too; anything else restores the last size */
+          /* "3,000,000", "3m", "3.5M", "250k" are read and shown back as k / m; anything else restores the last size */
           const m = String(t.value).trim().replace(/[\s,_]/g, "").match(/^(\d*\.?\d+)([kKmM]?)$/),
             v = m ? +m[1] * { "": 1, k: 1e3, K: 1e3, m: 1e6, M: 1e6 }[m[2]] : NaN;
           if (v > 0 && isFinite(v)) {
             S.size = v;
             S.sizeTyped = true;
             resize();
-          } else t.value = fullUsd(S.size);
+          }
+          showAmt(t, S.size);
           render();
         }
       });
@@ -1490,15 +1517,15 @@
           ),
         )
         .join("");
-      $("#replay").innerHTML =
-        '<option value="">Load a past incident pattern…</option>' +
-        PAST.map((p) => `<option value="${p.key}">${p.label}</option>`).join("");
+      $("#replay").innerHTML = PAST.map((p) => `<option value="${p.key}">${p.label}</option>`).join("");
+      $("#pastInfo").setAttribute("aria-label", COPY.past.info);
+      if (!PAST.length) document.querySelector("#steps .smode").hidden = true;
       $("#stamp").innerHTML =
         `Snapshot ${STAMP}${BW.block ? " · block " + BW.block.toLocaleString("en-US") : ""}`;
       $("#size-lbl").innerHTML = COPY.size.label;
       $("#alt-lbl").innerHTML = COPY.size.altLabel(gr("D"));
       $("#alt").value = S.alt.toFixed(2);
-      $("#size").value = fullUsd(S.size);
+      showAmt($("#size"), S.size);
       resize();
       try {
         const v = localStorage.getItem("rd-view2");

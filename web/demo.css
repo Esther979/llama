@@ -415,6 +415,76 @@
         gap: 0;
         padding: 0;
       }
+      /* "Simulate: a past incident | manual" spans the steps; in past mode steps 1 and 2 are read-only */
+      .smode {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .smode .q {
+        font-weight: 600;
+      }
+      .smode .mode {
+        margin-left: 0;
+      }
+      /* the past event's description: a tooltip under its select, shown on hover or focus of the asterisk at the
+   select's top right only, so the panel never moves */
+      .pastwrap {
+        position: relative;
+        flex: 0 1 410px;
+        min-width: 0;
+        display: flex;
+      }
+      /* to the right of the asterisk, in the empty end of the "Simulate" row, top aligned with the select; under it
+   when the window is too narrow for that */
+      .pastwrap .ptip {
+        display: none;
+        position: absolute;
+        top: -4px;
+        left: calc(100% + 8px);
+        z-index: 5;
+        width: 500px;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      @media (max-width: 1180px) {
+        .pastwrap .ptip {
+          top: calc(100% + 6px);
+          left: 0;
+          width: min(640px, calc(100vw - 32px));
+        }
+      }
+      .pinfo {
+        align-self: flex-start;
+        margin: -6px 0 0 2px;
+        padding: 0 3px;
+        border: 0;
+        background: none;
+        font: 600 17px/1 var(--sans);
+        color: var(--accent);
+        cursor: help;
+      }
+      .pinfo:hover ~ .ptip:not([hidden]),
+      .pinfo:focus-visible ~ .ptip:not([hidden]) {
+        display: block;
+      }
+      .smode select {
+        flex: 1 1 auto;
+        min-width: 0;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        padding: 5px 8px;
+      }
+      .steps[data-sim="past"] .step select:disabled,
+      .steps[data-sim="past"] .step input:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
       .step {
         padding: 12px 14px;
         display: flex;
@@ -1609,4 +1679,13 @@
       }
       .vchain li .offc {
         margin-top: 6px;
+      }
+      /* step 1 follows the mode row: no divider on its left (or on top, one column) */
+      .smode + .step {
+        border-left: 0;
+      }
+      @media (max-width: 860px) {
+        .smode + .step {
+          border-top: 0;
+        }
       }

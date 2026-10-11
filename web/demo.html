@@ -32,7 +32,6 @@
           <label class="hin" for="alt"
             ><span id="alt-lbl"></span><input id="alt" type="text" inputmode="decimal"
           /></label>
-          <select id="replay" aria-label="Load a past incident pattern"></select>
           <p class="note hline wmsg" id="walletMsg" hidden></p>
           <p class="note hline" id="sizeLine"></p>
           <span class="stamp" id="stamp"></span>
@@ -58,9 +57,20 @@
       <div class="banner" id="banner" hidden></div>
 
       <div class="view-part" id="view-pt">
-      <div class="banner" id="pastBanner" hidden></div>
 
       <section class="panel steps" id="steps" aria-label="Incident to test">
+        <div class="smode">
+          <span class="q" id="simLbl"></span>
+          <div class="mode sm" role="group" aria-label="How to set the incident">
+            <button data-mode="past" aria-pressed="true"></button
+            ><button data-mode="manual" aria-pressed="false"></button>
+          </div>
+          <span class="pastwrap">
+            <select id="replay" aria-label="Past incident" aria-describedby="pastBanner"></select>
+            <button type="button" class="pinfo" id="pastInfo" aria-describedby="pastBanner">*</button>
+            <div class="banner ptip" id="pastBanner" role="tooltip" hidden></div>
+          </span>
+        </div>
         <div class="step">
           <label class="q" for="node"><i>1</i><span id="q1"></span></label>
           <select id="node"></select>
