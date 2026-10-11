@@ -135,16 +135,16 @@ const COPY = {
 
   /* Exit chart (RiskModel.actCostCurve): the cost of acting at every share sold now. */
   exit: {
+    foldTitle: "Cost of selling, by share sold",
+    barNow: "Sellable today",
+    barLater: "If this plays out",
+    none: "None",
+    curveRow: (drop) => `(the Morpho liquidation curve's nearest row: a ${drop} oracle drop)`,
     keySale: "Sale cost",
     keyKept: "Loss on the part kept",
     keyTotal: "Total (the two added)",
     keyNo: "Beyond Pendle's limit: cannot sell now",
     lowest: (v, x) => `Lowest ${v} at x = ${x}`,
-    sayNoLoss: "Keep it all: this incident costs this position nothing.",
-    sayStay: (v) => `Keep it all: staying costs ${v}, less than any sale.`,
-    saySell: (x, amt, sale, kept, total, stay, saved) =>
-      `Sell ${x} (${amt}): sale cost ${sale}, loss on the rest ${kept}, total ${total}, ${saved} less than keeping it all (${stay}).`,
-    sayStuck: (p) => `The other ${p} cannot be sold now.`,
     carry: (cash, pt, dur, share, usd) =>
       `Cash earns ${cash} vs the PT's ${pt} a year. Over this ${dur} incident, selling gives up ${share} of the amount sold (${usd} on a full sale): a short incident leaves the chart almost unchanged; a longer one (step 3) moves it.`,
     carryNone: (pt) => `Cash earns at least the PT's ${pt} a year: selling gives up no yield, so the cash yield does not move the chart.`,

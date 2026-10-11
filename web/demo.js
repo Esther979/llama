@@ -560,16 +560,8 @@
               ? K.allPool + (stuckUsd > 0 ? ` · ${K.stuck(money(stuckUsd))}` : "")
               : "";
         let body = "";
-        if (!hasLoss) {
-          if (
-            (s.type === "not_modelled" && S.fail === "halt") ||
-            s.sellable_later < s.sellable_now - 1e-9
-          ) {
-            const now = s.sellable_now * C,
-              later = S.fail === "halt" ? 0 : s.sellable_later * C;
-            body += `<div class="bars">${bar(K.sellableToday, [["b-cap", now, money(now)]], money(now), now)}${bar(K.ifPlaysOut, [["b-cap", later, money(later)]], S.fail === "halt" ? K.noneFor(sevText()) : later ? money(later) : K.none, now)}</div>`;
-          }
-        } else {
+        /* no loss: nothing to compare here; what can still be sold is the "Can you get out?" card's */
+        if (hasLoss) {
           /* "Act" = the recommended sale; on Stay, show selling to the pool limit so the bar shows why not. */
           const xa = m.x || MAXX,
             actCost = m.x
@@ -931,18 +923,6 @@
    <text class="best-lbl" x="${lx}" y="${Math.max(by - 10, t + 40)}" text-anchor="middle">${K.lowest(money(best.total_usd), pc(best.fraction, 0))}</text>
    <line class="cross" id="cross" x1="0" x2="0" y1="${t}" y2="${H - b}" visibility="hidden"/></svg>`;
       }
-      /* The chart's caption (the explainer's sentence): what selling the recommended share costs against staying. */
-      function exitSay(m) {
-        const r = m.sev,
-          K = COPY.exit,
-          V = m.ac.value_usd;
-        if (r.verdict === "STAY")
-          return r.loss_if_stay_usd <= 0 ? K.sayNoLoss : K.sayStay(money(r.loss_if_stay_usd));
-        return (
-          K.saySell(pc(r.sell_fraction, 0), money(r.sell_fraction * V), money(r.sale_cost_usd), money(r.loss_kept_usd), money(r.total_if_act_usd), money(r.loss_if_stay_usd), money(r.avoided_usd)) +
-          (r.verdict === "SELL_TO_CAP" ? " " + K.sayStuck(pc(1 - r.sell_fraction, 0)) : "")
-        );
-      }
       /* What the cash yield does here (user report, 11 Oct: typing it seemed to change nothing). The yield given up is
    the model's r.carry, over the incident's duration (at most until expiry): tiny for a short incident, so the chart
    barely moves; this line shows the amount so the input is never silent. */
@@ -983,11 +963,11 @@
           };
           if (S.fail === "halt") later = `No exit for ${sevText()}: ${s.note}.`;
           else if (s.avg_cost_later == null || sl <= 0)
-            later = `No room left. Liquidators' PT fills the pool first${s.exit_row_drop != null ? ` (Morpho liquidation curve at a ${pc(s.exit_row_drop)} oracle drop)` : ""}.`;
+            later = `No room left. Liquidators' PT fills the pool first${s.exit_row_drop != null ? ` ${COPY.exit.curveRow(pc(s.exit_row_drop))}` : ""}.`;
           else if (isDrain)
             later = `Up to ${money(sl * C)} (${pc(sl, 0)}). <span class="asm">${pc(S.sev / 100, 0)} of pool liquidity leaves</span>, so each sale costs what a sale ${trim(1 / (1 - S.sev / 100))}× its size costs today.`;
           else if (changed)
-            later = `Up to ${money(sl * C)} (${pc(sl, 0)}) at an average cost of ${pc(s.avg_cost_later, 2)}, after liquidators sell first${s.exit_row_drop != null ? ` (Morpho liquidation curve at a ${pc(s.exit_row_drop)} oracle drop)` : ""}.`;
+            later = `Up to ${money(sl * C)} (${pc(sl, 0)}) at an average cost of ${pc(s.avg_cost_later, 2)}, after liquidators sell first${s.exit_row_drop != null ? ` ${COPY.exit.curveRow(pc(s.exit_row_drop))}` : ""}.`;
           else later = "Exit capacity is not affected in this model.";
         }
         /* the model's rows (actCostCurve) every 10%, at the pool limit and at the recommended sale */
@@ -1013,14 +993,31 @@
               `<tr class="ref"><td>${pc((+r[1] * N0) / C, 0)} · ${money(+r[1] * N0)}</td><td colspan="4">Refused: ${r[2]}</td></tr>`,
           )
           .join("");
+        /* "Can you get out?" is about liquidity (user decision, 11 Oct, plan A): today and after the incident, as text and
+   two bars; the cost-of-acting chart, its break-even line and the cash-yield line go in a fold (the decision card
+   says the verdict). The cash line shows only when cash earns less than the PT; it is always the APY slider's
+   tooltip. */
+        const nowUsd = cap,
+          laterUsd = idle ? null : S.fail === "halt" || s.avg_cost_later == null ? 0 : s.sellable_later * C,
+          bmax = Math.max(nowUsd, laterUsd || 0, 1),
+          liqBars =
+            laterUsd === null
+              ? ""
+              : `<div class="bars lbars">${bar(COPY.exit.barNow, [["b-cap", nowUsd, money(nowUsd)]], money(nowUsd), bmax)}${bar(COPY.exit.barLater, [["b-cap", laterUsd, money(laterUsd)]], laterUsd > 0 ? money(laterUsd) : COPY.exit.none, bmax)}</div>`,
+          showCarry = S.alt / 100 < d.time_model.implied_apy - 1e-12;
+        $("#alt").title = carryLine(m);
         $("#exit").innerHTML =
           `<div class="phead"><h2>Can you get out?</h2><span class="note">Real Pendle quotes, ${DAY}</span></div>
    <dl><dt>Today</dt><dd>Up to ${money(cap)} (${pc(s.sellable_now, 0)}), costing ${pc(last, 2)} in slippage.</dd>${later ? `<dt>If this plays out</dt><dd>${later}</dd>` : ""}</dl>
-   <div class="cverdict"><span class="vb ${VCLASS[s.verdict]}">${s.verdict}</span><span>${exitSay(m)}</span></div>
-   <p class="note ccarry" id="carryLine">${carryLine(m)}</p>
+   ${liqBars}
+   ${det(
+     "d-cost",
+     COPY.exit.foldTitle,
+     `${showCarry ? `<p class="note ccarry" id="carryLine">${carryLine(m)}</p>` : ""}
    <div class="ckey"><span><i class="sw-sale"></i>${COPY.exit.keySale}</span><span><i class="sw-kept"></i>${COPY.exit.keyKept}</span><span><i class="sw-total"></i>${COPY.exit.keyTotal}</span>${MAXX < 1 - 1e-9 ? `<span><i class="sw-no"></i>${COPY.exit.keyNo}</span>` : ""}</div>
    <div class="cwrap" id="cwrap">${chart(m)}<div class="tip" id="tip" hidden></div></div>
-   <p class="cbe">${exitBe(m)}</p>
+   <p class="cbe">${exitBe(m)}</p>`,
+   )}
    ${det(
      "d-sizes",
      "All sale sizes",

@@ -848,8 +848,10 @@ try {
           return x <= 1e-9 ? -1 : x >= 1 - 1e-9 ? 2 : x; };
         if (sv.classList.contains("zoned") !== zoned || (zoned && (Math.abs(+sv.style.getPropertyValue("--za") - pos(m.be.start)) > 1e-3
             || Math.abs(+sv.style.getPropertyValue("--zb") - pos(m.be.cap)) > 1e-3))) bad.push(tag + ": severity track zones");
-        const cap = document.querySelector("#exit .cverdict").textContent, bel = document.querySelector("#exit .cbe").textContent;
-        if (!cap.startsWith(r.verdict) || (r.verdict !== "STAY" && !cap.includes(money(r.total_if_act_usd)))) bad.push(tag + ": caption '" + cap + "'");
+        /* the card is about liquidity (plan A): no verdict caption; today vs after as two bars, from the model; the
+           chart, break-even and cash line in the "Cost of selling" fold */
+        const bel = document.querySelector("#exit .cbe").textContent, lb = [...document.querySelectorAll("#exit .lbars .bv")].map((x) => x.textContent);
+        if (document.querySelector("#exit .cverdict") || !document.querySelector("#d-cost #chart") || lb[0] !== money(r.sellable_now * m.C)) bad.push(tag + ": liquidity card '" + lb.join(" / ") + "'");
         const bv = (x) => (x === null ? COPY.exit.beNever : sevText(x));
         if (!bel.includes(bv(m.be.start)) || !bel.includes(bv(m.be.cap))) bad.push(tag + ": break-even line '" + bel + "'");
       }
