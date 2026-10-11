@@ -74,15 +74,20 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   (user decision, 11 Oct; to-do 7): the control sits on the thing it drives. Step 2 only repeats the value as a
   read-only line. One duration control on the page, never two.
 - One mode: any dependency can be failed by hand. Preview was removed on 10 Oct.
-- No detector and no invented incidents (team decision). An incident is set by hand (node, failure, severity), or
-  loaded from a past event through "Load a past incident pattern…" at the top right: the real events in
-  `d.past_incidents`, grade C. No page text may describe a detector or an invented incident (gate 2b).
+- No detector and no invented incidents (team decision). The incident is set one way or the other, never both
+  (user decision, 11 Oct): a row "Simulate: A past incident | Manual" on top of the steps. Past: a select of the real
+  events in `d.past_incidents` (grade C); steps 1 and 2 show the event's node, failure and severity, read-only
+  (disabled), and a click on a chain layer or node only opens its evidence. Manual: node, failure and severity by
+  hand, starting from the values on screen. Past again loads the last event chosen. The duration rail stays
+  editable in both modes ("what if it lasted longer"). No page text may describe a detector or an invented incident
+  (gate 2b).
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults. In both views
   the header's first row holds only the title and the switch, and the view's own inputs take the second row, so the
   switch does not move when the view changes.
 - Header of the PT view, left to right (to-dos 8 and 10, done): title; the position select; "Wallet (optional)";
   "Position size (USD)";
-  "Cash earns after selling, % APY"; "Load a past incident pattern…"; the view switch at the far right.
+  "Cash earns after selling, % APY"; the view switch at the far right. The past-event select is not in the header:
+  it sits in the steps' "Simulate" row.
   - The position select and the size input answer different questions and must not look like two size controls.
     The select says how the PT is held (labels from `position_presets[*].label`: "PT held outright", "PT as
     collateral, LTV of the Morpho market average", the two real borrowers); never put an amount in its options.
@@ -99,7 +104,7 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   "cash earns" and past-incident dropdown are hidden there. Each view keeps its own values when switching.
 - The page never opens on an empty decision card: the PT-reUSD oracle drop is preselected on the real borrower
   closest to liquidation (done in `b47402c`), so the first screen shows a liquidation and an exit, not a STAY. A past
-  event is a pattern applied to this position, not something that happened to it: the banner and the card label must
+  event is a pattern applied to this position, not something that happened to it: the event's tooltip and the card label must
   say so ("Pattern from …"), and the PT-reUSD event must never read as an incident on PT-sUSDe. The opening preset
   is likewise someone else's position (a real borrower of this market), not the manager's: say so on the card.
   Because it is a real-borrower preset, the size field is read-only on the first screen (to-do 8): show next to it
@@ -108,7 +113,9 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
   both. In this file "view" means a page view (Position / Vaults); Layers and Graph are "displays".
 - Plain words. One number per sentence. PT view: amounts in USD, shares as % of the position. Vault view: amounts
   in the vault's currency, written after the number. Both views write money the same short way (3.0k, 456k,
-  3.00M; PT with "$"); an input field keeps the full number the manager typed.
+  3.00M; PT with "$"). The two amount fields (PT "Position size (USD)", vault "Amount invested") read and show k / m
+  units (user decision, 11 Oct): 3,000 = 3k, 3,000,000 = 3m, up to three decimals (3,249,472 = 3.249m); "3,000,000",
+  "3m", "3.5M", "250k" are all read; the full number is the field's tooltip.
 - Every number in the drawer shows its source and its evidence grade (A to D).
 - Works at phone width; the graph may scroll sideways inside its own container.
 
@@ -145,7 +152,7 @@ liquidity-run table) decide behaviour.
 - **Use `vaultDecideAt` everywhere.** `vaultDecide` is the old probability-based function. The vault guide named
   it in two places; the backend fixed that in `556828c` (merged).
 - **The amount default exceeds the Belem vault.** 10,000,000 is above its total assets (about 4.7M EURCV); the
-  guide has a message for that case. Show the message, leave the typed number in the field, and pass
+  guide has a message for that case. Show the message, leave the typed amount in the field (as "10m"), and pass
   `Math.min(amount, total_assets)` to the model, as the guide says. Label the amount "your input".
 
 ## Current state (`frontend` after to-do 8)
@@ -179,9 +186,13 @@ What is on the branch:
   and the off-chain row. The other user-facing strings are still in `demo.js` and move step by step (see
   "Separation rules").
 - No detector and no invented incidents: the prototype bar, the two examples and the page-built `REPLAYS` are gone.
-  "Load a past incident pattern…" lists `d.past_incidents` (4 events). Selecting one sets node, failure, severity,
-  the duration and the recovers toggle (`S.past`; `p.opts` is no longer used, guide 5b); moving the dependency,
-  failure or severity drops it (what-if), changing the position keeps it. Its text is in `#pastBanner` ("Pattern from …,
+  "Simulate: A past incident | Manual" (`S.mode`): the past select lists `d.past_incidents` (4 events); choosing one
+  sets node, failure, severity, the duration and the recovers toggle (`S.past`, `S.lastPast`; `p.opts` is no longer
+  used, guide 5b) and disables steps 1 and 2; Manual drops `S.past` (what-if) and enables them; changing the position
+  keeps the event. Its description is `#pastBanner`, a tooltip shown on hover or keyboard focus of the asterisk
+  at the past select's top right only, not of the select, placed to its right in the row's empty end (under the
+  select below 1180px) (user decision, 11 Oct: above the steps it pushed the panel
+  down; `aria-describedby` on the select and the asterisk keeps it for screen readers) ("Pattern from …,
   applied to this position. It did not happen to PT-sUSDe."); `#banner` is only the load error. The origin layer
   and node carry a "Past pattern" tag, the card label "Pattern from …".
 - First screen: `pt_reusd_aug_2026` on `lev_closest_to_liquidation` (EXIT, doing nothing loses $165k, selling
@@ -201,8 +212,8 @@ What is on the branch:
   on load and on every size change; `PRE` follows it); every model call takes this `d`. The size sets `spot` and
   `lev_market_avg`; for a real borrower the field shows its on-chain size, read-only, "read on chain" (A), with a hint
   to pick a sized preset; switching back shows the typed size again. Default `size_input.default_usd`, "assumed"
-  (D, source in the title) until typed, then "your input". The field keeps the text as typed ("7,000,000", "5M",
-  "250k" are read); anything else restores the last size. Under the inputs: "{pt_units} PT at {pt_price_usd};
+  (D, source in the title) until typed, then "your input". The field shows the size in k / m units (see "UX decisions
+  to keep"); text it cannot read restores the last size. Under the inputs: "{pt_units} PT at {pt_price_usd};
   sellable now: {share} ({capacity_usd} pool limit)" for the selected preset. The exit table's refused rows stay
   shares of the quotes' notional (`N0`, the backend file's `position.notional_usd`); the market drawer's "Largest
   sale quoted" is `size_input.capacity_usd`. Events and the timeline are cached by size too.
@@ -236,8 +247,8 @@ What is on the branch:
   180 days; any other input stops it. `S.hours` / `S.recovers` belong to the PT view (kept across a Vaults switch).
   Default duration `DEF_H` = 6 h (the guide names none; the explainer opens at 6 h): a manual incident keeps the
   rail where it is; a past event sets `p.hours` and `p.recovers`, or 6 h and stays when `hours` is null (Stream
-  xUSD, Elixir deUSD). Moving the rail or the toggle keeps a past event selected; moving dependency, failure or
-  severity drops it (what-if), as before.
+  xUSD, Elixir deUSD). Moving the rail or the toggle keeps a past event selected; only the Manual mode changes
+  dependency, failure or severity.
 - Timeline chart (to-do 7, second part): a fold under the rail ("Loss if staying, by how long the incident lasts"),
   on the rail's axis: `RiskModel.timeline` points, background by answer between the events' exact durations, grey
   marks at 16 h and expiry, the rail's duration as a line, `timelineSummary` lines above it, the held-constant
