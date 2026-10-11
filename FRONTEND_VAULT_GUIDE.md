@@ -2,6 +2,7 @@
 
 > For the front-end colleague: this is the **second view** (vaults), separate from the first view (a single PT position, `FRONTEND_GUIDE.md`). The PT view stays the main entry: do not change a single line of it.
 > Give this file to Claude and say "add a vault view to the page following FRONTEND_VAULT_GUIDE.md".
+> State (11 Oct, `frontend` b8fb353): first cut done (switch, address and amount, badge, sentence, stay vs exit bars, liquidity-run table, six-layer chain in Layers and Graph; acceptance rows 9/9). Open: exit tranches (free / `forceDeallocate` / locked), markets, sensitivity, timeline, the run's share slider, layer-6 off-chain relations; links from `dependency_edges` and the incident path from `chain_items` (section 3, on `main` since 30450ef) instead of edges derived by the page.
 
 Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The existing PT view stays the default view and must not change (same data, same code paths). The two views share only `web/risk_model.js` and the page style.
 
@@ -14,7 +15,7 @@ Instructions for Claude. Add a second view, "Vaults", to the Risk Desk page. The
 | `README.md`, section "Vault report contract" | Every field |
 
 ```html
-<script src="vaults.sample.js"></script>   <!-- after risk_model.js; the PT view keeps dashboard.sample.js -->
+<script src="../sample_data/vaults.sample.js"></script>   <!-- in web/demo.html, after risk_model.js; the PT view keeps dashboard.sample.js -->
 ```
 
 ## 2. Rules

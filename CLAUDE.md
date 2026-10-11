@@ -114,7 +114,7 @@ cp data/vaults_report.json sample_data/vaults_report.sample.json
 python3 backtest_reusd.py && python3 calibrate_depeg.py && python3 check_js_port.py
 ```
 
-## Key facts (live data, 10 Oct 2026)
+## Key facts (live data, 10 Oct 2026; vault sample at block 26163394)
 
 Position under test: PT-sUSDe-26NOV2026 (Ethereum), Pendle market `0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e`,
 PT `0xb195b618ea52b77cb2a58846f452f59f8dfa9390`, sUSDe `0x9d39a5de30e57443bff2a8307a4256c8797a3497`,
@@ -150,8 +150,18 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
 
 - Organisers: no probability (done: severity-based core); vault address + amount input (done); STAY / EXIT badge,
   dependency chain, loss vs exit cost in money, one sentence (done); "force allocation" = VaultV2 `forceDeallocate`
-  (decided; used as the forced exit tranche, penalty read on chain); "multiplied by price of PT" + timeline (done:
-  incident duration, PT valued at units x its price).
+  (decided; used as the forced exit tranche, penalty read on chain); "multiplied by price of PT" + timeline (backend
+  done: incident duration, PT valued at units x its price; front end: to-do 9).
+- Reasoning = how the incident travels through the five layers (user, 11 Oct): `propagation` (per layer and step, with
+  grades and edges) and `propagation_events` (when it changes along the duration slider: 16 h oracle switch, ~175 days
+  debt crossing); the front end's draggable duration component drives it (no separate timeline widget).
+- Recovers / stays: kept (it decides temporary vs permanent loss), shown only for the three failures whose recovery
+  is decided off-chain (USDe depeg, Ethena shortfall, sUSDe NAV loss); elsewhere the contracts decide and it is
+  hidden (`recovery_toggle`, checked to change nothing there).
+- Vault links come from the backend (`dependency_edges`, `incidents[].chain_items`), not derived by the page.
+- Sample regeneration reads a newer block, so numbers move slightly: recompute the guides' acceptance tables after
+  every regeneration (the vault table was stale once). Pinning a block and an automatic table check: not wanted.
+- Local explainer page (`explainer/`, git-ignored; claude.ai artifact 1AF9wDRyqLwcZYbx8pddsC): never commit it.
 - Team: PT view stays the main entry, vault view is the second view and is in scope; Kamino deferred; fault injection
   limited to the 9 nodes; severity slider manual; USDe ≠ sUSDe (done); timeline = incident duration, flat timelines
   described as "duration does not change the answer" (not "always stay").
@@ -182,8 +192,12 @@ Morpho market `0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb0
    102 relations, 101 quotes re-checked; Ceffu's page returns 403). Left: the other vault tokens (fxSAVE, strUSD,
    PT-reUSD / reUSD, PRIME, siUSD, etrUSD / trUSD, AUTO, nvPRIME, EUROP); the LLM only finds relations, numbers come
    from code.
-4. **Front-end integration check** against both acceptance tables; a 2–3 minute demo script (Belem vault → mGLOeuro →
-   chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command for refresh + checks.
+4. **Front-end integration**: checked `frontend` at b8fb353 (11 Oct): `check_js_port.py` 30/30, `check_demo.mjs` all
+   pass (size rows skipped). Open on the page, in order: duration slider + dynamic propagation + recovers toggle
+   (to-do 9), `propagation` path (6b), `decisionText` (6), vault exit tranches / sensitivity / timeline / edges (8),
+   `atSize` (7), wallet (10). Status table: FRONTEND_GUIDE section 0. Still to write: a 2–3 minute demo script
+   (Belem vault → mGLOeuro → chain → "exit above 20%" → PT five layers → 16 h oracle timelock → timeline); one command
+   for refresh + checks.
 5. Liquidation feasibility for RWA collateral without DEX liquidity (bad debt if liquidators cannot sell).
 6. Admin / upgrade risk from the crawler's role edges (who can change an oracle or a vault, timelock, EOA vs multisig).
 7. Vault timeline: PT collateral pull-to-par and borrower interest; swap cost for asset-issuer incidents (REVIEW).
