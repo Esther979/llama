@@ -987,27 +987,31 @@ try {
     fire(document.querySelector("#v-amt"), "10,000,000");
     out.msgs.above = /above the vault's total assets/.test(document.querySelector("#v-msg").textContent)
       && document.querySelector("#v-amt").value === "10,000,000" && VV.last().r.amount < 1e7;
-    /* 6f. graph display: one node per chain item, edges drawn, the incident's path marked; same decision as Layers */
+    /* 6f. both displays from the backend's lists (guide 3): one node per chain item, exactly dependency_edges drawn
+       (dashed when grade D), the path = inc.chain_items in Layers and Graph, the hot edges = those with both ends on
+       it; the card does not change with the display */
     out.graph = { bad: [], vaults: 0, incidents: 0 };
     for (const e of VAULTS.report.vaults.filter((x) => x.coverage === "full")) {
       VV.set({ addr: e.vault_address, amount: 1e6, display: "list" });
       const v = VAULTS.details[e.vault_address.toLowerCase()];
-      for (const i of v.incidents.filter((i) => i.analyzed !== false && i.type !== "liquidity_run")) {
+      for (const i of v.incidents.filter((i) => i.analyzed !== false)) {
         VV.set({ inc: i.key, sev: null, display: "list" });
-        const listHot = document.querySelectorAll("#v-chain li.on").length, card = document.querySelector("#v-decision").innerText;
+        const want = new Set(i.chain_items || []), sameSet = (a) => a.length === want.size && a.every((x) => want.has(x));
+        const listHot = [...document.querySelectorAll("#v-chain li.on")].map((x) => x.dataset.vid), card = document.querySelector("#v-decision").innerText;
         VV.set({ display: "graph" });
-        const nodes = document.querySelectorAll("#v-graph-box [data-vg]").length,
+        const E = v.dependency_edges,
+          nodes = document.querySelectorAll("#v-graph-box [data-vg]").length,
           items = v.dependency_chain.reduce((n, L) => n + L.items.length, 0),
           lines = document.querySelectorAll("#v-edges > line, #v-edges > path").length,
-          want = (VV.last().graph || { edges: [] }).edges.length,
-          hot = document.querySelectorAll("#v-graph-box .node.hot").length,
-          hotE = document.querySelectorAll("#v-edges > .hot").length;
+          dashed = document.querySelectorAll("#v-edges > .doc").length,
+          hot = [...document.querySelectorAll("#v-graph-box .node.hot")].map((x) => x.dataset.vg),
+          hotE = document.querySelectorAll("#v-edges > .hot").length,
+          wantE = E.filter((x) => want.has(x.from) && want.has(x.to)).length;
         const tag = e.vault_name + " " + i.key;
         if (nodes !== items) out.graph.bad.push(tag + ": nodes " + nodes + " vs items " + items);
-        if (lines !== want || want < items - 1 - (v.dependency_chain[5] || { items: [] }).items.filter((x) => !/vault asset|issuer|depeg/.test(x.label)).length)
-          out.graph.bad.push(tag + ": edges drawn " + lines + " of " + want);
-        if (hot < 2 || hotE < 1) out.graph.bad.push(tag + ": path marked on " + hot + " nodes, " + hotE + " edges");
-        if (hot !== listHot) out.graph.bad.push(tag + ": " + hot + " marked in Graph vs " + listHot + " in Layers");
+        if (lines !== E.length || dashed !== E.filter((x) => x.grade === "D").length) out.graph.bad.push(tag + ": edges drawn " + lines + " of " + E.length + ", dashed " + dashed);
+        if (!want.size || !sameSet(hot) || !sameSet(listHot)) out.graph.bad.push(tag + ": path Graph " + hot.join() + " / Layers " + listHot.join() + " vs chain_items " + [...want].join());
+        if (hotE !== wantE) out.graph.bad.push(tag + ": " + hotE + " hot edges vs " + wantE);
         if (document.querySelector("#v-decision").innerText !== card) out.graph.bad.push(tag + ": the card changed with the display");
         out.graph.incidents++;
       }
@@ -1021,6 +1025,64 @@ try {
       if (!path.includes("mGLOeuro / EURCV") || !path.includes("mGLOeuro issuer")) out.graph.bad.push("Belem mGLOeuro path: " + path);
     }
     VV.set({ display: "list" });
+    /* 6g. the rest of the vault view (to-do 9): tranches, sensitivity, loss chart, markets, duration and timeline,
+       the run's share slider, layer-6 off-chain relations; all against the model with the page's inputs */
+    out.g = { bad: [], n: 0, off: 0 };
+    const G = out.g, eqJ = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    for (const e of VAULTS.report.vaults.filter((x) => x.coverage === "full").slice(0, ${QUICK} ? 3 : 99)) {
+      VV.set({ addr: e.vault_address, amount: 1e6, display: "list" });
+      ["v-d-exit", "v-d-sens", "v-d-loss", "v-d-mk", "v-d-tl"].forEach((k) => (VV.state.open[k] = true));
+      const v = VAULTS.details[e.vault_address.toLowerCase()], ex = v.exit, amt = Math.min(1e6, v.total_assets);
+      for (const inc of v.incidents.filter((i) => i.analyzed !== false && i.type !== "liquidity_run")) {
+        for (const [hours, rec] of [[null, false], [168, true]]) {
+          VV.set({ inc: inc.key, sev: null, hours: hours === null ? ex.horizon_days * 24 : hours, recovers: rec });
+          G.n++;
+          const tag = e.vault_name + " " + inc.key + " " + (hours || "default") + "h rec " + rec, L = VV.last(), r = L.r, st = VV.state;
+          const want = RiskModel.vaultDecideAt(inc, ex, amt, inc.default_severity, st.alt, null, false, st.hours, st.recovers);
+          if (!eqJ(r, want)) G.bad.push(tag + ": card differs from vaultDecideAt with the duration");
+          if (hours === null && !eqJ(r, RiskModel.vaultDecideAt(inc, ex, amt, null, null, null))) G.bad.push(tag + ": the default duration differs from the static decision");
+          /* tranches */
+          const tds = [...document.querySelectorAll("#v-decision table.vtr tbody tr")].map((x) => x.children[1].textContent);
+          if (tds.join() !== [r.free_usd, r.forced_usd, r.locked_usd].map(VaultView.money).join()) G.bad.push(tag + ": tranches " + tds.join());
+          /* sensitivity, with its basis note off the defaults */
+          const sv = RiskModel.vaultSensitivity(inc, ex, amt, r.severity), rows = document.querySelectorAll("#v-d-sens table.sens tbody tr:not(.grp)");
+          if (!eqJ(L.sens, sv) || rows.length !== sv.candidates.length) G.bad.push(tag + ": sensitivity");
+          if (!!document.querySelector("#v-d-sens p.note") !== (hours !== null)) G.bad.push(tag + ": defaults note");
+          /* loss chart and markets */
+          const pts = document.querySelector("#v-d-loss polyline:not(.low)").getAttribute("points").trim().split(/\\s+/).length;
+          if (pts !== inc.severity_grid.length) G.bad.push(tag + ": loss chart " + pts + " points");
+          const mk = [...document.querySelectorAll("#v-more table.vmk tbody tr")];
+          if (mk.length !== v.markets.length || mk.filter((x) => x.classList.contains("on")).length !== v.markets.filter((m) => (inc.affected_markets || []).includes(m.key)).length)
+            G.bad.push(tag + ": markets table");
+          /* duration rail and timeline */
+          const tl = RiskModel.vaultTimeline(inc, ex, amt, r.severity, st.recovers, st.alt);
+          if (!eqJ(L.timeline.rows, tl) || !eqJ(L.timeline.sum, RiskModel.vaultTimelineSummary(inc, tl))) G.bad.push(tag + ": timeline");
+          if (document.querySelector("#v-tl polyline").getAttribute("points").trim().split(/\\s+/).length !== tl.length) G.bad.push(tag + ": timeline chart");
+          const both = new Set((inc.duration_grids || []).map((g) => g.recovers)).size === 2;
+          if (!!document.querySelector("#v-rec [data-vrec]") !== both) G.bad.push(tag + ": recovers toggle");
+          if (document.querySelector("#v-rail").hidden || Math.abs(+document.querySelector("#v-dur").value - Math.log(st.hours) / Math.log(4320) * 1000) > 1) G.bad.push(tag + ": duration rail");
+        }
+      }
+      VV.set({ hours: ex.horizon_days * 24, recovers: false });
+      /* layer-6 off-chain relations: one source link per relation */
+      for (const it of v.dependency_chain.flatMap((L) => L.items).filter((x) => x.offchain && v.offchain && v.offchain[x.offchain])) {
+        const li = [...document.querySelectorAll("#v-chain li")].find((x) => x.dataset.vid === it.id), o = v.offchain[it.offchain];
+        const links = li ? li.querySelectorAll("details.offc a.osrc").length : 0;
+        if (links !== o.relations.filter((r) => r.evidence && r.evidence.url).length) G.bad.push(e.vault_name + " " + it.offchain + ": " + links + " source links of " + o.relations.length);
+        G.off++;
+      }
+      /* the run's share slider: the model at that share, the drag keeps its element */
+      const run = v.incidents.find((i) => i.type === "liquidity_run");
+      if (run) {
+        VV.set({ inc: run.key });
+        const sl = document.querySelector("#v-share");
+        sl.value = "30"; sl.dispatchEvent(new Event("input", { bubbles: true }));
+        const worst = v.incidents.find((i) => i.key === v.worst_incident);
+        const Lw = worst ? RiskModel.vaultDecideAt(worst, ex, amt, null, VV.state.alt, null, false, VV.state.hours, VV.state.recovers).L : 0;
+        if (!eqJ(VV.last().runAt, RiskModel.vaultRun(ex, amt, 0.3, Lw)) || document.querySelector("#v-share") !== sl) G.bad.push(e.vault_name + ": run slider");
+        VV.state.share = 0.5;
+      }
+    }
     /* back to the PT view: same state and text as before */
     document.querySelector('[data-page="pt"]').click();
     out.ptSame = snap() === before && !document.querySelector("#view-pt").hidden && document.querySelector("#view-vault").hidden;
@@ -1046,8 +1108,11 @@ try {
   gate(vault.msgs.notCovered && vault.msgs.notFound && vault.msgs.above,
     `6e. vault messages: not analysed ${vault.msgs.notCovered}, unknown address ${vault.msgs.notFound}, amount above the vault ${vault.msgs.above}`);
   gate(vault.graph && vault.graph.bad.length === 0 && vault.graph.incidents > 0,
-    `6f. vault graph: ${vault.graph ? vault.graph.vaults : 0} vaults, ${vault.graph ? vault.graph.incidents : 0} incidents: one node per item, every derived edge drawn, the path marked as in Layers, same card`);
+    `6f. vault graph: ${vault.graph ? vault.graph.vaults : 0} vaults, ${vault.graph ? vault.graph.incidents : 0} incidents: one node per item, exactly dependency_edges drawn (D dashed), the path = chain_items in both displays, same card`);
   if (vault.graph) vault.graph.bad.slice(0, 5).forEach((x) => console.log("           " + x));
+  gate(vault.g && vault.g.n > 0 && vault.g.bad.length === 0,
+    `6g. vault details: ${vault.g ? vault.g.n : 0} incident x duration cases (card = vaultDecideAt with the duration; default = static decision; tranches, sensitivity and its note, loss chart, markets, timeline, recovers toggle, rail), ${vault.g ? vault.g.off : 0} off-chain items, run slider`);
+  if (vault.g) vault.g.bad.slice(0, 6).forEach((x) => console.log("           " + x));
   gate(vault.ptSame, "6a. switching back restores the PT view exactly (state, text, controls)");
   vault.bad.forEach((x) => console.log("           " + x));
 

@@ -1564,3 +1564,42 @@
         font-size: 11px;
         color: var(--muted);
       }
+      /* Vault view (to-do 9): the duration rail is a native range under the same rail box; reference marks sit over it,
+   inset by half a thumb like the axis. Detail tables: the incident's markets highlighted. */
+      .vrtrack {
+        position: relative;
+        margin-top: 20px;
+      }
+      #v-rmarks {
+        position: absolute;
+        inset: 0 9px;
+        pointer-events: none;
+      }
+      .vrtrack input[type="range"] {
+        position: relative;
+        display: block;
+      }
+      .tline.low {
+        stroke: var(--muted);
+        stroke-dasharray: 5 4;
+      }
+      table.vmk tr.on td {
+        background: var(--crit-tint);
+      }
+      table.vmk td:nth-child(6) {
+        white-space: normal;
+        text-align: left;
+      }
+      table.vtr td:first-child {
+        white-space: normal;
+      }
+      /* Off-chain relations inside a vault chain item: a plain list, not more item boxes. */
+      .vchain li .offc li {
+        border: 0;
+        background: none;
+        padding: 0;
+        margin: 0;
+      }
+      .vchain li .offc {
+        margin-top: 6px;
+      }

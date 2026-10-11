@@ -1351,7 +1351,7 @@
         "toggle",
         (ev) => {
           const t = ev.target;
-          if (t.tagName === "DETAILS" && t.id)
+          if (t.tagName === "DETAILS" && t.id && !t.closest("#view-vault"))
             S.open[t.id] = t.open;
         },
         true,

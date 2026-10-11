@@ -43,9 +43,6 @@
           <label class="hin" for="v-alt"
             ><span id="v-alt-lbl"></span><input id="v-alt" type="text" inputmode="decimal"
           /></label>
-          <label class="hin" for="v-hz"
-            ><span id="v-hz-lbl"></span><input id="v-hz" type="text" inputmode="decimal"
-          /></label>
         </div>
         <div class="mode" role="group" aria-label="Page view">
           <button data-page="pt" aria-pressed="true">Position (PT)</button
@@ -182,7 +179,24 @@
                 ><button data-vdisp="graph" aria-pressed="false">Graph</button>
               </div>
             </div>
+            <div class="rail" id="v-rail" role="group" aria-label="How long the incident lasts" hidden>
+              <div class="rhead">
+                <span class="rlbl" id="v-durLbl"></span>
+                <span class="rrec" id="v-rec"></span>
+              </div>
+              <div class="vrtrack">
+                <div id="v-rmarks"></div>
+                <input type="range" id="v-dur" min="0" max="1000" step="1" aria-label="How long the incident lasts" />
+              </div>
+              <div class="raxis" id="v-raxis"></div>
+              <ul class="tlsum" id="v-dsum"></ul>
+              <details class="tl" id="v-d-tl">
+                <summary id="v-tlSum"></summary>
+                <div id="v-tl"></div>
+              </details>
+            </div>
             <div class="vchain" id="v-chain"></div>
+            <div id="v-more"></div>
           </section>
           <aside class="side">
             <section class="panel decision" id="v-decision" aria-live="polite"></section>

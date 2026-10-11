@@ -149,7 +149,6 @@ const COPY = {
     groupOther: "Listed, not analysed",
     amountLabel: "Amount invested (your input)",
     altLabel: "Alternative yield, % APY",
-    hzLabel: "Horizon, days",
     q1: "Which incident?",
     hint: "Every number assumes the incident has happened. Pick the incident, then how bad.",
     groups: {
@@ -170,11 +169,11 @@ const COPY = {
     notCovered: (name, note) => `${name}: ${note}. No numbers for this vault.`,
     above: (total, cur) => `Amount above the vault's total assets (${total} ${cur}): computed for the whole vault.`,
     chainHead: "What this deposit depends on",
-    /* Edge labels of the vault graph; each edge is read from a data field (see vault.js, graphEdges). */
+    /* Edge labels of the vault graph, by dependency_edges[].type (backend). */
     edge: {
-      chain: "settles on",
+      settlement: "settles on",
       adapter: "adapter",
-      market: "lends on",
+      allocation: "lends on",
       collateral: "collateral",
       issuer: "issued by",
       underlying: "underlying",
@@ -212,13 +211,63 @@ const COPY = {
     sExitBe: (name, be) => ` Exiting pays once ${name} loses more than ${be}.`,
     sEarly: (f) => ` Act early: if all depositors withdrew, only ${f} of the vault could leave without penalty.`,
     runHead: "If other depositors withdraw first",
+    runSlider: "Share of the free liquidity other depositors take first",
+    runAt: (p) => `If others take ${p} first, for your amount:`,
+    runWhole: "For the whole vault, at the default severity:",
     runCols: ["Others take", "Free now", "With penalty", "Locked", "Loss if locked"],
     runNote: (worst, sev) =>
       worst
         ? `Loss on the locked part if ${worst} hits at ${sev}.`
         : "No analysed credit incident: the locked part carries no modelled loss.",
     issuerNote: "Second-order effects on borrowers (their debt is in the same asset) are not modelled.",
-    assumption: (alt, hz) => `Alternative yield ${alt} a year, horizon ${hz} days: assumptions (D).`,
+    assumption: (alt) =>
+      `Alternative yield ${alt} a year (D); the yield given up is counted over the incident's duration, set on the rail over the chain.`,
+    /* Duration of a vault incident (guide 3, "Timeline"). */
+    dur: {
+      recWhy: "Whether the token comes back after the incident is your assumption (D); liquidations during it stay.",
+      noRec: "This incident has one loss grid: recovering does not change it.",
+      switchAt: (dur) => `oracle switch ${dur}`,
+      chartTitle: "Loss if staying, by how long the incident lasts",
+      chartNote: (cur) =>
+        `Amounts in ${cur}. Held constant over the incident: the vault's allocations, its market liquidity and the yields (D).`,
+    },
+    verdictWord: { STAY: "Stay", EXIT: "Exit", EXIT_PARTIAL: "Exit part", REVIEW: "Review" },
+    /* Details under the vault card (guide section 3). */
+    det: {
+      exitTitle: "Exit, tranche by tranche",
+      trCols: ["Tranche", "Amount", "Unit cost", "Now"],
+      free: "Free now (idle and the liquidity market)",
+      forced: "With penalty (forceDeallocate from other markets)",
+      locked: "Locked (lent out, no liquidity)",
+      out: "withdraw",
+      stays: "keep",
+      cannot: "cannot leave now",
+      stay: "Loss if you stay",
+      cost: "Cost of exiting now",
+      kept: "Loss still kept",
+      avoided: "Loss avoided by exiting",
+      penalty: (p) => `Force-deallocation penalty ${p} (read on chain).`,
+      all: (free, forced) =>
+        `If all depositors withdrew, ${free} of the vault could leave without penalty and ${forced} more with it.`,
+      otherAmount: "Another amount, same incident",
+      sensDefaults: (alt, hz, v) =>
+        `Computed at the vault's defaults (alternative yield ${alt}, ${hz} days, the loss stays), where the answer is ${v}: the model's sensitivity takes no other inputs.`,
+      lossTitle: (sym) => `Vault loss by how much ${sym} loses`,
+      gridAria: (n) => `Vault loss at ${n} severities from 0.5% to 100%, on the slider's log scale; the current severity marked.`,
+      gridTicks: [0.005, 0.01, 0.05, 0.1, 0.3, 1],
+      gridNote: (low) =>
+        `Share of the vault's assets lost (bad debt of every real borrower, taken pro rata by the lenders).${low ? " Dashed: if the lending oracles do not follow the shock." : ""}`,
+      pmCols: ["Shock", "Collateral", "Oracle follows", "Market bad debt", "Vault loss"],
+      yes: "yes",
+      no: "no",
+      pmNote: (cur) => `Each market at the historical shocks of the slider's anchors (C); amounts in ${cur}.`,
+      mkTitle: (n) => `Markets the vault lends on (${n})`,
+      mkCols: ["Collateral", "Type", "Allocation", "Of vault", "Of market", "Oracle", "Borrowers", "Max LTV / limit", "Debt within 1% of liquidation"],
+      notAnalysed: "(not analysed)",
+      follows: (mkt, und) =>
+        `(follows ${[mkt ? "its market" : null, und ? "the underlying" : null].filter(Boolean).join(" and ") || "neither"})`,
+      mkNote: (cur) => `Read on chain at the vault's block (A); amounts in ${cur}. The affected markets of this incident are highlighted.`,
+    },
   },
 
   /* Off-chain dependencies from the issuer's documents (d.offchain; guide section 8). */
@@ -249,6 +298,16 @@ const COPY = {
       admin_role: "Admin roles",
       underlying: "Underlying",
       infrastructure: "Infrastructure",
+      originator: "Originators",
+      legal_structure: "Legal structure",
+      parent_credit: "Parent credit",
+      service_provider: "Service providers",
+      reserve_custodian: "Reserve custodians",
+      underlying_asset: "Underlying assets",
+      borrower: "Borrowers",
+      asset_manager: "Asset managers",
+      market_maker: "Market makers",
+      bridge: "Bridges",
       other: "Other",
     },
   },
