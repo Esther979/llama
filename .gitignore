@@ -6,3 +6,7 @@ data/
 .env
 # local explainer pages (not for GitHub)
 explainer/
+# node package for web/demo_autopilot.mjs (npm i --no-save playwright)
+node_modules/
+package.json
+package-lock.json
