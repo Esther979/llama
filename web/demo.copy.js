@@ -18,6 +18,27 @@ const COPY = {
     drawerRow: "Past pattern",
   },
 
+  /* "What would change the answer" (RiskModel.sensitivity, guide section 5): one assumption at a time replaced by
+     its stated alternative, the decision rerun. */
+  sens: {
+    title: "What would change the answer",
+    hinges: (alt, grade, verdict) => `The answer hinges on: ${alt} (grade ${grade}) → ${verdict}.`,
+    robust: "No tested assumption changes the answer.",
+    cols: ["If instead", "Grade", "Answer"],
+    others: "Other positions, same incident",
+    flips: "changes the answer",
+    loses: (v) => `doing nothing loses ${v}`,
+    verdict: { STAY: "Stay", REDUCE: "Reduce", SELL_TO_CAP: "Sell to the pool limit", EXIT: "Exit" },
+    severity: "Severity",
+    stayAll: (max) => `Stay at every severity up to ${max}.`,
+    stayBelow: (s, below) => `Stay below ${s}${below ? " (below this slider)" : ""}. `,
+    noCap: "The pool limit is not reached on this slider.",
+    cap: (pc, s) => `Sell up to the ${pc} pool limit from ${s}.`,
+    rule: "Rule",
+    ruleText:
+      "Assume the incident has happened at this severity. Pick the share x that minimises x × (slippage + yield given up) + (1 − x) × loss. Never beyond the largest size Pendle quoted.",
+  },
+
   /* The real-borrower presets are someone else's position, read on chain. */
   position: {
     notYours: (label) => `Position: ${label}. A real borrower of this market, read on chain, not your position.`,

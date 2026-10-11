@@ -1039,6 +1039,29 @@
       tr.ref td {
         color: var(--crit);
       }
+      /* "What would change the answer": long assumptions wrap; a row that flips the verdict is bold; the weakest one is
+   the highlighted row (tr.best); the other positions sit under their own group heading. */
+      .sens-head {
+        margin: 0 0 6px;
+        font-weight: 600;
+      }
+      table.sens td:first-child {
+        white-space: normal;
+      }
+      table.sens td:nth-child(3) {
+        white-space: normal;
+        text-align: left;
+      }
+      table.sens th:nth-child(3) {
+        text-align: left;
+      }
+      table.sens tr.flip td:nth-child(3) {
+        font-weight: 600;
+      }
+      table.sens tr.grp th {
+        text-align: left;
+        padding-top: 10px;
+      }
       dl {
         display: grid;
         grid-template-columns: max-content minmax(0, 1fr);

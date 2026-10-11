@@ -273,9 +273,8 @@
           low && m.be.cap !== null && m.be.cap <= f.min + 1e-9 && low.cap !== null
             ? low.cap
             : m.be.cap;
-        m.others = Object.keys(PRE)
-          .filter((k) => k !== posKey)
-          .map((k) => ({ k, m: model(k, true) }));
+        /* "What would change the answer" (guide section 5): the backend's candidates, flips and weakest assumption */
+        m.sv = RM.sensitivity(d, posKey, S.node, S.fail, S.sev, cy, o);
         return m;
       }
       const VCLASS = {
@@ -284,12 +283,6 @@
         SELL_TO_CAP: "cap",
         EXIT: "cap",
       };
-      const word = (m) =>
-        m.verdict === "STAY"
-          ? "Stay"
-          : m.verdict === "EXIT"
-            ? "Exit"
-            : `${m.verdict === "SELL_TO_CAP" ? "Sell to the pool limit" : "Reduce"}, sell ${money(m.sev.sell_usd)}`;
 
       /* What the incident does at each step of the path, read from the inject result (guide, section 6). */
       function story(m) {
@@ -626,6 +619,35 @@
         `<details id="${id}" ${S.open[id] ? "open" : ""}><summary>${title}</summary><div>${body}</div></details>`;
       const yn = (v) => (v === true ? "yes" : v === false ? "no" : "unknown");
 
+      /* "What would change the answer": RiskModel.sensitivity's candidates (one assumption replaced at a time), the
+   other positions in their own group, the weakest assumption that flips the verdict; then the severity break-even. */
+      function sensBlock(m) {
+        const T = COPY.sens,
+          sv = m.sv,
+          f = m.f,
+          vw = (v) => T.verdict[v] || v;
+        const row = (c) =>
+          `<tr class="${sv.weakest && c === sv.weakest ? "best" : ""} ${c.flips ? "flip" : ""}"><td>${c.alternative}</td><td>${gr(c.grade)}</td><td>${vw(c.verdict)}${c.flips ? ` <span class="note">(${T.flips})</span>` : ""}${c.comparison && c.loss_if_stay_usd > 0 ? `<span class="note"> · ${T.loses(money(c.loss_if_stay_usd))}</span>` : ""}</td></tr>`;
+        const own = sv.candidates.filter((c) => !c.comparison),
+          other = sv.candidates.filter((c) => c.comparison);
+        const head = sv.weakest
+          ? T.hinges(sv.weakest.alternative, sv.weakest.grade, vw(sv.weakest.verdict))
+          : T.robust;
+        const sevFlip =
+          m.start === null
+            ? T.stayAll(sevText(f.max))
+            : T.stayBelow(sevText(m.start), m.start < f.min - 1e-9) +
+              (m.cap === null ? T.noCap : T.cap(pc(MAXX, 0), sevText(m.cap)));
+        return det(
+          "d-flip",
+          T.title,
+          `<p class="sens-head">${head}</p>
+      <div class="tw"><table class="sens"><thead><tr>${T.cols.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${own.map(row).join("")}${
+        other.length ? `<tr class="grp"><th colspan="3">${T.others}</th></tr>${other.map(row).join("")}` : ""
+      }</tbody></table></div>
+      <dl><dt>${T.severity}</dt><dd>${sevFlip}</dd><dt>${T.rule}</dt><dd>${T.ruleText}</dd></dl>`,
+        );
+      }
       function renderDecision(m) {
         const s = m.sev,
           C = m.C,
@@ -695,23 +717,8 @@
           body += `<p class="note">At this severity, doing nothing loses <b>${money(s.loss_usd)}</b>: ${pc(s.L_high, 1)} of your ${m.P.debt_usd > 0 ? "equity" : "position"}, ${pc((s.L_high * S.book) / 100, 1)} of the book.${s.L_low !== s.L_high ? ` Loss is between ${pc(s.L_low, 1)} and ${pc(s.L_high, 1)} depending on the oracle; the decision uses the high end.` : ""}</p>`;
           body += rule;
           body += `<p class="note">Losses and the decision come from the backend model (RiskModel.decideAt). ${src(d.evidence.mechanism)}</p>`;
-          const sevFlip =
-            m.start === null
-              ? `Stay at every severity up to ${sevText(f.max)}.`
-              : `Stay below ${sevText(m.start)}${m.start < f.min - 1e-9 ? " (below this slider)" : ""}. ` +
-                (m.cap === null
-                  ? "The pool limit is not reached on this slider."
-                  : `Sell up to the ${pc(MAXX, 0)} pool limit from ${sevText(m.cap)}.`);
-          body += det(
-            "d-flip",
-            "What would change the answer",
-            `<dl>
-      <dt>Severity</dt><dd>${sevFlip}</dd>
-      <dt>Position preset</dt><dd>${m.others.map((o) => `${o.m.P.label}: <b>${word(o.m)}</b>${o.m.hasLoss ? ` (doing nothing loses ${money(o.m.sev.loss_if_stay_usd)})` : ""}`).join("<br>")}</dd>
-      <dt>Cash earns</dt><dd>You assume cash earns <span class="asm">${trim(S.alt)}%</span> a year after selling; the PT yields ${pc(d.position.implied_apy, 2)}. Each sale gives up ${pc(m.cy, 2)} of the amount sold until ${EXPIRY}. Change it under Assumptions.</dd>
-      <dt>Rule</dt><dd>Assume the incident has happened at this severity. Pick the share x that minimises x × (slippage + yield given up) + (1 − x) × loss. Never beyond the largest size Pendle quoted.</dd></dl>`,
-          );
         }
+        body += sensBlock(m);
         $("#decision").innerHTML =
           `<div class="vband ${VCLASS[v]}"><span class="lbl">${S.past ? COPY.past.band(pastOf().label) : "What-if"} · ${FAIL[S.fail].phrase(sevText())} at ${where}</span>
     <div class="verdict">${vw}${sub ? `<small>${sub}</small>` : ""}</div><p class="why">${why}</p></div><div class="dbody">${isReal(S.pos) ? `<p class="note">${COPY.position.notYours(PRE[S.pos].label)}</p>` : ""}${body}</div>`;

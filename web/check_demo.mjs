@@ -398,6 +398,59 @@ try {
   })()`);
   gate(sweep.bad.length === 0 && sweep.n > 0, `3. presets x failures rendered: ${sweep.n}${sweep.bad.length ? " failed " + sweep.bad.slice(0, 5).join("; ") : ""}`);
 
+  /* 3b. "What would change the answer" is RiskModel.sensitivity (guide section 5): the page's result equals the model's
+     with the same inputs (past event's opts included), and the screen shows its candidates, flips, the other
+     positions in their own group and the weakest assumption */
+  const sens = await p.ev(`(() => {
+    const bad = []; let n = 0, failed = 0;
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    const VW = ((typeof COPY !== "undefined" && COPY.sens) || {}).verdict || {};
+    const check = (tag) => {
+      n++;
+      const before = bad.length;
+      try { checkOne(tag); } catch (e) { bad.push(tag + ": " + e); }
+      if (bad.length > before) failed++;
+    };
+    const checkOne = (tag) => {
+      const m = model();
+      if (!m.sv) { bad.push(tag + ": no sensitivity on the page"); return; }
+      const want = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry(), pastOf() ? pastOf().opts : null);
+      if (JSON.stringify(m.sv) !== JSON.stringify(want)) bad.push(tag + ": page result differs from the model");
+      const box = document.querySelector("#d-flip");
+      if (!box) { bad.push(tag + ": no 'What would change the answer' block"); return; }
+      const rows = [...box.querySelectorAll("table.sens tbody tr:not(.grp)")];
+      /* shown in the page's order: this position's own assumptions, then the other positions as their own group */
+      const order = want.candidates.filter((c) => !c.comparison).concat(want.candidates.filter((c) => c.comparison));
+      if (rows.length !== order.length) bad.push(tag + ": " + rows.length + " rows vs " + order.length + " candidates");
+      order.forEach((c, i) => {
+        const r = rows[i]; if (!r) return;
+        const t = r.children[2].textContent;
+        if (!t.startsWith(VW[c.verdict] || c.verdict)) bad.push(tag + " row " + i + ": '" + t + "' vs " + c.verdict);
+        if (r.classList.contains("flip") !== c.flips) bad.push(tag + " row " + i + ": flip mark " + r.classList.contains("flip") + " vs " + c.flips);
+        if (r.children[0].textContent !== c.alternative) bad.push(tag + " row " + i + ": alternative text");
+      });
+      const grp = !!box.querySelector("table.sens tr.grp"), hasCmp = want.candidates.some((c) => c.comparison);
+      if (grp !== hasCmp) bad.push(tag + ": other-positions group " + grp + " vs " + hasCmp);
+      const head = (box.querySelector(".sens-head") || { textContent: "" }).textContent;
+      if (want.weakest ? !head.includes(want.weakest.alternative) : head !== (COPY.sens || {}).robust) bad.push(tag + ": weakest line '" + head + "'");
+      if (/Position preset/.test(box.textContent)) bad.push(tag + ": the page-built 'Position preset' row is still there");
+    };
+    fire(document.querySelector("#replay"), "");
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const k of Object.keys(NODES)) for (const f of fails(k))
+        for (const sv of [FAIL[f].def, FAIL[f].max]) { setNode(k, f, sv); check(pk + " " + k + ":" + f + " @" + sv); }
+    }
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const x of PAST) { fire(document.querySelector("#replay"), x.key); check(pk + " past " + x.key); }
+    }
+    fire(document.querySelector("#replay"), "");
+    return { n, bad, failed };
+  })()`);
+  gate(sens.n > 0 && sens.bad.length === 0, `3b. "What would change the answer" is RiskModel.sensitivity: ${sens.n - sens.failed}/${sens.n} cases (model, rows, flips, groups, weakest)`);
+  sens.bad.slice(0, 5).forEach((x) => console.log("           " + x));
+
   /* 4. acceptance table, model result and on-screen verdict */
   const rows = acceptanceRows();
   const atPage = rows.filter((r) => r.size === 1e7);
