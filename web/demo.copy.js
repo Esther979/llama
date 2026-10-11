@@ -15,6 +15,7 @@ const COPY = {
     banner: (label, what, source) =>
       `<b>Pattern from ${label}</b>: ${what}, applied to this position. It did not happen to PT-sUSDe. ${source}. Moving the dependency, the failure or the severity turns it into a what-if test.`,
     sevNote: (v) => `Severity of the past event: ${v}. Move the slider to turn it into a what-if test.`,
+    lasting: (dur, recovered) => `, lasting ${dur}${recovered ? ", then recovered" : ""}`,
     drawerRow: "Past pattern",
   },
 
@@ -62,7 +63,47 @@ const COPY = {
     keyCost: "Cost of selling",
     stuckLine: (a, b) => `<b>${a} cannot be sold through Pendle now.</b> With the rest you keep, ${b} stays at risk.`,
     range: (lo, hi) => `Loss is between ${lo} and ${hi} depending on the oracle; the decision uses the high end.`,
-    source: (src) => `Losses, the decision and these texts come from the backend model (RiskModel.decideAt, decisionText). ${src}`,
+    source: (src) => `Losses, the decision and these texts come from the backend model (RiskModel.decideAtDuration, decisionText). ${src}`,
+  },
+
+  /* Time rail: how long the incident lasts (guide sections 5b and 6). Event texts are RiskModel.propagationEvents'
+     own; the recovers reason is RiskModel.recoveryToggle's. */
+  rail: {
+    lasted: (dur) => `The incident has lasted <b>${dur}</b>`,
+    play: "Play",
+    pause: "Pause",
+    after: "After the incident",
+    recovers: "Recovers",
+    stays: "Stays",
+    stepLine: (dur, rec) =>
+      `Lasts ${dur}${rec === null ? "" : rec ? ", recovers" : ", stays"}: drag the time rail on the chain below.`,
+    oracle: (dur) => `oracle switch ${dur}`,
+    expiry: "PT expiry",
+    pastMark: (dur) => `the past event: ${dur}`,
+    ticks: [
+      [1, "1 h"],
+      [6, "6 h"],
+      [24, "1 d"],
+      [168, "7 d"],
+      [720, "30 d"],
+      [2160, "90 d"],
+      [4320, "180 d"],
+    ],
+    jump: (dur) => `Go to ${dur}, where the path changes`,
+    from: (dur) => `From ${dur}`,
+    answer: "answer",
+    layer: (n, from, to, text) => `Layer ${n}: ${from} → ${to}: ${text}`,
+    state: {
+      unchanged: "unchanged",
+      hit: "hit",
+      origin: "origin",
+      not_applicable: "not applicable",
+      not_modelled: "not modelled",
+      unknown: "unknown",
+    },
+    none: "Between 1 hour and 180 days the path does not change with the duration.",
+    carryNote: (v, dur) =>
+      `Sale cost includes the yield given up over the incident (${dur}, at most until expiry): ${v} of the amount sold.`,
   },
 
   /* "How it spreads": RiskModel.propagation's steps in causal order (guide section 6). */

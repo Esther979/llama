@@ -33,6 +33,16 @@ const gate = (ok, label) => {
   if (!ok) failures++;
 };
 
+/* ---- the duration path (guide section 5b), written here so the gates do not trust the page's own code: the
+   decision for the page's state (S.hours, S.recovers, S.alt), and the inputs o every other function gets */
+const DUR = `const durR = (pk = S.pos) => RiskModel.decideAtDuration(d, pk, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100);
+  const durO = (pk, r) => { const o = { hours: S.hours, collateral_usd: r.position_value_usd, collateral_oracle_usd: r.collateral_usd,
+    debt_usd: r.debt_usd, sale_value_usd: PRE[pk].collateral_usd }; if (S.recovers) o.permanent = 0; return o; };
+  /* same words, numbers within 0.2% (a duration moves the PT value slightly) */
+  const closeText = (a, b) => { const re = /\\d[\\d,]*(?:\\.\\d+)?/g, na = a.match(re) || [], nb = b.match(re) || [];
+    if (a.replace(re, "#") !== b.replace(re, "#") || na.length !== nb.length) return false;
+    return na.every((x, i) => { const u = +x.replace(/,/g, ""), v = +nb[i].replace(/,/g, ""); return Math.abs(u - v) <= Math.max(2e-3 * Math.abs(v), 0.011); }); };`;
+
 /* ---- the guide's acceptance table (section 9), read at run time so it follows the guide */
 function acceptanceRows() {
   const md = readFileSync(GUIDE, "utf8");
@@ -207,7 +217,7 @@ async function openPage(b, { width = 1400, dark = false } = {}) {
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
     return r.result.value;
   };
-  return { ev, errors };
+  return { ev, errors, s };
 }
 
 /* ---- checks */
@@ -230,6 +240,8 @@ try {
   const first = await p.ev(`(() => {
     const b = document.querySelector("#pastBanner"), card = document.querySelector("#decision");
     return { past: S.past, pos: S.pos, verdict: model().verdict, banner: !!b && !b.hidden && /Pattern from/.test(b.textContent),
+      hours: S.hours, recovers: S.recovers, toggle: !!document.querySelector("#rec [data-rec]"),
+      reason: (document.querySelector("#rec .rwhy") || { textContent: "" }).textContent,
       cardPattern: /Pattern from/.test(card.querySelector(".lbl").textContent),
       notYours: /not your position/.test(card.textContent),
       replay: document.querySelector("#replay").value };
@@ -238,6 +250,8 @@ try {
     `1b. first screen preselects ${first.past} on ${first.pos}`);
   gate(first.verdict === "EXIT" && first.banner && first.cardPattern && first.notYours,
     `1b. first screen: verdict ${first.verdict}, event banner ${first.banner}, card says pattern ${first.cardPattern} and not your position ${first.notYours}`);
+  gate(first.hours === 1 && first.recovers === true && !first.toggle && first.reason.length > 0,
+    `1b. first screen at the event's duration (${first.hours} h, recovers ${first.recovers}), the recovers reason shown instead of a toggle`);
 
   /* 2. every node opens its drawer, clicked in both views */
   const drawers = await p.ev(`(() => {
@@ -287,9 +301,10 @@ try {
   gate(words.hits.length === 0, `2b. no detector or invented-incident wording${words.hits.length ? ": " + words.hits.join(" / ") : ""}`);
   gate(!words.proto, "2b. no prototype bar or example feed");
 
-  /* 2d. "Load a past incident pattern" lists d.past_incidents; each sets node, failure and severity and passes its
-     opts; moving the severity turns it into a what-if */
+  /* 2d. "Load a past incident pattern" lists d.past_incidents; each sets node, failure, severity, the duration
+     (p.hours, or the default) and the recovers toggle (guide 5b); moving the severity turns it into a what-if */
   const past = await p.ev(`(() => {
+    ${DUR}
     if (typeof PAST === "undefined") return { n: 0, bad: ["the page has no d.past_incidents list"], optsMatter: false, whatIf: false };
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     const sel = document.querySelector("#replay"), bad = [];
@@ -299,17 +314,18 @@ try {
       fire(document.querySelector("#pos"), pk);
       for (const x of PAST) {
         fire(sel, x.key);
-        if (S.past !== x.key || S.node !== x.node || S.fail !== x.fail || Math.abs(S.sev - x.sev) > 1e-9)
-          bad.push(x.key + ": state " + [S.past, S.node, S.fail, S.sev].join("/"));
-        const want = RiskModel.decideAt(d, pk, x.node, x.fail, x.sev, carry(), x.opts), got = model().sev;
-        if (got.verdict !== want.verdict || Math.abs(got.loss_if_stay_usd - want.loss_if_stay_usd) > 1)
-          bad.push(pk + " " + x.key + ": page " + got.verdict + " " + Math.round(got.loss_if_stay_usd) + " vs model with opts " + want.verdict + " " + Math.round(want.loss_if_stay_usd));
+        const wh = x.hours != null ? x.hours : DEF_H, wr = x.hours != null && !!x.recovers;
+        if (S.past !== x.key || S.node !== x.node || S.fail !== x.fail || Math.abs(S.sev - x.sev) > 1e-9 || S.hours !== wh || S.recovers !== wr)
+          bad.push(x.key + ": state " + [S.past, S.node, S.fail, S.sev, S.hours, S.recovers].join("/"));
+        const want = RiskModel.decideAtDuration(d, pk, x.node, x.fail, x.sev, wh, wr, S.alt / 100), got = model().sev;
+        if (JSON.stringify(got) !== JSON.stringify(want))
+          bad.push(pk + " " + x.key + ": page " + got.verdict + " " + Math.round(got.loss_if_stay_usd) + " vs decideAtDuration " + want.verdict + " " + Math.round(want.loss_if_stay_usd));
       }
     }
-    /* opts must matter somewhere, or this gate proves nothing */
+    /* the event's recovery must matter somewhere, or this gate proves nothing */
     const u = PAST.find((x) => x.key === "usde_feb_2026");
-    const optsMatter = !!u && RiskModel.decideAt(d, "spot", u.node, u.fail, u.sev, 0).loss_if_stay_usd
-      !== RiskModel.decideAt(d, "spot", u.node, u.fail, u.sev, 0, u.opts).loss_if_stay_usd;
+    const optsMatter = !!u && RiskModel.decideAtDuration(d, "spot", u.node, u.fail, u.sev, u.hours, true).loss_if_stay_usd
+      !== RiskModel.decideAtDuration(d, "spot", u.node, u.fail, u.sev, u.hours, false).loss_if_stay_usd;
     fire(sel, PAST[0].key);
     const sv = document.querySelector("#sev");
     sv.value = String(+sv.value + 1); sv.dispatchEvent(new Event("input", { bubbles: true }));
@@ -317,14 +333,18 @@ try {
     fire(sel, "");
     return { n: keys.length, bad, optsMatter, whatIf };
   })()`);
-  gate(past.bad.length === 0 && past.n > 0, `2d. past events: ${past.n} listed, each sets its incident and passes its opts${past.bad.length ? ": " + past.bad.slice(0, 3).join("; ") : ""}`);
-  gate(past.optsMatter, "2d. opts change the result (USDe Feb 2026 on spot), so the gate above is meaningful");
+  gate(past.bad.length === 0 && past.n > 0, `2d. past events: ${past.n} listed, each sets its incident, duration and recovers toggle; the page equals decideAtDuration${past.bad.length ? ": " + past.bad.slice(0, 3).join("; ") : ""}`);
+  gate(past.optsMatter, "2d. the recovers toggle changes the result (USDe Feb 2026 on spot), so the gate above is meaningful");
   gate(past.whatIf, "2d. moving the severity turns a past event into a what-if (banner hidden, dropdown reset)");
 
-  /* 2e. the guide's past-incident table (section 3c), on screen */
+  /* 2e. the guide's past-incident table (section 3c), on screen. The page values the position at the end of the
+     incident (guide 5b: $164,900 instead of $164,903), so amounts match within 0.1%. The table's oracle and
+     liquidation columns used the event's own duration; for an event without one the page uses its default
+     duration, so those two columns are compared only for events with a stated duration. */
   const pr = pastRows();
-  const pres = await p.ev(`(() => {
+  const presAll = await p.ev(`(() => {
     const rows = ${JSON.stringify(pr)}, out = [];
+    let noDur = 0;
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     for (const r of rows) {
       fire(document.querySelector("#pos"), r.preset);
@@ -336,19 +356,23 @@ try {
       if (x.verdict !== r.verdict) d2.push("verdict " + x.verdict + " vs " + r.verdict);
       eq(Math.round(x.sell_fraction * 100), r.sell, 0, "sell %");
       eq(Math.round(x.sale_cost_usd), r.sale, 1, "sale cost");
-      eq(Math.round(x.loss_if_stay_usd), r.stay, 1, "loss if stay");
-      if (x.oracle_falls !== r.oracle) d2.push("oracle " + x.oracle_falls + " vs " + r.oracle);
-      if ((x.liquidated || []).includes(true) !== r.liquidated) d2.push("liquidated " + JSON.stringify(x.liquidated));
+      eq(Math.round(x.loss_if_stay_usd), r.stay, Math.max(1, r.stay * 1e-3), "loss if stay");
+      if (pastOf().hours != null) {
+        if (x.oracle_falls !== r.oracle) d2.push("oracle " + x.oracle_falls + " vs " + r.oracle);
+        if ((x.liquidated || []).includes(true) !== r.liquidated) d2.push("liquidated " + JSON.stringify(x.liquidated));
+      } else noDur++;
       eq(be.start === null ? null : +be.start.toFixed(3), r.beStart, 1e-3, "break-even start");
       eq(be.cap === null ? null : +be.cap.toFixed(3), r.beCap, 1e-3, "break-even cap");
       if (!txt.startsWith(want)) d2.push("screen '" + txt + "' vs '" + want + "'");
       out.push({ row: r.key + " " + r.preset, d: d2 });
     }
     fire(document.querySelector("#replay"), "");
-    return out;
+    return { rows: out, noDur, defH: DEF_H };
   })()`);
+  const pres = presAll.rows, pnod = presAll.noDur;
   const pok = pres.filter((r) => !r.d.length).length;
-  gate(pres.length > 0 && pok === pres.length, `2e. guide 3c past-incident rows: ${pok}/${pres.length} match (model and screen)`);
+  gate(pres.length > 0 && pok === pres.length, `2e. guide 3c past-incident rows: ${pok}/${pres.length} match (model and screen; amounts within 0.1%)`);
+  if (pnod) console.log(`NOTE       2e. oracle / liquidated columns not compared on ${pnod} rows: events without a stated duration run at the default ${presAll.defH} h`);
   pres.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
 
   /* 2c. off-chain dependencies in the evidence drawer (guide section 8) */
@@ -399,10 +423,13 @@ try {
     `2c. quote wording by quote_found (true ${off.quoteN.true}, null ${off.quoteN.null}, false ${off.quoteN.false})${off.quoteBad.length ? ": " + off.quoteBad.join("; ") : ""}`);
   gate(off.offIds.length === 0, `2c. "Contracts behind it" lists on-chain members only${off.offIds.length ? ": " + off.offIds.join(", ") : ""}`);
 
-  /* 2f. the guide's propagation rows (section 6), in both displays. A row whose opts only a duration control can set
-     is SKIPPED until the time rail (to-do 7); one whose opts are a past event's is set through that event. */
+  /* 2f. the guide's propagation rows (section 6), in both displays. A row whose opts are a past event's is set through
+     that event; one with a duration through the time rail (recovers off unless opts say permanent 0); a row without
+     opts (no duration: the oracle switch applies) at 16 h, recovers off. The position step's numbers match within
+     0.2% (the page values the PT at the end of the incident). */
   const prow = propRows();
   const prop = await p.ev(`(() => {
+    ${DUR}
     const rows = ${JSON.stringify(prow)}, out = [];
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -410,11 +437,13 @@ try {
       const tag = r.preset + " " + r.node + ":" + r.fail + " " + r.sev + "% " + JSON.stringify(r.opts);
       fire(document.querySelector("#replay"), "");
       fire(document.querySelector("#pos"), r.preset);
-      if (r.opts) {
-        const ev = PAST.find((x) => x.node === r.node && x.fail === r.fail && Math.abs(x.sev - r.sev) < 1e-9 && same(x.opts, r.opts));
-        if (!ev) { out.push({ tag, skip: true }); continue; }
-        fire(document.querySelector("#replay"), ev.key);
-      } else setNode(r.node, r.fail, r.sev);
+      const ev = r.opts && PAST.find((x) => x.node === r.node && x.fail === r.fail && Math.abs(x.sev - r.sev) < 1e-9 && same(x.opts, r.opts));
+      if (ev) fire(document.querySelector("#replay"), ev.key);
+      else {
+        setNode(r.node, r.fail, r.sev);
+        S.recovers = !!r.opts && r.opts.permanent === 0;
+        setHours(r.opts && r.opts.hours != null ? r.opts.hours : 16);
+      }
       const d2 = [], pg = model().pg;
       if (!pg) { out.push({ tag, d: ["no propagation on the page"] }); continue; }
       for (const view of ["list", "graph"]) {
@@ -423,7 +452,7 @@ try {
           const st = [...document.querySelectorAll("#chain .lay:not(.pos)")].map((x) => x.dataset.state);
           if (st.join() !== r.states.join()) d2.push("layers " + st.join(" · "));
           const pos = document.querySelector("#chain .lay.pos .eff");
-          if (!pos || pos.textContent !== r.position) d2.push("position row '" + (pos && pos.textContent) + "'");
+          if (!pos || !closeText(pos.textContent, r.position)) d2.push("position row '" + (pos && pos.textContent) + "'");
         } else {
           const lit = [...document.querySelectorAll("#graph .node.hot")].map((x) => x.dataset.g);
           const hotLayers = new Set(pg.layers.filter((l) => l.state === "origin" || l.state === "hit").map((l) => l.n));
@@ -441,21 +470,23 @@ try {
     fire(document.querySelector("#replay"), "");
     return out;
   })()`);
-  const pdone = prop.filter((r) => !r.skip), prok = pdone.filter((r) => !r.d.length).length;
+  const pdone = prop, prok = pdone.filter((r) => !r.d.length).length;
   gate(pdone.length > 0 && prok === pdone.length, `2f. guide 6 propagation rows: ${prok}/${pdone.length} match in both displays (layer states, position step, verdict, lit graph)`);
   pdone.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.tag}: ${r.d.join("; ")}`));
-  const pskip = prop.filter((r) => r.skip);
-  if (pskip.length) console.log(`SKIPPED    2f. ${pskip.length} rows need a duration the page cannot set yet (time rail, to-do 7): ${pskip.map((r) => r.tag).join(", ")}`);
 
-  /* 2g. card, path and spread list agree, for every preset x failure (two severities) and every past event: the page's
-     decisionText and propagation equal the model's with the same inputs; card, decisionText and propagation give one
-     verdict; the card's sentence is the headline; the spread list is the steps, ending with the result */
+  /* 2g. card, zones, path and spread list agree, for every preset x failure (two severities, two durations) and every
+     past event: the card equals decideAtDuration; the zones, decisionText and propagation equal the model's with its
+     inputs o and its carry (guide 5b, one mechanism); card, decisionText and propagation give one verdict; the card's
+     sentence is the headline; the spread list is the steps, ending with the result */
   const agree2 = await p.ev(`(() => {
+    ${DUR}
     const bad = []; let n = 0, failed = 0;
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     const one = (tag) => {
-      const m = model(), o = pastOf() ? pastOf().opts : null, cy = carry();
+      const m = model(), r = durR(), o = durO(S.pos, r), cy = r.carry, f = FAIL[S.fail];
       if (!m.pg || !m.t) { bad.push(tag + ": no propagation / decisionText on the page"); return; }
+      if (JSON.stringify(m.sev) !== JSON.stringify(r)) bad.push(tag + ": card differs from decideAtDuration");
+      if (JSON.stringify(m.be) !== JSON.stringify(RiskModel.breakEvenSeverity(d, S.pos, S.node, S.fail, cy, f.min, f.max, 400, o))) bad.push(tag + ": zones differ from breakEvenSeverity with the duration inputs");
       const t = RiskModel.decisionText(d, S.pos, S.node, S.fail, S.sev, cy, o), pg = RiskModel.propagation(d, S.pos, S.node, S.fail, S.sev, cy, o);
       if (JSON.stringify(m.t) !== JSON.stringify(t)) bad.push(tag + ": decisionText differs from the model");
       if (JSON.stringify(m.pg) !== JSON.stringify(pg)) bad.push(tag + ": propagation differs from the model");
@@ -477,8 +508,11 @@ try {
     fire(document.querySelector("#replay"), "");
     for (const pk of Object.keys(PRE)) {
       fire(document.querySelector("#pos"), pk);
-      for (const k of Object.keys(NODES)) for (const f of fails(k))
-        for (const sv of [FAIL[f].def, FAIL[f].max]) { setNode(k, f, sv); check(pk + " " + k + ":" + f + " @" + sv); }
+      for (const h of [6, 24]) for (const rec of [true, false]) {
+        setHours(h); S.recovers = rec;
+        for (const k of Object.keys(NODES)) for (const f of fails(k))
+          for (const sv of [FAIL[f].def, FAIL[f].max]) { setNode(k, f, sv); check(pk + " " + k + ":" + f + " @" + sv + " " + h + "h rec " + rec); }
+      }
       for (const x of (typeof PAST !== "undefined" ? PAST : [])) { fire(document.querySelector("#replay"), x.key); check(pk + " past " + x.key); fire(document.querySelector("#replay"), ""); }
     }
     return { n, failed, bad };
@@ -508,9 +542,10 @@ try {
   gate(sweep.bad.length === 0 && sweep.n > 0, `3. presets x failures rendered: ${sweep.n}${sweep.bad.length ? " failed " + sweep.bad.slice(0, 5).join("; ") : ""}`);
 
   /* 3b. "What would change the answer" is RiskModel.sensitivity (guide section 5): the page's result equals the model's
-     with the same inputs (past event's opts included), and the screen shows its candidates, flips, the other
+     with decideAtDuration's inputs and carry (guide 5b), and the screen shows its candidates, flips, the other
      positions in their own group and the weakest assumption */
   const sens = await p.ev(`(() => {
+    ${DUR}
     const bad = []; let n = 0, failed = 0;
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
     const VW = ((typeof COPY !== "undefined" && COPY.sens) || {}).verdict || {};
@@ -523,7 +558,7 @@ try {
     const checkOne = (tag) => {
       const m = model();
       if (!m.sv) { bad.push(tag + ": no sensitivity on the page"); return; }
-      const want = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, carry(), pastOf() ? pastOf().opts : null);
+      const r = durR(), want = RiskModel.sensitivity(d, S.pos, S.node, S.fail, S.sev, r.carry, durO(S.pos, r));
       if (JSON.stringify(m.sv) !== JSON.stringify(want)) bad.push(tag + ": page result differs from the model");
       const box = document.querySelector("#d-flip");
       if (!box) { bad.push(tag + ": no 'What would change the answer' block"); return; }
@@ -560,16 +595,41 @@ try {
   gate(sens.n > 0 && sens.bad.length === 0, `3b. "What would change the answer" is RiskModel.sensitivity: ${sens.n - sens.failed}/${sens.n} cases (model, rows, flips, groups, weakest)`);
   sens.bad.slice(0, 5).forEach((x) => console.log("           " + x));
 
-  /* 4. acceptance table, model result and on-screen verdict */
+  /* 4. acceptance table (section 9): the model rows exactly (decideAt, carry 0, the data's range), then the screen.
+     The table has no duration (the oracle switch applies, the loss stays): the page is set to 16 h on the rail,
+     recovers off, and its amounts match within 0.1% (the PT valued at the end of the incident). */
   const rows = acceptanceRows();
   const atPage = rows.filter((r) => r.size === 1e7);
+  const mres = await p.ev(`(() => {
+    const out = [];
+    for (const r of ${JSON.stringify(atPage)}) {
+      const t = d.failure_types.types[r.fail], x = RiskModel.decideAt(d, r.preset, r.node, r.fail, r.sev, 0),
+        be = RiskModel.breakEvenSeverity(d, r.preset, r.node, r.fail, 0, t.min, t.max), dd = [];
+      const eq = (a, b, tol, name) => { if (a === null || b === null ? a !== b : Math.abs(a - b) > tol) dd.push(name + " " + a + " vs " + b); };
+      if (x.verdict !== r.verdict) dd.push("verdict " + x.verdict);
+      eq(Math.round(x.sell_fraction * 100), r.sell, 0, "sell %");
+      eq(Math.round(x.sale_cost_usd), r.sale, 1, "sale cost");
+      eq(Math.round(x.loss_if_stay_usd), r.stay, 1, "loss if stay");
+      eq(Math.round(x.loss_kept_usd), r.kept, 1, "loss kept");
+      eq(+x.sellable_later.toFixed(4), r.later, 1e-4, "sellable later");
+      eq(be.start === null ? null : +be.start.toFixed(3), r.beStart, 1e-3, "break-even start");
+      eq(be.cap === null ? null : +be.cap.toFixed(3), r.beCap, 1e-3, "break-even cap");
+      out.push({ row: r.preset + " " + r.node + ":" + r.fail + " @" + r.sev, d: dd });
+    }
+    return out;
+  })()`);
+  const mok = mres.filter((r) => !r.d.length).length;
+  gate(mok === mres.length && mres.length > 0, `4. acceptance rows at $10M, model (decideAt, carry 0): ${mok}/${mres.length} match exactly`);
+  mres.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
   const res = await p.ev(`(() => {
     const rows = ${JSON.stringify(atPage)}, out = [];
     const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
-    fire(document.querySelector("#replay"), "");   /* section 9 rows are what-if tests: no opts */
+    fire(document.querySelector("#replay"), "");   /* section 9 rows are what-if tests */
     for (const r of rows) {
       fire(document.querySelector("#pos"), r.preset);
       setNode(r.node, r.fail, r.sev);
+      S.recovers = false;
+      setHours(16);
       const m = model(), x = m.sev, be = m.be, txt = document.querySelector("#decision .verdict").textContent;
       const want = r.verdict === "STAY" ? "Stay" : r.verdict === "EXIT" ? "Exit" : "Sell " + money(x.sell_usd);
       const d = [];
@@ -577,8 +637,8 @@ try {
       if (x.verdict !== r.verdict) d.push("verdict " + x.verdict + " vs " + r.verdict);
       eq(Math.round(x.sell_fraction * 100), r.sell, 0, "sell %");
       eq(Math.round(x.sale_cost_usd), r.sale, 1, "sale cost");
-      eq(Math.round(x.loss_if_stay_usd), r.stay, 1, "loss if stay");
-      eq(Math.round(x.loss_kept_usd), r.kept, 1, "loss kept");
+      eq(Math.round(x.loss_if_stay_usd), r.stay, Math.max(1, r.stay * 1e-3), "loss if stay");
+      eq(Math.round(x.loss_kept_usd), r.kept, Math.max(1, r.kept * 1e-3), "loss kept");
       if (x.oracle_falls !== r.oracle) d.push("oracle " + x.oracle_falls + " vs " + r.oracle);
       eq(+x.sellable_later.toFixed(4), r.later, 1e-4, "sellable later");
       eq(be.start === null ? null : +be.start.toFixed(3), r.beStart, 1e-3, "break-even start");
@@ -589,7 +649,7 @@ try {
     return out;
   })()`);
   const ok = res.filter((r) => !r.d.length).length;
-  gate(ok === res.length && res.length > 0, `4. acceptance rows at $10M: ${ok}/${res.length} match (model and screen)`);
+  gate(ok === res.length && res.length > 0, `4. acceptance rows at $10M, screen at 16 h, recovers off: ${ok}/${res.length} match (amounts within 0.1%)`);
   res.filter((r) => r.d.length).forEach((r) => console.log(`           ${r.row}: ${r.d.join("; ")}`));
   /* 4b. the exit panel agrees with the decision card, for every preset x failure at four severities */
   const agree = await p.ev(`(() => {
@@ -623,6 +683,116 @@ try {
   if (agree.bad.length > 8) console.log(`           ... and ${agree.bad.length - 8} more`);
   const other = rows.length - atPage.length;
   if (other) console.log(`SKIPPED    4. ${other} acceptance rows at other sizes: the page has no position-size input yet`);
+
+  /* 7. time rail (guide 5b and 6, to-do 7): marks, one duration control, the recovers toggle, keys, event clicks,
+     the guide's two examples, Play */
+  const rail = await p.ev(`(async () => {
+    const out = { bad: [], marks: 0, toggles: 0 };
+    const fire = (el, v) => { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); };
+    const lay = (n) => document.querySelector('#chain .lay[data-ln="' + n + '"]').dataset.state;
+    document.querySelector('[data-view="list"]').click();
+    fire(document.querySelector("#replay"), "");
+    const TLH = d.oracle.challenge_timelock_s / 3600, EXP = d.time_model.days_to_expiry * 24;
+    /* a. one red mark per event at its duration, the two grey reference marks; the toggle exactly where the model
+       shows it, its reason otherwise */
+    for (const pk of Object.keys(PRE)) {
+      fire(document.querySelector("#pos"), pk);
+      for (const k of Object.keys(NODES)) for (const f of fails(k)) {
+        setNode(k, f);
+        const tag = pk + " " + k + ":" + f;
+        const ev = RiskModel.propagationEvents(d, pk, k, f, S.sev, S.recovers, S.alt / 100);
+        const marks = [...document.querySelectorAll("#rmarks .rm.ev")].map((x) => +x.dataset.h);
+        if (marks.length !== ev.events.length || marks.some((h, i) => Math.abs(h - ev.events[i].hours) > 1e-6))
+          out.bad.push(tag + ": marks " + marks.join() + " vs events " + ev.events.map((e) => e.hours).join());
+        const items = document.querySelectorAll("#revents > li:not(.note)").length;
+        if (items !== ev.events.length) out.bad.push(tag + ": " + items + " listed events vs " + ev.events.length);
+        if (!ev.events.length && !document.querySelector("#revents > li.note")) out.bad.push(tag + ": no 'path does not change' line");
+        const refs = [...document.querySelectorAll("#rmarks .rm.ref:not(.pm)")].map((x) => +x.dataset.h);
+        if (refs.length !== 2 || Math.abs(refs[0] - TLH) > 1e-9 || Math.abs(refs[1] - EXP) > 1e-9) out.bad.push(tag + ": reference marks " + refs.join());
+        out.marks += marks.length;
+        const rt = RiskModel.recoveryToggle(d, k, f), tg = document.querySelectorAll("#rec [data-rec]").length === 2,
+          why = (document.querySelector("#rec .rwhy") || { textContent: "" }).textContent;
+        if (tg !== rt.show || why !== rt.reason) out.bad.push(tag + ": toggle " + tg + " vs " + rt.show + ", reason '" + why + "'");
+        out.toggles += tg;
+      }
+    }
+    /* b. one duration control on the page: the rail's thumb; the only range input is the severity */
+    const sliders = document.querySelectorAll("#view-pt [role=slider]").length, ranges = document.querySelectorAll("#view-pt input[type=range]").length;
+    if (sliders !== 1 || ranges !== 1 || !/drag the time rail/.test(document.querySelector("#durNote").textContent))
+      out.bad.push("duration controls: " + sliders + " sliders, " + ranges + " range inputs");
+    /* c. keys: arrows 1% of the rail, PageUp 10% */
+    fire(document.querySelector("#pos"), "lev_closest_to_liquidation");
+    setNode("usde", "depeg", 3);
+    document.querySelector('#rec [data-rec="1"]').click();
+    setHours(6);
+    const th = document.querySelector("#rthumb"), key = (k) => th.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+    const u0 = uOf(S.hours);
+    key("ArrowRight");
+    if (Math.abs(uOf(S.hours) - u0 - 0.01) > 1e-9 || th.getAttribute("aria-valuetext") !== durText(S.hours)) out.bad.push("ArrowRight: u " + uOf(S.hours));
+    key("PageUp");
+    if (Math.abs(uOf(S.hours) - u0 - 0.11) > 1e-9) out.bad.push("PageUp: u " + uOf(S.hours));
+    key("ArrowLeft"); key("PageDown");
+    if (Math.abs(S.hours - 6) > 1e-6) out.bad.push("back to 6 h: " + S.hours);
+    /* d. the guide's main example (section 6): the 3% USDe depeg on the closest borrower, recovers on, cash 4%: one
+       event at 16 h, layers 3 and 5 unchanged -> hit, STAY -> EXIT; a click on it moves the thumb past it, the layers
+       it names change, and they flash */
+    fire(document.querySelector("#alt"), "4");
+    const ev = eventsOf();
+    const e0 = ev.events[0];
+    out.example = ev.events.map((e) => [+e.hours.toFixed(1), e.verdict_before, e.verdict_after, e.layers.map((l) => l.n + ":" + l.from + ">" + l.to).join(" ")]);
+    if (ev.events.length !== 1 || Math.abs(e0.hours - 16) > 1e-3 || e0.verdict_before !== "STAY" || e0.verdict_after !== "EXIT"
+        || e0.layers.map((l) => l.n).join() !== "3,5") out.bad.push("guide example 16 h: " + JSON.stringify(out.example));
+    const before = e0 ? e0.layers.map((l) => lay(l.n)) : [];
+    const wasVerdict = model().verdict;
+    document.querySelector('#revents button[data-evh="0"]').click();
+    if (!e0 || Math.abs(S.hours - e0.hours * 1.0005) > 1e-9) out.bad.push("event click: thumb at " + S.hours);
+    const after = e0 ? e0.layers.map((l) => lay(l.n)) : [];
+    if (e0 && (before.join() !== e0.layers.map((l) => l.from).join() || after.join() !== e0.layers.map((l) => l.to).join()))
+      out.bad.push("event click: layers " + before.join() + " -> " + after.join());
+    if (wasVerdict !== "STAY" || model().verdict !== "EXIT") out.bad.push("event click: verdict " + wasVerdict + " -> " + model().verdict);
+    const fl = [...document.querySelectorAll("#chain .lay.flash")].map((x) => x.dataset.ln).join();
+    if (e0 && fl !== e0.layers.map((l) => l.n).join()) out.bad.push("flash on layers " + fl);
+    if (!document.querySelector("#revents > li.passed")) out.bad.push("the passed event is not marked");
+    /* the second example: susde:discount 0.5%, one event at 4,190.4 h, STAY -> EXIT */
+    setNode("susde", "discount", 0.5);
+    const ev2 = eventsOf().events;
+    out.example2 = ev2.map((e) => [+e.hours.toFixed(1), e.verdict_before, e.verdict_after]);
+    if (ev2.length !== 1 || Math.abs(ev2[0].hours - 4190.4) > 0.1 || ev2[0].verdict_after !== "EXIT") out.bad.push("guide example 4,190.4 h: " + JSON.stringify(out.example2));
+    /* e. Play from 1 h: pauses past the event, reaches the end and stops; the label toggles */
+    setNode("usde", "depeg", 3);
+    setHours(1);
+    const play = document.querySelector("#play");
+    play.click();
+    const labelOn = play.textContent, t0 = performance.now();
+    let paused = false;
+    while (PLAY.on && performance.now() - t0 < 30000) {
+      await new Promise((ok) => setTimeout(ok, 100));
+      if (PLAY.hold > 0 && Math.abs(S.hours - 16 * 1.0005) < 1e-6) paused = true;
+    }
+    out.play = { ms: Math.round(performance.now() - t0), end: S.hours, labelOn, labelOff: play.textContent, paused };
+    if (PLAY.on || S.hours !== H_MAX || labelOn !== COPY.rail.pause || play.textContent !== COPY.rail.play || !paused)
+      out.bad.push("play: " + JSON.stringify(out.play));
+    /* a drag or a key stops Play */
+    setHours(1); play.click(); key("ArrowRight");
+    if (PLAY.on) out.bad.push("a key did not stop Play");
+    fire(document.querySelector("#alt"), (d.position.implied_apy * 100).toFixed(2));
+    return out;
+  })()`);
+  /* a real pointer drag on the track: press at 20% of the rail, move to 60%, release (pointer capture) */
+  const tr = await p.ev(`(() => { const st = document.querySelector("#replay"); st.value = ""; st.dispatchEvent(new Event("change", { bubbles: true }));
+    document.querySelector("#rail").scrollIntoView({ block: "center" });
+    const r = document.querySelector("#rtrack").getBoundingClientRect(); return { x: r.left, w: r.width, y: r.top + r.height / 2 }; })()`);
+  const mouse = (type, u) => p.s("Input.dispatchMouseEvent", { type, x: tr.x + tr.w * u, y: tr.y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1 });
+  await mouse("mousePressed", 0.2);
+  const atPress = await p.ev(`uOf(S.hours)`);
+  await mouse("mouseMoved", 0.6);
+  await mouse("mouseReleased", 0.6);
+  const dragged = await p.ev(`new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => ok({ u: uOf(S.hours),
+    thumb: document.querySelector("#rthumb").style.left, now: +document.querySelector("#rthumb").getAttribute("aria-valuenow") }))))`);
+  if (Math.abs(atPress - 0.2) > 0.01 || Math.abs(dragged.u - 0.6) > 0.01 || Math.abs(parseFloat(dragged.thumb) - 60) > 1)
+    rail.bad.push(`pointer drag: pressed at u ${atPress.toFixed(3)}, released at u ${dragged.u.toFixed(3)}, thumb ${dragged.thumb}`);
+  gate(rail.bad.length === 0, `7. time rail (pointer drag included): ${rail.marks} event marks and the two reference marks as the model's events (48 cases), recovers toggle on ${rail.toggles} of them, one duration control, keys, event click (thumb, layers, verdict, flash), guide examples ${JSON.stringify(rail.example)} and ${JSON.stringify(rail.example2)}, Play ${rail.play ? rail.play.ms + " ms" : "-"}`);
+  rail.bad.slice(0, 8).forEach((x) => console.log("           " + x));
 
   /* 6. vault view (FRONTEND_VAULT_GUIDE.md) */
   const vr = vaultRows();

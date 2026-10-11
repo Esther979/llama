@@ -1324,3 +1324,200 @@
         padding: 5px 12px;
         font-weight: 500;
       }
+      /* Time rail (to-do 7): how long the incident lasts, on the chain it drives. Log scale; grey dashed marks are
+   references (oracle switch, expiry, the past event), red marks the durations where the path changes. */
+      .rail {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--sunk);
+        padding: 10px 12px 8px;
+        margin-bottom: 12px;
+      }
+      .rhead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+      }
+      .rlbl {
+        font-size: 13px;
+      }
+      .rlbl b {
+        font: 600 18px/1 var(--cond);
+      }
+      .rplay {
+        padding: 3px 14px;
+      }
+      .rplay[aria-pressed="true"] {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--surface);
+      }
+      .rrec {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 8px;
+        flex: 1 1 260px;
+        min-width: 0;
+      }
+      .rrec .mode {
+        margin-left: 0;
+      }
+      .rrec .rwhy {
+        flex-basis: 100%;
+      }
+      .rtrack {
+        position: relative;
+        height: 30px;
+        margin: 22px 9px 0;
+        touch-action: none;
+        cursor: pointer;
+      }
+      .rline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 4px;
+        margin-top: -2px;
+        border-radius: 2px;
+        background: var(--line-strong);
+      }
+      .rm {
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        width: 0;
+      }
+      .rm.ref {
+        border-left: 1px dashed var(--muted);
+      }
+      .rm.ref span {
+        position: absolute;
+        bottom: 100%;
+        margin-bottom: 2px;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .rm.ref.pm {
+        border-left-color: var(--accent);
+      }
+      .rm.ref.pm span {
+        display: none;
+      }
+      .rm.ev {
+        top: 50%;
+        bottom: auto;
+        width: 8px;
+        height: 16px;
+        margin: -8px 0 0 -4px;
+        padding: 0;
+        border: 0;
+        border-radius: 2px;
+        background: var(--crit);
+      }
+      .rthumb {
+        position: absolute;
+        top: 50%;
+        width: 18px;
+        height: 18px;
+        margin: -9px 0 0 -9px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 3px solid var(--accent);
+        cursor: grab;
+        z-index: 1;
+      }
+      .raxis {
+        position: relative;
+        height: 16px;
+        margin: 2px 9px 0;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .raxis span {
+        position: absolute;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+      .raxis span:first-child {
+        transform: none;
+      }
+      .raxis span:last-child {
+        transform: translateX(-100%);
+      }
+      .revents {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 13px;
+      }
+      .revents > li {
+        border-left: 3px solid var(--line-strong);
+        padding-left: 8px;
+      }
+      .revents > li.passed {
+        border-left-color: var(--crit);
+      }
+      .revents > li.note {
+        border-left: 0;
+        padding-left: 0;
+      }
+      .revents ul {
+        margin: 2px 0 0;
+        padding-left: 16px;
+      }
+      .revents li li[data-state="hit"],
+      .revents li li[data-state="origin"] {
+        color: var(--crit);
+      }
+      .vb {
+        display: inline-block;
+        font: 600 11px/16px var(--sans);
+        padding: 0 6px;
+        border-radius: 3px;
+      }
+      .vb.stay {
+        background: var(--good-tint);
+        color: var(--good);
+      }
+      .vb.reduce {
+        background: var(--warn-tint);
+        color: var(--warn);
+      }
+      .vb.cap {
+        background: var(--crit-tint);
+        color: var(--crit);
+      }
+      @media (max-width: 560px) {
+        .raxis span:nth-child(6) {
+          display: none;
+        }
+      }
+      /* A layer whose state just changed pulses twice in about 1 s; --flash-at carries a running pulse through a
+   re-render. With reduced motion: an outline instead. */
+      @keyframes rflash {
+        25%,
+        75% {
+          box-shadow: 0 0 0 3px var(--crit);
+        }
+      }
+      .lay.flash .lrow,
+      .band.flash .node {
+        animation: rflash 1s ease-in-out;
+        animation-delay: var(--flash-at, 0ms);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .lay.flash .lrow,
+        .band.flash .node {
+          animation: none;
+          outline: 2px solid var(--crit);
+          outline-offset: 1px;
+        }
+      }

@@ -63,6 +63,19 @@
         ORC && ORC.challenge_timelock_s != null
           ? trim(ORC.challenge_timelock_s / 3600)
           : null;
+      /* How long the incident lasts (guide section 5b, to-do 7): one rail on the chain, log scale from 1 h to 180 days.
+   DEF_H is the duration of a manual incident and of a past event without a stated duration (the guide names none;
+   the backend's explainer opens at 6 h). */
+      const H_MIN = 1,
+        H_MAX = 4320,
+        DEF_H = 6;
+      const hOf = (u) => H_MIN * Math.exp(Math.log(H_MAX / H_MIN) * u);
+      const uOf = (h) => Math.log(h / H_MIN) / Math.log(H_MAX / H_MIN);
+      /* Durations under 48 h read in hours, longer ones in days. */
+      const durText = (h) => {
+        const v = h < 48 ? h : h / 24;
+        return String(v < 10 ? +v.toFixed(1) : Math.round(v)) + (h < 48 ? " h" : " days");
+      };
       const gr = (g) =>
         g
           ? `<span class="gr ${g}" title="${d.evidence.grades[g] || ""}">${g}</span>`
@@ -191,12 +204,12 @@
         e.to === "position" ? Object.assign({}, e, { to: "pos" }) : e,
       );
 
-      /* Past incidents (guide section 3c): real events as ready-made inputs, each with the opts the model needs
-   (duration, recovery). There is no detector and no invented incident. S.past = the selected key, null for a
-   what-if test; moving the dependency, failure or severity drops it, changing the position keeps it. */
+      /* Past incidents (guide sections 3c and 5b): real events that preset the controls, the duration and the recovers
+   toggle included; their opts are not used (one mechanism, the duration). There is no detector and no invented
+   incident. S.past = the selected key, null for a what-if test; moving the dependency, failure or severity drops
+   it; changing the position, the duration or the recovers toggle keeps it. */
       const PAST = d.past_incidents || [];
       const pastOf = () => PAST.find((x) => x.key === S.past) || null;
-      const pastOpts = () => (pastOf() ? pastOf().opts : null);
       /* First screen (guide 3c, user decision): the PT-reUSD oracle drop on the real borrower closest to
    liquidation, so the decision card shows a liquidation and an exit. */
       const FIRST = PAST.find((x) => x.key === "pt_reusd_aug_2026") || PAST[0] || null;
@@ -213,6 +226,9 @@
         fail: FIRST ? FIRST.fail : "depeg",
         sev: FIRST ? FIRST.sev : 10,
         alt: d.position.implied_apy * 100,
+        /* the first screen opens at the event's own duration (1 h for PT-reUSD); null-duration events: DEF_H, stays */
+        hours: FIRST && FIRST.hours != null ? FIRST.hours : DEF_H,
+        recovers: FIRST ? FIRST.hours != null && !!FIRST.recovers : true,
         book: 10,
         open: {},
         more: {},
@@ -231,22 +247,33 @@
           k = v < 10 ? 100 : 10;
         return Math.min(f.max, Math.max(f.min, Math.round(v * k) / k));
       };
-      /* Yield given up until expiry per unit sold, from the annual "cash earns" input (guide section 4). Unscaled:
-   the model scales it per unit of equity for levered presets. */
-      const carry = () => RM.carryOf(d, S.alt / 100);
       const isLev = () => PRE[S.pos].debt_usd > 0;
       const edgeOn = (e) => !e.applies_to || e.applies_to.includes(S.pos);
+      /* The inputs decideAtDuration used (guide 5b), passed to every other function so all numbers agree. */
+      function durInputs(posKey, r) {
+        const o = {
+          hours: S.hours,
+          collateral_usd: r.position_value_usd,
+          collateral_oracle_usd: r.collateral_usd,
+          debt_usd: r.debt_usd,
+          sale_value_usd: PRE[posKey].collateral_usd,
+        };
+        if (S.recovers) o.permanent = 0;
+        return o;
+      }
 
-      /* The decision given the incident at the chosen severity, no probability (guide, section 4):
-   RiskModel.decideAt for the verdict, RiskModel.breakEvenSeverity for the severity zones on step 2. */
+      /* The decision given the incident at the chosen severity and duration, no probability (guide, sections 4 and
+   5b): RiskModel.decideAtDuration for the verdict; breakEvenSeverity (the severity zones on step 2), sensitivity,
+   decisionText and propagation with its inputs (o) and its carry (yield given up over the incident only, at most
+   until expiry, from the annual "cash earns" input; unscaled: the model scales it per unit of equity). */
       function model(posKey = S.pos, light = false) {
         const P = PRE[posKey],
           C = P.collateral_usd,
           equity = C - P.debt_usd,
-          f = FAIL[S.fail],
-          cy = carry();
-        const o = pastOpts(),
-          r = RM.decideAt(d, posKey, S.node, S.fail, S.sev, cy, o),
+          f = FAIL[S.fail];
+        const r = RM.decideAtDuration(d, posKey, S.node, S.fail, S.sev, S.hours, S.recovers, S.alt / 100),
+          o = durInputs(posKey, r),
+          cy = r.carry,
           x = r.sell_fraction;
         const m = {
           P,
@@ -256,6 +283,7 @@
           sev: r,
           L: r.L_high,
           cy,
+          o,
           x,
           slip: x ? RM.slippageAt(x, RM.sizeCurve(d, C)[0]) : 0,
           hasLoss: r.L_high > 0,
@@ -306,7 +334,7 @@
             (past ? `<span class="tag det">${COPY.past.tag}</span>` : "") +
             (hyp ? '<span class="tag hyp">What-if</span>' : "");
           const fact = lf.fact;
-          return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}" data-state="${pl.state}"><span class="ln">${L.n}</span>
+          return `<div class="lay ${hot ? "hot" : ""} ${org === L.n ? "origin" : ""} ${hyp ? "hyp" : ""}" data-state="${pl.state}" data-ln="${L.n}"><span class="ln">${L.n}</span>
       <button class="lrow" data-layer="${L.n}" aria-label="Test an incident at layer ${L.n}, ${L.name}">
         <span class="lt"><span class="lbl">${L.name}</span><b>${lf.head}${tags}</b><span class="fact">${fact}</span>${idle ? "" : `<span class="eff ${hot ? "" : "n"}">${pl.text}</span>`}</span></button>
       <button class="more" data-more="${L.n}" aria-expanded="${open}">${open ? "Hide" : "Show"} ${ids.length} ${ids.length > 1 ? "dependencies" : "dependency"} and evidence</button>
@@ -360,18 +388,19 @@
       let FLOW = { nodes: new Set(), edges: new Set() },
         IDLE = false;
       /* The red path: the nodes and d.ui.edges of propagation's steps whose state is origin or hit (data id "position"
-   is the page's "pos"). */
+   is the page's "pos"). An edge lights only when its source is already on the path: the position step lists both of
+   its edges (holding and liquidation) even when nobody is liquidated, e.g. a USDe depeg shorter than the oracle's
+   16 h switch. Steps come in causal order, so a source is lit before the edges leaving it. */
       function pathOf(pg) {
         const nodes = new Set(),
           edges = new Set(),
           id = (k) => (k === "position" ? "pos" : k);
-        pg.steps
-          .filter((x) => HOT(x.state))
-          .forEach((x) => {
-            if (x.node !== "result") nodes.add(id(x.node));
+        const hot = pg.steps.filter((x) => HOT(x.state));
+        hot.forEach((x) => x.node !== "result" && nodes.add(id(x.node)));
+        hot.forEach((x) => {
             (x.edges || []).forEach((e) => {
               const i = EDGES.findIndex((g) => g.from === e.from && id(g.to) === id(e.to) && g.type === e.type);
-              if (i >= 0) {
+              if (i >= 0 && nodes.has(id(e.from))) {
                 edges.add(i);
                 nodes.add(id(e.from));
                 nodes.add(id(e.to));
@@ -401,7 +430,7 @@
         };
         let h = '<svg id="edges" aria-hidden="true"></svg>';
         LAY.forEach((L) => {
-          h += `<div class="band"><div class="lname"><b>${L.n}</b>${L.name}</div><div class="grow">${L.nodes.map(node).join("")}</div></div>`;
+          h += `<div class="band" data-ln="${L.n}"><div class="lname"><b>${L.n}</b>${L.name}</div><div class="grow">${L.nodes.map(node).join("")}</div></div>`;
         });
         const ph = fl.nodes.has("pos");
         h += `<div class="band"><div class="lname">Your position</div><div class="grow"><div class="node pos ${ph ? "hot" : ""}" data-g="pos" style="grid-column:${isLev() ? 3 : 4}"><span class="nm">${isLev() ? "PT posted as collateral" : "PT held outright"}</span><span class="sub">${isLev() ? `Collateral ${money(P.collateral_usd)}, debt ${money(P.debt_usd)}` : money(P.collateral_usd)}</span>${posStep && !idle ? `<span class="sub"><b>${posStep.text}</b></span>` : ""}</div></div></div>`;
@@ -595,6 +624,152 @@
           .join("");
       }
 
+      /* Time rail (guide 5b and 6, to-do 7): the duration control sits on the chain it drives. Events
+   (RiskModel.propagationEvents, about 300 model runs) are cached by position, incident, severity, recovers and cash
+   APY, never recomputed on drag. The track and its thumb are static markup: only the marks, labels and list are
+   rebuilt, so a drag keeps its pointer capture and the thumb keeps focus. */
+      let EVK = null,
+        EV = null;
+      const eventsOf = () => {
+        const k = [S.pos, S.node, S.fail, S.sev, S.recovers, S.alt].join("|");
+        if (k !== EVK) {
+          EVK = k;
+          EV = RM.propagationEvents(d, S.pos, S.node, S.fail, S.sev, S.recovers, S.alt / 100);
+        }
+        return EV;
+      };
+      const at = (h) => (uOf(Math.min(H_MAX, Math.max(H_MIN, h))) * 100).toFixed(3) + "%";
+      function renderRail(m) {
+        const T = COPY.rail,
+          ev = eventsOf(),
+          rt = RM.recoveryToggle(d, S.node, S.fail),
+          p = pastOf(),
+          vb = (v) => `<span class="vb ${VCLASS[v]}">${COPY.sens.verdict[v] || v}</span>`;
+        $("#railLbl").innerHTML = T.lasted(durText(S.hours));
+        $("#play").textContent = PLAY.on ? T.pause : T.play;
+        $("#play").setAttribute("aria-pressed", PLAY.on);
+        $("#rec").innerHTML =
+          (rt.show
+            ? `<span class="note">${T.after}</span><span class="mode sm" role="group" aria-label="${T.after}"><button data-rec="1" aria-pressed="${S.recovers}">${T.recovers}</button><button data-rec="0" aria-pressed="${!S.recovers}">${T.stays}</button></span>`
+            : "") + `<span class="note rwhy">${rt.reason}</span>`;
+        /* grey reference marks (oracle switch, expiry, the past event's own duration), one red mark per event */
+        const refs = [];
+        if (TL !== null) refs.push([+TL, T.oracle(durText(+TL))]);
+        refs.push([d.time_model.days_to_expiry * 24, T.expiry]);
+        if (p && p.hours != null) refs.push([p.hours, T.pastMark(durText(p.hours)), "pm"]);
+        $("#rmarks").innerHTML =
+          refs
+            .map(([h, t, c]) => `<i class="rm ref ${c || ""}" style="left:${at(h)}" data-h="${h}" title="${t}"><span>${t}</span></i>`)
+            .join("") +
+          ev.events
+            .map(
+              (e, i) =>
+                `<button class="rm ev ${S.hours >= e.hours ? "passed" : ""}" style="left:${at(e.hours)}" data-evh="${i}" data-h="${e.hours}" aria-label="${T.jump(durText(e.hours))}"></button>`,
+            )
+            .join("");
+        $("#raxis").innerHTML = T.ticks
+          .map(([h, t]) => `<span style="left:${at(h)}">${t}</span>`)
+          .join("");
+        $("#revents").innerHTML = ev.events.length
+          ? ev.events
+              .map(
+                (e, i) =>
+                  `<li class="${S.hours >= e.hours ? "passed" : ""}"><button class="link" data-evh="${i}">${T.from(durText(e.hours))}</button>${e.verdict_before !== e.verdict_after ? ` ${T.answer} ${vb(e.verdict_before)} → ${vb(e.verdict_after)}` : ""}<ul>${e.layers
+                    .map((l) => `<li data-state="${l.to}">${T.layer(l.n, T.state[l.from] || l.from, T.state[l.to] || l.to, l.text)}</li>`)
+                    .join("")}</ul></li>`,
+              )
+              .join("")
+          : `<li class="note">${T.none}</li>`;
+        const th = $("#rthumb");
+        th.style.left = at(S.hours);
+        th.setAttribute("aria-valuenow", +S.hours.toFixed(2));
+        th.setAttribute("aria-valuetext", durText(S.hours));
+        $("#durNote").textContent = T.stepLine(durText(S.hours), rt.show ? S.recovers : null);
+      }
+      function setHours(h, live) {
+        S.hours = Math.min(H_MAX, Math.max(H_MIN, h));
+        live ? frame() : render();
+      }
+      /* One render per animation frame while dragging. */
+      let RAF = 0;
+      function frame() {
+        if (!RAF)
+          RAF = requestAnimationFrame(() => {
+            RAF = 0;
+            render();
+          });
+      }
+      /* Play: sweep the rail in about 9 s, pause just past each event, stop at the end. Any other input stops it. */
+      const PLAY = { on: false, last: 0, hold: 0, raf: 0 },
+        PLAY_MS = 9000,
+        HOLD_MS = 1400;
+      function play() {
+        if (PLAY.on) return stopPlay();
+        if (uOf(S.hours) >= 1 - 1e-6) S.hours = H_MIN;
+        PLAY.on = true;
+        PLAY.hold = 0;
+        PLAY.last = performance.now();
+        render();
+        PLAY.raf = requestAnimationFrame(tick);
+      }
+      function tick(now) {
+        if (!PLAY.on) return;
+        const dt = now - PLAY.last;
+        PLAY.last = now;
+        if (PLAY.hold > 0) PLAY.hold -= dt;
+        else {
+          const u = Math.min(1, uOf(S.hours) + dt / PLAY_MS);
+          let h = hOf(u);
+          const e = eventsOf().events.find((x) => x.hours > S.hours && x.hours <= h);
+          if (e) {
+            h = e.hours * 1.0005;
+            PLAY.hold = HOLD_MS;
+          }
+          S.hours = u >= 1 && !e ? H_MAX : Math.min(H_MAX, h);
+          if (u >= 1 && !e) return stopPlay();
+          render();
+        }
+        PLAY.raf = requestAnimationFrame(tick);
+      }
+      function stopPlay() {
+        if (!PLAY.on) return;
+        PLAY.on = false;
+        cancelAnimationFrame(PLAY.raf);
+        render();
+      }
+      /* Flash: a layer whose state a render changed pulses for about 1 s (an outline with prefers-reduced-motion).
+   Only when the incident is the same as in the previous render (duration, recovers or severity moved). The rows are
+   rebuilt on every render, so a running flash continues through its elapsed time (--flash-at). */
+      const FLASH_MS = 1000;
+      let PREV = { sig: null, st: {} },
+        FLASH = {};
+      function trackFlash(pg) {
+        const sig = [S.pos, S.node, S.fail].join("|"),
+          now = performance.now(),
+          st = {};
+        pg.layers.forEach((l) => {
+          st[l.n] = l.state;
+          if (sig === PREV.sig && PREV.st[l.n] !== l.state) {
+            FLASH[l.n] = now;
+            setTimeout(applyFlash, FLASH_MS + 20);
+          }
+        });
+        if (sig !== PREV.sig) FLASH = {};
+        PREV = { sig, st };
+      }
+      function applyFlash() {
+        const now = performance.now();
+        document.querySelectorAll("#chain .flash").forEach((el) => el.classList.remove("flash"));
+        Object.keys(FLASH).forEach((n) => {
+          const t = now - FLASH[n];
+          if (t >= FLASH_MS) return delete FLASH[n];
+          document.querySelectorAll(`#chain [data-ln="${n}"]`).forEach((el) => {
+            el.classList.add("flash");
+            el.style.setProperty("--flash-at", -Math.round(t) + "ms");
+          });
+        });
+      }
+
       const ymaxOf = (c) =>
         (Math.ceil((Math.max(...c.map((p) => p[1])) * 1000) / 3) * 3) / 1000;
       const CH = { W: 392, H: 190, l: 42, r: 10, t: 10, b: 48, ymax: ymaxOf(CURVE) };
@@ -698,7 +873,7 @@
      "d-sizes",
      "All sale sizes",
      `<div class="tw"><table><thead><tr><th>Sell</th><th>Slippage</th><th>Sale cost</th><th>Loss kept</th><th>Total</th></tr></thead><tbody>${fr.map(row).join("")}${refused}</tbody></table></div>
-     <p class="note">${m.hasLoss ? "The highlighted row has the lowest total. " : ""}${fr.some((f) => !isQ(f)) ? "* Interpolated between two quotes. " : ""}Sale cost includes yield given up (${pc(m.cy, 2)} of the amount sold). Counts only the Pendle swap route: no limit orders, OTC, or holding to expiry.</p>
+     <p class="note">${m.hasLoss ? "The highlighted row has the lowest total. " : ""}${fr.some((f) => !isQ(f)) ? "* Interpolated between two quotes. " : ""}${COPY.rail.carryNote(pc(m.cy, 3), durText(S.hours))} Counts only the Pendle swap route: no limit orders, OTC, or holding to expiry.</p>
      <p class="note">Quotes: ${src(d.evidence.exit_curve)}</p>`,
    )}`;
       }
@@ -774,8 +949,11 @@
       function render() {
         useCurve(S.pos);
         const m = model();
+        trackFlash(m.pg);
         renderSteps(m);
+        renderRail(m);
         renderChain(m);
+        applyFlash();
         renderSpread(m);
         renderDecision(m);
         renderExit(m);
@@ -805,7 +983,7 @@
         b.innerHTML = p
           ? COPY.past.banner(
               p.label,
-              `${FAIL[p.fail].phrase(sevText(p.sev))} at ${NODES[p.node].label}`,
+              `${FAIL[p.fail].phrase(sevText(p.sev))} at ${NODES[p.node].label}${p.hours != null ? COPY.past.lasting(durText(p.hours), !!p.recovers) : ""}`,
               src(p.evidence),
             )
           : "";
@@ -984,7 +1162,16 @@
       document.addEventListener("click", (ev) => {
         const t = ev.target.closest("button");
         if (!t) return;
-        if (t.dataset.drawer) nodeEvidence(t.dataset.drawer);
+        if (t.id !== "play" && !t.closest(".drawer")) stopPlay();
+        if (t.id === "play") play();
+        else if (t.dataset.evh) {
+          /* an event: move the thumb just past it */
+          const e = eventsOf().events[+t.dataset.evh];
+          if (e) setHours(e.hours * 1.0005);
+        } else if (t.dataset.rec) {
+          S.recovers = t.dataset.rec === "1";
+          render();
+        } else if (t.dataset.drawer) nodeEvidence(t.dataset.drawer);
         else if (t.dataset.layer) {
           S.past = null;
           const n = +t.dataset.layer;
@@ -1026,6 +1213,7 @@
       });
       document.addEventListener("input", (ev) => {
         const t = ev.target;
+        stopPlay();
         if (t.id === "sev") {
           const f = FAIL[S.fail];
           S.sev = isLog(f) ? posSev(f, +t.value) : +t.value;
@@ -1042,6 +1230,7 @@
             const v = parseFloat(String(t.value).trim().replace(",", "."));
             return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dv;
           };
+        stopPlay();
         if (t.id === "pos") {
           S.pos = t.value;
           closeDrawer();
@@ -1059,6 +1248,12 @@
           closeDrawer();
           const p = PAST.find((x) => x.key === t.value);
           S.past = p ? p.key : null;
+          /* the event presets the duration and the recovers toggle too (guide 5b); without a stated duration: the
+   default duration, stays */
+          if (p) {
+            S.hours = p.hours != null ? p.hours : DEF_H;
+            S.recovers = p.hours != null && !!p.recovers;
+          }
           if (p) setNode(p.node, p.fail, p.sev);
           else apply();
         }
@@ -1080,6 +1275,40 @@
         },
         true,
       );
+      /* Time rail: drag (pointer capture; a click on the track jumps there) and keys (arrows 1% of the rail,
+   PageUp / PageDown 10%, Home / End). */
+      const RTRACK = $("#rtrack");
+      let DRAG = false;
+      const dragTo = (ev) => {
+        const R = RTRACK.getBoundingClientRect();
+        setHours(hOf(Math.min(1, Math.max(0, (ev.clientX - R.left) / R.width))), true);
+      };
+      RTRACK.addEventListener("pointerdown", (ev) => {
+        if (ev.target.closest(".ev")) return;
+        stopPlay();
+        DRAG = true;
+        RTRACK.setPointerCapture(ev.pointerId);
+        $("#rthumb").focus();
+        dragTo(ev);
+      });
+      RTRACK.addEventListener("pointermove", (ev) => DRAG && dragTo(ev));
+      const endDrag = () => {
+        if (!DRAG) return;
+        DRAG = false;
+        frame();
+      };
+      RTRACK.addEventListener("pointerup", endDrag);
+      RTRACK.addEventListener("pointercancel", endDrag);
+      $("#rthumb").addEventListener("keydown", (ev) => {
+        const k = ev.key,
+          step = { ArrowRight: 0.01, ArrowUp: 0.01, ArrowLeft: -0.01, ArrowDown: -0.01, PageUp: 0.1, PageDown: -0.1 }[k];
+        const u = k === "Home" ? 0 : k === "End" ? 1 : step != null ? uOf(S.hours) + step : null;
+        if (u === null) return;
+        ev.preventDefault();
+        stopPlay();
+        setHours(hOf(Math.min(1, Math.max(0, u))));
+      });
+
       /* Chart hover: read both states at the pointer. */
       document.addEventListener("pointermove", (ev) => {
         const w = $("#cwrap"),
