@@ -270,6 +270,13 @@ What is on the branch:
   a past event's `opts` included: the weakest assumption that flips the verdict (or "No tested assumption changes
   the answer"), this position's own assumptions, the other positions as their own group (they never count as the
   weakest), then the severity break-even and the rule. Shown with or without a loss.
+- Decision card without repeats (user decision, 11 Oct, second pass): no "What-if · … severity …" label (the steps
+  show the incident); a past event's name stays as a tag ("Pattern from …") and whose position it is as another
+  ("Real borrower, not your position" / "Your wallet, read on chain") instead of the "Position: …" paragraph; under
+  the verdict an action-only line ("Sell all $X now." for EXIT, "Keep the position…" for STAY, none for REDUCE /
+  SELL_TO_CAP whose badge already says "Sell $X"), the backend's full headline as its tooltip; the bars carry the
+  amounts (exact in their tooltips), their key only when "Act" has two parts; the weakest assumption said once, on
+  the card (the fold's own line is gone). The reasons stay for now.
 - Decision card, trimmed (user decision, 11 Oct): the break-even sentence (`t.break_even`; it is on the severity
   slider and under the exit chart), the propagation rule (`t.rule`; the reasons say it) and the "Losses, the decision
   and these texts come from the backend model …" source note are no longer on the card (gate 2g). The headline,
