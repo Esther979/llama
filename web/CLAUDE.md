@@ -80,7 +80,8 @@ If the page is ever served over HTTP, serve from the repo root, not from `web/`,
 - Two page views, switched at the top right of the header: Position (PT), the default, and Vaults. In both views
   the header's first row holds only the title and the switch, and the view's own inputs take the second row, so the
   switch does not move when the view changes.
-- Header of the PT view, left to right (to-do 8, done): title; the position select; "Position size (USD)";
+- Header of the PT view, left to right (to-dos 8 and 10, done): title; the position select; "Wallet (optional)";
+  "Position size (USD)";
   "Cash earns after selling, % APY"; "Load a past incident pattern…"; the view switch at the far right.
   - The position select and the size input answer different questions and must not look like two size controls.
     The select says how the PT is held (labels from `position_presets[*].label`: "PT held outright", "PT as
@@ -186,6 +187,14 @@ What is on the branch:
 - First screen: `pt_reusd_aug_2026` on `lev_closest_to_liquidation` (EXIT, doing nothing loses $165k, selling
   costs $5.7k). With a real-borrower preset the card says it is "a real borrower of this market, read on chain, not
   your position". The size field then shows that borrower's on-chain size, read-only (to-do 8).
+- Wallet (to-do 10, guide 3b): "Wallet (optional)" after the position select, a text field with a list
+  (`<datalist>`) of `d.borrowers.wallets` (read by `onchain_positions.py --wallet`; none in today's sample) and the
+  13 borrowers of this market. `d = RiskModel.atSize(window.DASHBOARD, S.size, S.wallet)`: a read wallet adds
+  `wallet` (PT held) and / or `wallet_morpho` (its Morpho position) to the position select, the page selects one,
+  the size field shows its on-chain size read-only, and the card says "read on chain at block …" (not "not your
+  position"). Messages under the inputs: not an address; not read on chain, with the `--wallet` command to rerun;
+  read but no PT-sUSDe at the block; read, with its presets (A). Clearing the field removes the presets (back to
+  `spot` if one was selected). Nothing is typed in by hand. Events and flashes are keyed by the wallet too.
 - Position size (to-do 8, guide 3b): "Position size (USD)" and "Cash earns after selling, % APY" sit in the header
   after the position select; the "Assumptions you can change" fold and the "share of the book" field are gone, and
   so is the stamp's static "position size $10.00M". `d` is `RiskModel.atSize(window.DASHBOARD, S.size)` (`resize()`,
@@ -262,7 +271,10 @@ What is on the branch:
 - `main` was merged again at `48e5ab9` (in `74993e8`: `d.past_incidents`, the optional `opts` argument) and at
   `f1a44c5` (in `642e57b`: guide 3c, the first-screen rule, docs only).
 
-Check status (after to-do 9): `node web/check_demo.mjs` passes, 40 gates, nothing skipped (6f now against
+Check status (after to-do 10): `node web/check_demo.mjs` passes, 40 gates, nothing skipped (gate 8 also covers the
+wallet: list, a borrower's address read at its on-chain size (guide 9's 3,249,472 / 2,941,927) and selected, the card
+equal to the model, unread / invalid / cleared; the "read, no PT" message is not covered: the sample has no read
+wallet; 6f against
 `dependency_edges` / `chain_items`; new 6g: 82 incident x duration cases for the vault details, 4 off-chain items,
 the run slider) (one NOTE: guide 3c's
 oracle / liquidated columns are not compared for the two events without a stated duration); `python3
@@ -280,7 +292,7 @@ Lessons worth keeping:
 - Before to-do 7 the page's numbers came from `decideAt` with a past event's `opts`; now from `decideAtDuration`,
   so the guide's tables (computed with `decideAt`) match the screen within 0.1%, the model exactly.
 
-Gaps, most visible first: none from the guide's list besides the open to-do items (wallet input, vault view rest).
+Gaps, most visible first: none from the guides' lists; see the small leftovers under the to-do.
 
 Answered by the backend (guide section 0b, merged):
 
@@ -317,14 +329,15 @@ gates 6a-6e (`a7be800`); vault Graph display, gate 6f (`7df75da`); "What would c
 `propagation`, gates 2f / 2g (`52df261`); time rail with events, recovers toggle, Play and flash, the timeline
 chart in a fold, gates 7 / 7b (to-do 7: `e8ef479`, `5e436b9`); position size and cash yield in the header through
 `atSize`, gate 8, all guide 9 sizes (to-do 8: `d215b5c`); vault view rest: links and path from the backend, details
-folds, duration rail and timeline, run slider, layer-6 off-chain relations, gates 6f / 6g (to-do 9).
+folds, duration rail and timeline, run slider, layer-6 off-chain relations, gates 6f / 6g (to-do 9: `29af9c6`); the
+PT wallet input through `atSize(..., wallet)`, gate 8 (to-do 10).
 
 Item numbers are kept from earlier versions so references stay valid: 1, 2, the old 3 (detector wording), 3b,
 the new 3 (past incidents), 4 (vault view, first cut), 5 (sensitivity), 6 (decisionText), 6b (propagation) and 7
-(time rail, timeline chart), 8 (position size) and 9 (vault view rest) are done.
+(time rail, timeline chart), 8 (position size), 9 (vault view rest) and 10 (wallet) are done.
 
-Order of the remaining items (user decision, 11 Oct): 10, as listed (6 to 9 done). Small leftovers: the vault
-"share of my portfolio" amount entry; the three inline swatch styles.
+No numbered item left (6 to 10 done). Small leftovers: the vault "share of my portfolio" amount entry; the three
+inline swatch styles.
 
 To raise with the backend: `propagation`'s `position` step lists the `lending -> position` (liquidation) edge even
 when the position is not liquidated; the page filters it (see "Current state"), the data could drop it.
@@ -431,8 +444,7 @@ when the position is not liquidated; the page filters it (see "Current state"), 
    `check_demo.mjs` in the same commit. Then the 1M / 7M / 50M acceptance rows must pass instead of being skipped.
 9. Done. Vault view, rest: markets, exit tranches, sensitivity, liquidity-run slider and table, off-chain relations of
    layer 6, timeline.
-10. Last, only if time remains: PT wallet input (guide section 3b: an address read on chain, never typed-in
-    collateral or debt). Until then the header has no wallet field.
+10. Done. PT wallet input (guide section 3b: an address read on chain, never typed-in collateral or debt).
 
 Alongside, when the code is touched anyway: the three inline swatch styles; strings into `COPY`.
 
